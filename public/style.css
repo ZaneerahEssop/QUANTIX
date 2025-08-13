@@ -1,5 +1,23 @@
-/* Import a clean, modern font */
+/* Import Fonts (Poppins & Font Awesome for icons) */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css');
+
+/* --- Logo Placeholder --- */
+.logo-placeholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: var(--lavender, #b39ddb);
+    margin: 1.5rem auto 2rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    opacity: 0.5;
+}
+/* Import Fonts (Poppins & Font Awesome for icons) */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css');
 
 /* --- Color & Style Variables --- */
 :root {
@@ -10,17 +28,21 @@
 
     --text-light: hsl(0, 0%, 98%);
     --text-dark: hsl(25, 5%, 15%);
-
-    --background-neutral: hsl(30, 20%, 96%);
-    --card-background: #ffffff;
-    --border-color: hsl(0, 0%, 85%);
     --text-primary: hsl(0, 0%, 20%);
+    --text-secondary: hsl(0, 0%, 45%);
+    
+    --card-background: #ffffff;
+    --background-gradient: radial-gradient(circle at 100% 0%, hsl(30, 20%, 98%), hsl(260, 30%, 96%));
 }
+
+/* --- Animations --- */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 /* --- General Body & Layout Styling --- */
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: var(--background-neutral);
+    background: var(--background-gradient);
     color: var(--text-primary);
     display: flex;
     justify-content: center;
@@ -35,163 +57,161 @@ body {
 .profile-container {
     background-color: var(--card-background);
     padding: 2.5rem 3rem;
-    border-radius: 16px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-    max-width: 600px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
     width: 100%;
-    margin: 0 auto;
+    max-width: 600px;
     text-align: center;
-    border: 2px solid var(--border-color);
-    border-top: 5px solid var(--lavender); /* Added color accent */
-}
-
-/* Logo Placeholder Circle */
-.logo-placeholder {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background-color: var(--lavender);
-    margin: 1.5rem auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-top: 5px solid var(--lavender);
+    animation: slideUp 0.7s ease-out forwards;
 }
 
 /* --- Typography --- */
-h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
-}
+h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.75rem; }
+.accent-text { color: var(--lavender); }
+.profile-container p { color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 1.05rem; }
 
-/* Colored text span in the header */
-.accent-text {
-    color: var(--lavender);
-}
-
-.profile-container p {
-    color: #666;
-    margin-bottom: 2.5rem;
-    font-size: 1.05rem;
-}
-
-/* Signup Note Styling */
-.signup-note {
-    margin-top: 1.5rem;
-    font-size: 1rem;
-    color: #888;
-}
-.signup-link {
-    color: var(--lavender);
-    text-decoration: underline;
-    cursor: pointer;
-    font-weight: 500;
-    transition: color 0.2s;
-}
-.signup-link:hover {
-    color: var(--lavender);
-}
-
-/* --- Form Styling --- */
-.profile-form {
-    text-align: left;
-}
+/* --- Form, Icons & Floating Label Styling --- */
+.profile-form { text-align: left; }
 
 .form-group {
-    margin-bottom: 1.25rem;
+    position: relative;
+    margin-bottom: 1.75rem;
+    animation: slideUp 0.5s ease-out forwards;
+    opacity: 0;
+}
+/* Stagger the animation */
+.form-group:nth-child(1) { animation-delay: 0.3s; }
+.form-group:nth-child(2) { animation-delay: 0.4s; }
+.form-group:nth-child(3) { animation-delay: 0.5s; }
+.form-group:nth-child(4) { animation-delay: 0.6s; }
+.form-group:nth-child(5) { animation-delay: 0.7s; }
+.form-group:nth-child(6) { animation-delay: 0.8s; }
+
+.form-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 15px;
+    color: var(--sage); /* Sage for icons */
+    transition: color 0.3s;
+    z-index: 2;
 }
 
-.form-group label {
-    display: block;
-    font-weight: 600; /* Bolder labels */
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
+.form-input {
     width: 100%;
-    padding: 0.85rem 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    padding: 1rem 1rem 1rem 3rem;
+    border: 1px solid var(--sage); /* Sage for borders */
+    border-radius: 12px;
     font-size: 1rem;
     font-family: 'Poppins', sans-serif;
     box-sizing: border-box;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    background-color: transparent;
+    transition: border-color 0.3s;
+    position: relative;
+    z-index: 1;
 }
 
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
-    outline: none;
-    border-color: var(--golden);
-    box-shadow: 0 0 0 4px hsla(45, 90%, 70%, 0.4);
+.form-label {
+    position: absolute;
+    top: 50%;
+    left: 3rem;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 2;
 }
 
-textarea {
-    resize: vertical;
-    min-height: 120px;
+.form-input:focus + .form-label,
+.form-input.has-value + .form-label {
+    top: 0px;
+    left: 2.7rem;
+    transform: translateY(-50%) scale(0.8);
+    background-color: white;
+    padding: 0 0.3rem;
+    font-weight: 500;
+    color: var(--sage); /* Sage for active label */
 }
+
+.form-input:focus { outline: none; border-color: var(--lavender); }
+.form-input:focus ~ .form-icon { color: var(--lavender); }
+.form-input:focus ~ .form-label { color: var(--lavender); }
+
+textarea.form-input { min-height: 120px; padding-top: 1.5rem; }
+textarea.form-input + .form-label { top: 1.2rem; }
+textarea.form-input:focus + .form-label,
+textarea.form-input.has-value + .form-label { top: 0; }
+
+/* --- Custom Select (Dropdown) Styling --- */
+.select-wrapper { position: relative; }
+
+.select-wrapper .form-input {
+    appearance: none; /* Remove default arrow */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+    padding-right: 3rem; /* Make space for custom arrow */
+}
+
+/* Custom Arrow Icon */
+.select-wrapper::after {
+    content: '\f078'; /* Font Awesome chevron-down icon */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    position: absolute;
+    top: 50%;
+    right: 1.2rem;
+    transform: translateY(-50%);
+    color: var(--sage);
+    pointer-events: none; /* Let clicks pass through to the select */
+    transition: color 0.3s, transform 0.3s;
+    z-index: 2;
+}
+
+.form-input:focus ~ .select-wrapper::after { color: var(--lavender); }
 
 /* --- Button Styling --- */
 .submit-btn {
     width: 100%;
     padding: 1rem;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.3s;
+    transition: all 0.3s ease;
     margin-top: 1rem;
-    background-color: var(--golden); /* Consistent button color */
-    color: var(--text-light);
-    box-shadow: 0 4px 15px hsla(45, 90%, 70%, 0.3);
+    color: var(--text-dark); /* Dark text for contrast on golden */
+    background: linear-gradient(45deg, var(--coral), var(--golden));
+    box-shadow: 0 4px 20px hsla(30, 85%, 65%, 0.4);
+    animation: slideUp 0.5s ease-out 0.9s forwards;
+    opacity: 0;
 }
 
 .submit-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px hsla(45, 90%, 70%, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px hsla(30, 85%, 65%, 0.5);
 }
 
 /* --- Profile Picture Upload --- */
 .profile-pic-group {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-    background-color: #f8f9fa;
-    padding: 1rem;
-    border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 1rem; margin-bottom: 2rem; padding: 1.5rem;
+    border-radius: 16px; background-color: #f8f9fa;
+    animation: slideUp 0.5s ease-out 0.2s forwards;
+    opacity: 0;
 }
-
 .pic-preview {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    /* Colorful gradient background */
+    width: 100px; height: 100px; border-radius: 50%;
     background: linear-gradient(135deg, var(--coral), var(--lavender));
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    /* Default icon */
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>');
-    background-size: 45px;
-    background-position: center;
-    background-repeat: no-repeat;
-    border: 3px solid var(--card-background);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 4px solid var(--card-background);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    background-size: cover; background-position: center;
+    display: flex; justify-content: center; align-items: center;
+    transition: transform 0.3s ease;
 }
-
-.pic-upload-label {
-    font-weight: 500;
-    color: var(--text-primary);
-    cursor: pointer;
-}
-
-#profile_pic {
-    display: none; /* Hide the default file input */
-}
+.pic-preview:hover { transform: scale(1.05); }
+.pic-preview .default-icon { font-size: 40px; color: rgba(255,255,255,0.8); }
+#profile_pic_label { font-weight: 600; color: var(--coral); cursor: pointer; }
+#profile_pic { display: none; }
