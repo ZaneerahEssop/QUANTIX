@@ -4,173 +4,361 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planner Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root {
+            --blush: #E5ACBF;
+            --coral: #F6A28C;
+            --azalea: #ef6a9f;
+            --peach: #f9d5c6;
+            --card-background: #f9f9f9;
+            --text-primary: #333;
+            --text-secondary: #666;
+        }
+        body {
+            background:  #FFF6FA !important;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+        .dashboard-main {
+            max-width: 1200px;
+            margin: 3rem auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            padding: 0 1rem;
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dashboard-header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+        .add-btn {
+            background: var(--blush);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.7rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .add-btn:hover {
+            background: var(--coral);
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+        .cards-row {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .event-card {
+            background: var(--card-background);
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(239, 106, 179, 0.07);
+            border: 2px solid var(--blush);
+            padding: 1.8rem 1.5rem 1.8rem 1.5rem;
+            min-width: 200px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .event-card h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .event-card p {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.98rem;
+        }
+        .event-card .view-btn {
+            margin-top: auto;
+            background: var(--blush);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.4rem 1.2rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .event-card .view-btn:hover {
+            background: var(--coral);
+        }
+        .section-card {
+            background: var(--blush);
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(239, 106, 179, 0.07);
+            padding: 1.8rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .section-card h2 {
+            color: #fff;
+            font-size: 1.15rem;
+            margin: 0 0 1rem 0;
+            font-weight: 600;
+        }
+        .pending-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .pending-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-background);
+            border-radius: 8px;
+            margin-bottom: 0.7rem;
+            padding: 0.7rem 1rem;
+            box-shadow: 0 1px 4px rgba(239, 106, 179, 0.04);
+        }
+        .pending-list .fa-clipboard-list {
+            color: var(--azalea);
+            margin-right: 0.7rem;
+        }
+        .pending-list .details-btn {
+            background: var(--coral);
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            padding: 0.3rem 1rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .pending-list .details-btn:hover {
+            background: var(--peach);
+        }
+        .calendar-card {
+            background: var(--card-background);
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(239, 106, 179, 0.07);
+            border: 2px solid var(--blush);
+            padding: 1.8rem 1.5rem;
+        }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .calendar-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            color: var(--text-primary);
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--blush);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+        }
+        .day-name {
+            font-weight: 600;
+            color: #777;
+            padding: 0.5rem 0;
+        }
+        .day-number {
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: var(--text-primary);
+        }
+        .day-number:hover {
+            background-color: #eee;
+        }
+        .day-number.current-month {
+            font-weight: bold;
+        }
+        .day-number.today {
+            background-color: var(--blush);
+            color: #fff;
+        }
+        .chat-section {
+            background: var(--blush);
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(239, 106, 179, 0.07);
+            padding: 1.2rem 1.5rem;
+            margin-top: 2rem;
+        }
+        .chat-section h2 {
+            color: #fff;
+            font-size: 1.15rem;
+            margin: 0 0 1rem 0;
+            font-weight: 600;
+        }
+        .chat-box {
+            background: var(--card-background);
+            border-radius: 10px;
+            padding: 1rem;
+            min-height: 90px;
+            margin-bottom: 0.7rem;
+            box-shadow: 0 1px 4px rgba(239, 106, 179, 0.04);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+        }
+        .chat-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--peach);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .chat-message {
+            flex: 1;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+        .chat-meta {
+            color: var(--azalea);
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+        }
+    </style>
 </head>
-<body class="dashboard-body">
-    <header class="dashboard-header">
-        <h1>Hi, <span id="userName">Planner</span>!</h1>
-        <button class="add-event-btn"><i class="fas fa-plus"></i> Add Event</button>
-    </header>
-
-    <div class="dashboard-container">
-        <div class="left-column">
-            
-            <section class="events-section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h2>Upcoming events</h2>
-                    <a href="#" style="color: var(--text-secondary); text-decoration: none; font-weight: 500;">View all</a>
-                </div>
-                <div class="upcoming-events-container">
-                    <div class="upcoming-event-card">
-                        <h3>Wedding</h3>
-                        <div class="event-date">20 August 2025</div>
-                        <div class="event-stats">Confirmed guests: 134/200</div>
-                        <div class="event-stats">Vendors approved: 5/10</div>
-                        <div class="event-actions">
-                            <button>View</button>
-                            <button>Edit</button>
-                        </div>
-                    </div>
-                    <div class="upcoming-event-card">
-                        <h3>Tea Party</h3>
-                        <div class="event-date">29 August 2025</div>
-                        <div class="event-stats">Confirmed guests: 74/100</div>
-                        <div class="event-stats">Vendors approved: 2/5</div>
-                        <div class="event-actions">
-                            <button>View</button>
-                            <button>Edit</button>
-                        </div>
-                    </div>
-                    <div class="upcoming-event-card">
-                        <h3>Launch Party</h3>
-                        <div class="event-date">3 October 2025</div>
-                        <div class="event-stats">Confirmed guests: 50/150</div>
-                        <div class="event-stats">Vendors approved: 5/15</div>
-                        <div class="event-actions">
-                            <button>View</button>
-                            <button>Edit</button>
-                        </div>
-                    </div>
-                    <div class="upcoming-event-card">
-                        <h3>21st Birthday</h3>
-                        <div class="event-date">15 October 2025</div>
-                        <div class="event-stats">Confirmed guests: 43/100</div>
-                        <div class="event-stats">Vendors approved: 5/13</div>
-                        <div class="event-actions">
-                            <button>View</button>
-                            <button>Edit</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <div class="card task-list-card">
-                <h2>Task list</h2>
-                <div class="task-item">
-                    <input type="checkbox" id="task1">
-                    <label for="task1">Contact DJ for wedding</label>
-                </div>
-                <div class="task-item">
-                    <input type="checkbox" id="task2">
-                    <label for="task2">Confirm theme with Bob</label>
-                </div>
-                <div class="task-item">
-                    <input type="checkbox" id="task3">
-                    <label for="task3">Set up meeting with catering</label>
-                </div>
-            </div>
-            
+<body>
+    <div class="dashboard-main">
+        <div class="dashboard-header">
+            <h1><strong>Hi, Planner Name!</strong></h1>
+            <button class="add-btn">+ Add Event</button>
         </div>
-        
-        <div class="right-column">
-            <div class="card calendar-card">
-                <div class="calendar-header">
-                    <button class="nav-btn"><i class="fas fa-chevron-left"></i></button>
-                    <h3>August</h3>
-                    <button class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+        <div class="dashboard-grid">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.7rem;">
+                    <h2 style="margin: 0; font-size: 1.3rem; font-weight: 600; color: #333;">Upcoming Events</h2>
+                    <a href="#" style="color: var(--blush); text-decoration: none; font-weight: 500; font-size: 1rem;">View all</a>
                 </div>
-                <div class="calendar-grid">
-                    <div class="day-name">Mo</div>
-                    <div class="day-name">Tu</div>
-                    <div class="day-name">We</div>
-                    <div class="day-name">Th</div>
-                    <div class="day-name">Fr</div>
-                    <div class="day-name">Sa</div>
-                    <div class="day-name">Su</div>
-                    
-                    <div class="day-number">28</div>
-                    <div class="day-number">29</div>
-                    <div class="day-number">30</div>
-                    <div class="day-number">31</div>
-                    <div class="day-number current-month">1</div>
-                    <div class="day-number current-month">2</div>
-                    <div class="day-number current-month">3</div>
-                    <div class="day-number current-month">4</div>
-                    <div class="day-number current-month">5</div>
-                    <div class="day-number current-month">6</div>
-                    <div class="day-number current-month">7</div>
-                    <div class="day-number current-month today">8</div>
-                    <div class="day-number current-month">9</div>
-                    <div class="day-number current-month">10</div>
-                    <div class="day-number current-month">11</div>
-                    <div class="day-number current-month">12</div>
-                    <div class="day-number current-month">13</div>
-                    <div class="day-number current-month">14</div>
-                    <div class="day-number current-month">15</div>
-                    <div class="day-number current-month">16</div>
-                    <div class="day-number current-month">17</div>
-                    <div class="day-number current-month">18</div>
-                    <div class="day-number current-month">19</div>
-                    <div class="day-number current-month">20</div>
-                    <div class="day-number current-month">21</div>
-                    <div class="day-number current-month">22</div>
-                    <div class="day-number current-month">23</div>
-                    <div class="day-number current-month">24</div>
-                    <div class="day-number current-month">25</div>
-                    <div class="day-number current-month">26</div>
-                    <div class="day-number current-month">27</div>
-                    <div class="day-number">1</div>
-                    <div class="day-number">2</div>
-                    <div class="day-number">3</div>
-                    <div class="day-number">4</div>
-                </div>
-            </div>
-            
-            <div class="card chat-card">
-                <h2><i class="fa-solid fa-comments"></i> Chat</h2>
-                <div class="chat-message">
-                    <div class="message-avatar"></div>
-                    <div class="message-content">
-                        Hi there. The lowest we can go is R3000
+                <div class="cards-row">
+                    <div class="event-card">
+                        <h3>Meeting with Client</h3>
+                        <p>23 August 2025<br>Venue: Sandton Sky<br>Time: 12:00 - 16:00</p>
+                        <button class="view-btn">View</button>
+                    </div>
+                    <div class="event-card">
+                        <h3>Wedding Booking</h3>
+                        <p>25 October 2025<br>Venue: La Parada Fourways<br>Time: 17:00 - 22:00</p>
+                        <button class="view-btn">View</button>
+                    </div>
+                    <div class="event-card">
+                        <h3>Vendor Showcase</h3>
+                        <p>3 October 2025<br>Venue: The Leonardo<br>Time: 16:00 - 19:00</p>
+                        <button class="view-btn">View</button>
                     </div>
                 </div>
-                <div class="chat-message">
-                    <div class="message-avatar"></div>
-                    <div class="message-content">
-                        A set like that would start from R50 000
-                    </div>
+                <div class="section-card">
+                    <h2>Checklist</h2>
+                    <ul class="pending-list">
+                        <li>
+                            <span><i class="fa fa-clipboard-list"></i> Send follow-up emails</span>
+                            <button class="details-btn">View details</button>
+                        </li>
+                        <li>
+                            <span><i class="fa fa-clipboard-list"></i> Review budget for Q3</span>
+                            <button class="details-btn">View details</button>
+                        </li>
+                        <li>
+                            <span><i class="fa fa-clipboard-list"></i> Source new florists</span>
+                            <button class="details-btn">View details</button>
+                        </li>
+                    </ul>
                 </div>
-                <div class="chat-message">
-                    <div class="message-avatar"></div>
-                    <div class="message-content">
-                        Great, see you then
+                <div class="chat-section">
+                    <h2>Chat with Vendors</h2>
+                    <div class="chat-box">
+                        <div class="chat-avatar"><i class="fa fa-user"></i></div>
+                        <div class="chat-message">Hi, can you confirm the menu for the Tea Party?</div>
+                        <div class="chat-meta">Yesterday</div>
+                    </div>
+                    <div class="chat-box">
+                        <div class="chat-avatar"><i class="fa fa-user"></i></div>
+                        <div class="chat-message">Yes, we can provide a vegan option.</div>
+                        <div class="chat-meta">Today</div>
                     </div>
                 </div>
             </div>
-            
+            <div>
+                <div class="calendar-card">
+                    <div class="calendar-header">
+                        <button class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                        <h3>August</h3>
+                        <button class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="day-name">Mo</div>
+                        <div class="day-name">Tu</div>
+                        <div class="day-name">We</div>
+                        <div class="day-name">Th</div>
+                        <div class="day-name">Fr</div>
+                        <div class="day-name">Sa</div>
+                        <div class="day-name">Su</div>
+                        <div class="day-number">28</div>
+                        <div class="day-number">29</div>
+                        <div class="day-number">30</div>
+                        <div class="day-number">31</div>
+                        <div class="day-number current-month">1</div>
+                        <div class="day-number current-month">2</div>
+                        <div class="day-number current-month">3</div>
+                        <div class="day-number current-month">4</div>
+                        <div class="day-number current-month">5</div>
+                        <div class="day-number current-month">6</div>
+                        <div class="day-number current-month">7</div>
+                        <div class="day-number current-month today">8</div>
+                        <div class="day-number current-month">9</div>
+                        <div class="day-number current-month">10</div>
+                        <div class="day-number current-month">11</div>
+                        <div class="day-number current-month">12</div>
+                        <div class="day-number current-month">13</div>
+                        <div class="day-number current-month">14</div>
+                        <div class="day-number current-month">15</div>
+                        <div class="day-number current-month">16</div>
+                        <div class="day-number current-month">17</div>
+                        <div class="day-number current-month">18</div>
+                        <div class="day-number current-month">19</div>
+                        <div class="day-number current-month">20</div>
+                        <div class="day-number current-month">21</div>
+                        <div class="day-number current-month">22</div>
+                        <div class="day-number current-month">23</div>
+                        <div class="day-number current-month">24</div>
+                        <div class="day-number current-month">25</div>
+                        <div class="day-number current-month">26</div>
+                        <div class="day-number current-month">27</div>
+                        <div class="day-number">1</div>
+                        <div class="day-number">2</div>
+                        <div class="day-number">3</div>
+                        <div class="day-number">4</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <script type="module" src="app.js"></script>
-    <script type="module">
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        const auth = getAuth();
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                const userNameSpan = document.getElementById("userName");
-                userNameSpan.textContent = user.displayName || "Planner";
-            }
-        });
-    </script>
 </body>
 </html>

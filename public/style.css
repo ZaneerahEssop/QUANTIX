@@ -4,18 +4,19 @@
 
 /* --- Color & Style Variables --- */
 :root {
-    --coral: hsl(14, 85%, 65%);
-    --lavender: hsl(260, 35%, 75%);
-    --sage: hsl(120, 20%, 60%);
-    --golden: hsl(45, 90%, 70%);
-
+    --cream: #E2C5AE;
+    --blush: #E5ACBF;
+    --coral: #F6A28C; /* Lighter Coral */
+    --peach: #E8B180; /* Lighter Peach */
+    --azalea: #EF6AB3;
+    
     --text-light: hsl(0, 0%, 98%);
     --text-dark: hsl(25, 5%, 15%);
     --text-primary: hsl(0, 0%, 20%);
     --text-secondary: hsl(0, 0%, 45%);
     
     --card-background: #ffffff;
-    --background-gradient: radial-gradient(circle at 100% 0%, hsl(30, 20%, 98%), hsl(260, 30%, 96%));
+    --background-gradient: radial-gradient(circle at 100% 0%, #E2C5AE, #E5ACBF);
 }
 
 /* --- Animations --- */
@@ -45,14 +46,26 @@ body {
     width: 100%;
     max-width: 600px;
     text-align: center;
-    border-top: 5px solid var(--lavender);
+    border-top: 5px solid var(--blush);
     animation: slideUp 0.7s ease-out forwards;
 }
 
 /* --- Typography --- */
 h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.75rem; }
-.accent-text { color: var(--lavender); }
+.accent-text { color: var(--blush); }
 .profile-container p { color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 1.05rem; }
+
+/* Add styles for "Sign up here" and "Login here" links */
+.profile-container p a {
+    color: var(--blush);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.profile-container p a:hover {
+    color: var(--coral);
+}
 
 /* --- Form, Icons & Floating Label Styling --- */
 .profile-form { text-align: left; }
@@ -76,7 +89,7 @@ h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.75rem; }
     top: 50%;
     transform: translateY(-50%);
     left: 15px;
-    color: var(--sage); /* Sage for icons */
+    color: var(--peach); /* Peach for icons */
     transition: color 0.3s;
     z-index: 2;
 }
@@ -84,7 +97,7 @@ h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.75rem; }
 .form-input {
     width: 100%;
     padding: 1rem 1rem 1rem 3rem;
-    border: 1px solid var(--sage); /* Sage for borders */
+    border: 1px solid var(--peach); /* Peach for borders */
     border-radius: 12px;
     font-size: 1rem;
     font-family: 'Poppins', sans-serif;
@@ -114,12 +127,12 @@ h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.75rem; }
     background-color: white;
     padding: 0 0.3rem;
     font-weight: 500;
-    color: var(--sage); /* Sage for active label */
+    color: var(--peach); /* Peach for active label */
 }
 
-.form-input:focus { outline: none; border-color: var(--lavender); }
-.form-input:focus ~ .form-icon { color: var(--lavender); }
-.form-input:focus ~ .form-label { color: var(--lavender); }
+.form-input:focus { outline: none; border-color: var(--blush); }
+.form-input:focus ~ .form-icon { color: var(--blush); }
+.form-input:focus ~ .form-label { color: var(--blush); }
 
 textarea.form-input { min-height: 120px; padding-top: 1.5rem; }
 textarea.form-input + .form-label { top: 1.2rem; }
@@ -146,13 +159,13 @@ textarea.form-input.has-value + .form-label { top: 0; }
     top: 50%;
     right: 1.2rem;
     transform: translateY(-50%);
-    color: var(--sage);
+    color: var(--peach);
     pointer-events: none; /* Let clicks pass through to the select */
     transition: color 0.3s, transform 0.3s;
     z-index: 2;
 }
 
-.form-input:focus ~ .select-wrapper::after { color: var(--lavender); }
+.form-input:focus ~ .select-wrapper::after { color: var(--blush); }
 
 /* --- Button Styling --- */
 .submit-btn {
@@ -166,15 +179,15 @@ textarea.form-input.has-value + .form-label { top: 0; }
     transition: all 0.3s ease;
     margin-top: 1rem;
     color: var(--text-dark); /* Dark text for contrast on golden */
-    background: linear-gradient(45deg, var(--coral), var(--golden));
-    box-shadow: 0 4px 20px hsla(30, 85%, 65%, 0.4);
+    background: linear-gradient(45deg, var(--coral), var(--peach));
+    box-shadow: 0 4px 20px hsla(14, 85%, 65%, 0.4);
     animation: slideUp 0.5s ease-out 0.9s forwards;
     opacity: 0;
 }
 
 .submit-btn:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px hsla(30, 85%, 65%, 0.5);
+    box-shadow: 0 8px 25px hsla(14, 85%, 65%, 0.5);
 }
 
 /* --- Profile Picture Upload --- */
@@ -187,7 +200,7 @@ textarea.form-input.has-value + .form-label { top: 0; }
 }
 .pic-preview {
     width: 100px; height: 100px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--coral), var(--lavender));
+    background: linear-gradient(135deg, var(--coral), var(--blush));
     border: 4px solid var(--card-background);
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     background-size: cover; background-position: center;
@@ -254,8 +267,8 @@ body.dashboard-body {
 }
 
 .add-event-btn:hover {
-    border-color: var(--lavender);
-    color: var(--lavender);
+    border-color: var(--blush);
+    color: var(--blush);
 }
 
 .card {
@@ -270,60 +283,131 @@ body.dashboard-body {
     transform: translateY(-5px);
 }
 
-.upcoming-events-container {
-    display: grid; /* Changed to grid for a better wrapping layout */
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-}
 
-.upcoming-event-card {
-    background-color: #fff;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    padding: 1.5rem;
-    text-align: left;
-    position: relative;
-    border-left: 5px solid var(--lavender);
-}
-
-.upcoming-event-card h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0 0 0.5rem 0;
-}
-
-.event-date {
-    position: absolute;
-    top: 1.5rem;
-    right: 1.5rem;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-.event-stats {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-}
-
-.event-actions {
+.dashboard-main {
+    max-width: 1200px;
+    margin: 2rem auto;
     display: flex;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 2rem;
 }
-
-.event-actions button {
-    padding: 0.5rem 1rem;
-    border: 1px solid #ddd;
-    background-color: #fff;
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.dashboard-header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+}
+.add-btn {
+    background: var(--blush);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.add-btn:hover {
+    background: var(--coral);
+}
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+.cards-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+.event-card {
+    background: var(--card-background);
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(239, 106, 179, 0.07);
+    border: 2px solid var(--blush);
+    padding: 1.2rem 1.5rem 1.2rem 1.5rem;
+    min-width: 200px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.event-card h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+.event-card p {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.98rem;
+}
+.view-btn {
+    margin-top: auto;
+    background: var(--blush);
+    color: #fff;
+    border: none;
     border-radius: 8px;
+    padding: 0.4rem 1.2rem;
+    font-size: 0.95rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s;
 }
-
-.event-actions button:hover {
-    background-color: #f8f9fa;
+.view-btn:hover {
+    background: var(--coral);
+}
+.chat-section {
+    background: var(--blush);
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(239, 106, 179, 0.07);
+    padding: 1.2rem 1.5rem;
+    margin-top: 2rem;
+}
+.chat-section h2 {
+    color: #fff;
+    font-size: 1.15rem;
+    margin: 0 0 1rem 0;
+    font-weight: 600;
+}
+.chat-box {
+    background: var(--card-background);
+    border-radius: 10px;
+    padding: 1rem;
+    min-height: 90px;
+    margin-bottom: 0.7rem;
+    box-shadow: 0 1px 4px rgba(239, 106, 179, 0.04);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+}
+.chat-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--peach);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+.chat-message {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+.calendar-card {
+    background: var(--card-background);
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(239, 106, 179, 0.07);
+    border: 2px solid var(--blush);
+    padding: 1.2rem 1.5rem;
 }
 
 /* --- Task List --- */
@@ -358,7 +442,7 @@ body.dashboard-body {
     appearance: none;
     width: 20px;
     height: 20px;
-    border: 2px solid var(--sage);
+    border: 2px solid var(--peach);
     border-radius: 50%;
     position: relative;
     cursor: pointer;
@@ -367,8 +451,8 @@ body.dashboard-body {
 }
 
 .task-item input[type="checkbox"]:checked {
-    background-color: var(--sage);
-    border-color: var(--sage);
+    background-color: var(--peach);
+    border-color: var(--peach);
 }
 
 .task-item input[type="checkbox"]:checked::after {
@@ -385,8 +469,8 @@ body.dashboard-body {
 
 /* --- Chat Section --- */
 .chat-card {
-    background-color: hsl(260, 35%, 95%); /* Light lavender background */
-    border-left: 5px solid var(--lavender);
+    background-color: hsl(260, 35%, 95%); /* Light blush background */
+    border-left: 5px solid var(--blush);
     padding: 2rem;
 }
 
@@ -397,7 +481,7 @@ body.dashboard-body {
 }
 
 .chat-card .fa-comments {
-    color: var(--lavender);
+    color: var(--blush);
     font-size: 1.5rem;
 }
 
@@ -416,7 +500,7 @@ body.dashboard-body {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background-color: var(--lavender);
+    background-color: var(--blush);
 }
 
 .message-content {
@@ -502,4 +586,51 @@ body.dashboard-body {
 
 .day-number:hover:not(.today) {
     background-color: #f0f0f0;
+}
+
+/* New Signup Page Styles */
+.profile-container {
+    max-width: 700px;
+}
+.role-choices {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+.role-card {
+    background: var(--card-background);
+    border: 2px solid var(--border-color, #ddd);
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+    width: 260px;
+    text-align: center;
+    color: var(--text-primary);
+    transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--peach);
+    outline: none;
+}
+.role-card.selected, .role-card:hover {
+    box-shadow: 0 8px 32px rgba(45, 45, 130, 0.13);
+    border-color: var(--blush);
+    background: hsl(260, 35%, 95%);
+}
+.role-card input[type="radio"]:focus + .card-icon {
+    outline: 2px solid var(--blush);
+}
+.card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+.submit-btn {
+    width: 100%;
+    margin-top: 2rem;
 }
