@@ -3,9 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event-ually Perfect</title>
+    <title>Planner Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
-<body>
-    <h1>Planner Dashboard</h1>
+<body class="dashboard-body">
+    <header class="dashboard-header">
+        <h1>Hi, <span id="userName">Planner</span>!</h1>
+        <button class="add-event-btn"><i class="fas fa-plus"></i> Add Event</button>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="left-column">
+            
+            <section class="events-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2>Upcoming events</h2>
+                    <a href="#" style="color: var(--text-secondary); text-decoration: none; font-weight: 500;">View all</a>
+                </div>
+                <div class="upcoming-events-container">
+                    <div class="upcoming-event-card">
+                        <h3>Wedding</h3>
+                        <div class="event-date">20 August 2025</div>
+                        <div class="event-stats">Confirmed guests: 134/200</div>
+                        <div class="event-stats">Vendors approved: 5/10</div>
+                        <div class="event-actions">
+                            <button>View</button>
+                            <button>Edit</button>
+                        </div>
+                    </div>
+                    <div class="upcoming-event-card">
+                        <h3>Tea Party</h3>
+                        <div class="event-date">29 August 2025</div>
+                        <div class="event-stats">Confirmed guests: 74/100</div>
+                        <div class="event-stats">Vendors approved: 2/5</div>
+                        <div class="event-actions">
+                            <button>View</button>
+                            <button>Edit</button>
+                        </div>
+                    </div>
+                    <div class="upcoming-event-card">
+                        <h3>Launch Party</h3>
+                        <div class="event-date">3 October 2025</div>
+                        <div class="event-stats">Confirmed guests: 50/150</div>
+                        <div class="event-stats">Vendors approved: 5/15</div>
+                        <div class="event-actions">
+                            <button>View</button>
+                            <button>Edit</button>
+                        </div>
+                    </div>
+                    <div class="upcoming-event-card">
+                        <h3>21st Birthday</h3>
+                        <div class="event-date">15 October 2025</div>
+                        <div class="event-stats">Confirmed guests: 43/100</div>
+                        <div class="event-stats">Vendors approved: 5/13</div>
+                        <div class="event-actions">
+                            <button>View</button>
+                            <button>Edit</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="card task-list-card">
+                <h2>Task list</h2>
+                <div class="task-item">
+                    <input type="checkbox" id="task1">
+                    <label for="task1">Contact DJ for wedding</label>
+                </div>
+                <div class="task-item">
+                    <input type="checkbox" id="task2">
+                    <label for="task2">Confirm theme with Bob</label>
+                </div>
+                <div class="task-item">
+                    <input type="checkbox" id="task3">
+                    <label for="task3">Set up meeting with catering</label>
+                </div>
+            </div>
+            
+        </div>
+        
+        <div class="right-column">
+            <div class="card calendar-card">
+                <div class="calendar-header">
+                    <button class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                    <h3>August</h3>
+                    <button class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="calendar-grid">
+                    <div class="day-name">Mo</div>
+                    <div class="day-name">Tu</div>
+                    <div class="day-name">We</div>
+                    <div class="day-name">Th</div>
+                    <div class="day-name">Fr</div>
+                    <div class="day-name">Sa</div>
+                    <div class="day-name">Su</div>
+                    
+                    <div class="day-number">28</div>
+                    <div class="day-number">29</div>
+                    <div class="day-number">30</div>
+                    <div class="day-number">31</div>
+                    <div class="day-number current-month">1</div>
+                    <div class="day-number current-month">2</div>
+                    <div class="day-number current-month">3</div>
+                    <div class="day-number current-month">4</div>
+                    <div class="day-number current-month">5</div>
+                    <div class="day-number current-month">6</div>
+                    <div class="day-number current-month">7</div>
+                    <div class="day-number current-month today">8</div>
+                    <div class="day-number current-month">9</div>
+                    <div class="day-number current-month">10</div>
+                    <div class="day-number current-month">11</div>
+                    <div class="day-number current-month">12</div>
+                    <div class="day-number current-month">13</div>
+                    <div class="day-number current-month">14</div>
+                    <div class="day-number current-month">15</div>
+                    <div class="day-number current-month">16</div>
+                    <div class="day-number current-month">17</div>
+                    <div class="day-number current-month">18</div>
+                    <div class="day-number current-month">19</div>
+                    <div class="day-number current-month">20</div>
+                    <div class="day-number current-month">21</div>
+                    <div class="day-number current-month">22</div>
+                    <div class="day-number current-month">23</div>
+                    <div class="day-number current-month">24</div>
+                    <div class="day-number current-month">25</div>
+                    <div class="day-number current-month">26</div>
+                    <div class="day-number current-month">27</div>
+                    <div class="day-number">1</div>
+                    <div class="day-number">2</div>
+                    <div class="day-number">3</div>
+                    <div class="day-number">4</div>
+                </div>
+            </div>
+            
+            <div class="card chat-card">
+                <h2><i class="fa-solid fa-comments"></i> Chat</h2>
+                <div class="chat-message">
+                    <div class="message-avatar"></div>
+                    <div class="message-content">
+                        Hi there. The lowest we can go is R3000
+                    </div>
+                </div>
+                <div class="chat-message">
+                    <div class="message-avatar"></div>
+                    <div class="message-content">
+                        A set like that would start from R50 000
+                    </div>
+                </div>
+                <div class="chat-message">
+                    <div class="message-avatar"></div>
+                    <div class="message-content">
+                        Great, see you then
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <script type="module" src="app.js"></script>
+    <script type="module">
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        const auth = getAuth();
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                const userNameSpan = document.getElementById("userName");
+                userNameSpan.textContent = user.displayName || "Planner";
+            }
+        });
+    </script>
 </body>
 </html>
