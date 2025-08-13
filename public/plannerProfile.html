@@ -13,42 +13,76 @@
         <p>Fill out your details to get started and connect with vendors.</p>
         
         <form class="profile-form" action="#" method="POST">
-            <div class="profile-pic-group">
-                <div class="pic-preview"></div>
-                <label for="profile_pic" class="pic-upload-label">
-                    Click to Upload Profile Picture
-                    <input type="file" id="profile_pic" name="profile_pic" accept="image/*">
-                </label>
+            
+            <div class="form-group profile-pic-group">
+                <div class="pic-preview">
+                    <i class="fas fa-camera default-icon"></i>
+                </div>
+                <label for="profile_pic" id="profile_pic_label">Upload Profile Picture</label>
+                <input type="file" id="profile_pic" name="profile_pic" accept="image/*">
             </div>
 
             <div class="form-group">
-                <label for="full_name">Full Name</label>
-                <input type="text" id="full_name" name="full_name" placeholder="e.g., Jane Doe" required>
+                <i class="form-icon fas fa-user"></i>
+                <input type="text" id="full_name" name="full_name" class="form-input" placeholder=" " required>
+                <label for="full_name" class="form-label">Full Name</label>
             </div>
 
             <div class="form-group">
-                <label for="company_name">Company Name (Optional)</label>
-                <input type="text" id="company_name" name="company_name" placeholder="e.g., Dream Day Events">
+                <i class="form-icon fas fa-building"></i>
+                <input type="text" id="company_name" name="company_name" class="form-input" placeholder=" ">
+                <label for="company_name" class="form-label">Company Name (Optional)</label>
             </div>
             
             <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" placeholder="e.g., (123) 456-7890" required>
+                <i class="form-icon fas fa-phone"></i>
+                <input type="tel" id="phone" name="phone" class="form-input" placeholder=" " required>
+                <label for="phone" class="form-label">Phone Number</label>
             </div>
             
             <div class="form-group">
-                <label for="website">Website / Portfolio</label>
-                <input type="url" id="website" name="website" placeholder="https://www.yourportfolio.com">
+                <i class="form-icon fas fa-link"></i>
+                <input type="url" id="website" name="website" class="form-input" placeholder=" ">
+                <label for="website" class="form-label">Website / Portfolio</label>
             </div>
 
             <div class="form-group">
-                <label for="bio">Short Bio</label>
-                <textarea id="bio" name="bio" placeholder="Tell everyone a little about your planning style and experience..."></textarea>
+                 <i class="form-icon fas fa-align-left"></i>
+                <textarea id="bio" name="bio" class="form-input" placeholder=" "></textarea>
+                <label for="bio" class="form-label">Short Bio</label>
             </div>
             
             <button type="submit" class="submit-btn">Save & Continue</button>
         </form>
     </main>
+
+    <script>
+        // --- Live Profile Picture Preview ---
+        document.getElementById('profile_pic').addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const picPreview = document.querySelector('.pic-preview');
+                picPreview.style.backgroundImage = `url(${URL.createObjectURL(file)})`;
+                picPreview.querySelector('.default-icon').style.display = 'none';
+            }
+        });
+
+        // --- Logic for Floating Labels ---
+        document.querySelectorAll('.form-input').forEach(input => {
+            // Check on blur (clicking away)
+            input.addEventListener('blur', function() {
+                if(this.value) {
+                    this.classList.add('has-value');
+                } else {
+                    this.classList.remove('has-value');
+                }
+            });
+            // Check on page load in case of browser auto-fill
+            if(input.value) {
+                input.classList.add('has-value');
+            }
+        });
+    </script>
 
 </body>
 </html>

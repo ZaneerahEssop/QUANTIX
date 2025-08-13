@@ -3,25 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
+    <title>Sign Up - Choose Your Role</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <main class="profile-container">
-        <h1>Sign Up for <span class="accent-text">(Insert App Name Here)</span></h1>
-        <div class="logo-placeholder"></div>
-        <form class="profile-form" action="#" method="POST">
-            <div class="form-group">
-                <label for="role">Select Your Role</label>
-                <select id="role" name="role" required>
-                    <option value="" disabled selected>Choose your role...</option>
-                    <option value="vendor">Vendor</option>
-                    <option value="planner">Planner</option>
-                </select>
+    <h1>Welcome to <span class="accent-text">(Insert app name here)</span></h1>
+    <div class="logo-placeholder"></div>
+        <p>Select your role to get started with a tailored experience.</p>
+        <form id="signupForm">
+            <div class="role-choices">
+                <label class="role-card planner-card">
+                    <input type="radio" name="role" value="planner" required style="display:none;">
+                    <div class="card-icon">🗒️</div>
+                    <h2>Event Planner</h2>
+                    <p>Organize events, find vendors, and manage your projects all in one place.</p>
+                </label>
+                <label class="role-card vendor-card">
+                    <input type="radio" name="role" value="vendor" required style="display:none;">
+                    <div class="card-icon">🏪</div>
+                    <h2>Vendor</h2>
+                    <p>Showcase your services, connect with planners, and grow your business.</p>
+                </label>
             </div>
-            <button type="submit" class="submit-btn">Sign Up with Google</button>
+            <button type="button" id="googleSignUpBtn" class="submit-btn" style="margin-top:2rem;">Sign Up with Google</button>
         </form>
-        <p class="signup-note">Already have an account? <a href="login.html" class="signup-link">Login here</a></p>
+        <p class="signup-note">Already have an account? <a href="login.html" class="signup-link">Log in here</a></p>
     </main>
+        <style>
+        .profile-container {
+            max-width: 700px;
+        }
+        .role-choices {
+                display: flex;
+                gap: 2rem;
+                justify-content: center;
+                margin-top: 2rem;
+                flex-wrap: wrap;
+        }
+        .role-card {
+                background: var(--card-background, #fff);
+                border: 2px solid var(--border-color, #ddd);
+                border-radius: 14px;
+                box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+                padding: 2rem 1.5rem 1.5rem 1.5rem;
+                width: 260px;
+                text-align: center;
+                color: var(--text-primary, #222);
+                transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                cursor: pointer;
+                border-width: 2px;
+                border-style: solid;
+                border-color: var(--border-color, #ddd);
+                outline: none;
+        }
+        .role-card.selected, .role-card:hover {
+                box-shadow: 0 8px 32px rgba(45, 45, 130, 0.13);
+                border-color: var(--lavender, #b39ddb);
+                background: var(--lavender, #ede7f6);
+        }
+        .role-card input[type="radio"]:focus + .card-icon {
+                outline: 2px solid var(--lavender, #b39ddb);
+        }
+        .card-icon {
+                font-size: 2.5rem;
+                margin-bottom: 1rem;
+        }
+        .submit-btn {
+                width: 100%;
+                margin-top: 2rem;
+        }
+        /* Always keep cards side by side, even on small screens */
+        </style>
+        <script>
+        // Highlight selected card
+        document.querySelectorAll('.role-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input[type="radio"]').checked = true;
+            });
+        });
+        document.getElementById('googleSignUpBtn').addEventListener('click', function(e) {
+            const selected = document.querySelector('.role-card.selected input[type="radio"]');
+            if (!selected) {
+                alert('Please select a role to sign up.');
+                return;
+            }
+            // Here you would trigger your Google sign up logic and redirect based on role
+            if (selected.value === 'planner') {
+                window.location.href = 'plannerProfile.html';
+            } else if (selected.value === 'vendor') {
+                window.location.href = 'vendorProfile.html';
+            }
+        });
+        </script>
+
 </body>
 </html>
