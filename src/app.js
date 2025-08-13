@@ -1,3 +1,33 @@
+// --- Google Sign Up for signup.html ---
+const googleSignUpBtn = document.getElementById("googleSignUpBtn");
+if (googleSignUpBtn) {
+  googleSignUpBtn.addEventListener("click", async () => {
+    const selected = document.querySelector('.role-card.selected input[type="radio"]');
+    if (!selected) {
+      alert('Please select a role to sign up.');
+      return;
+    }
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      // Save user with selected role in Firestore
+      const userRef = doc(db, "users", user.uid);
+      await setDoc(userRef, {
+        name: user.displayName,
+        email: user.email,
+        role: selected.value
+      });
+      // Redirect to profile details page based on role
+      if (selected.value === "planner") {
+        window.location.href = "/public/plannerProfile.html";
+      } else if (selected.value === "vendor") {
+        window.location.href = "/public/vendorProfile.html";
+      }
+    } catch (error) {
+      console.error("Error signing up with Google:", error);
+    }
+  });
+}
 // Import Firebase functions
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";

@@ -79,6 +79,7 @@
         }
         /* Always keep cards side by side, even on small screens */
         </style>
+        <script type="module" src="/src/app.js"></script>
         <script>
         // Highlight selected card
         document.querySelectorAll('.role-card').forEach(card => {
@@ -87,19 +88,6 @@
                 this.classList.add('selected');
                 this.querySelector('input[type="radio"]').checked = true;
             });
-        });
-        document.getElementById('googleSignUpBtn').addEventListener('click', function(e) {
-            const selected = document.querySelector('.role-card.selected input[type="radio"]');
-            if (!selected) {
-                alert('Please select a role to sign up.');
-                return;
-            }
-            // Here you would trigger your Google sign up logic and redirect based on role
-            if (selected.value === 'planner') {
-                window.location.href = 'plannerProfile.html';
-            } else if (selected.value === 'vendor') {
-                window.location.href = 'vendorProfile.html';
-            }
         });
         </script>
 
