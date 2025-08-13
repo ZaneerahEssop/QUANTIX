@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planner Profile Details</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <main class="profile-container">
+        <h1>Set Up Your <span class="accent-text">Planner</span> Profile</h1>
+        <p>Fill out your details to get started and connect with vendors.</p>
+        
+        <form class="profile-form" action="#" method="POST">
+            <div class="profile-pic-group">
+                <div class="pic-preview"></div>
+                <label for="profile_pic" class="pic-upload-label">
+                    Click to Upload Profile Picture
+                    <input type="file" id="profile_pic" name="profile_pic" accept="image/*">
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input type="text" id="full_name" name="full_name" placeholder="e.g., Jane Doe" required>
+            </div>
+
+            <div class="form-group">
+                <label for="company_name">Company Name (Optional)</label>
+                <input type="text" id="company_name" name="company_name" placeholder="e.g., Dream Day Events">
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" placeholder="e.g., (123) 456-7890" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="website">Website / Portfolio</label>
+                <input type="url" id="website" name="website" placeholder="https://www.yourportfolio.com">
+            </div>
+
+            <div class="form-group">
+                <label for="bio">Short Bio</label>
+                <textarea id="bio" name="bio" placeholder="Tell everyone a little about your planning style and experience..."></textarea>
+            </div>
+            
+            <button type="submit" class="submit-btn">Save & Continue</button>
+        </form>
+    </main>
+
+</body>
+</html>
