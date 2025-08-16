@@ -382,21 +382,20 @@ import { getFirestore } from 'firebase/firestore';
 // --- 1. Firebase Configuration ---
 // The global __firebase_config variable will be used here.
 // Do not replace it manually.
-const firebaseConfig = typeof __firebase_config !== 'undefined' 
-    ? JSON.parse(__firebase_config) 
-    : {
-      apiKey: "AIzaSyCwoCgB9o8JCGJltFfMCVb0EqRxRWSODZ0",
-      authDomain: "quantix-26ba5.firebaseapp.com",
-      projectId: "quantix-26ba5",
-      storageBucket: "quantix-26ba5.firebasestorage.app",
-      messagingSenderId: "503362009947",
-      appId: "1:503362009947:web:67ef295f8cd987cc55787e",
-      measurementId: "G-HJB25H1SWR"
-    };
+const firebaseConfig = {
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+// eslint-disable-next-line no-unused-vars
 const db = getFirestore(app);
 
 // --- 2. Style Objects ---
