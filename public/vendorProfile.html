@@ -1,100 +1,208 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vendor Profile Details</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <main class="profile-container">
-        <h1>Set Up Your <span class="accent-text">Vendor</span> Profile</h1>
-        <p>Provide your business details to be discovered by event planners.</p>
-        
-        <form class="profile-form" action="#" method="POST">
-            
-            <div class="form-group profile-pic-group">
-                <div class="pic-preview">
-                    <i class="fas fa-camera default-icon"></i>
-                </div>
-                <label for="profile_pic" id="profile_pic_label">Upload Business Logo</label>
-                <input type="file" id="profile_pic" name="profile_pic" accept="image/*">
-            </div>
+      <h1>Set Up Your <span class="accent-text">Vendor</span> Profile</h1>
+      <p>Provide your business details to be discovered by event planners.</p>
 
-            <div class="form-group">
-                <i class="form-icon fas fa-store"></i>
-                <input type="text" id="business_name" name="business_name" class="form-input" placeholder=" " required>
-                <label for="business_name" class="form-label">Business Name</label>
-            </div>
-            
-            <div class="form-group">
-                <i class="form-icon fas fa-concierge-bell"></i>
-                <div class="select-wrapper">
-                    <select id="vendor_category" name="vendor_category" class="form-input" required>
-                        <option value="" disabled selected></option>
-                        <option value="catering">Catering</option>
-                        <option value="photography">Photography</option>
-                        <option value="florist">Florist</option>
-                        <option value="music">Music / DJ</option>
-                        <option value="decor">Decor & Rentals</option>
-                    </select>
-                    <label for="vendor_category" class="form-label">Vendor Category</label>
-                </div>
-                
-            </div>
+      <form class="profile-form" action="#" method="POST">
+        <div class="form-group profile-pic-group">
+          <div class="pic-preview">
+            <i class="fas fa-camera default-icon"></i>
+          </div>
+          <label for="profile_pic" id="profile_pic_label"
+            >Upload Business Logo</label
+          >
+          <input
+            type="file"
+            id="profile_pic"
+            name="profile_pic"
+            accept="image/*"
+          />
+        </div>
 
-            <div class="form-group">
-                <i class="form-icon fas fa-user"></i>
-                <input type="text" id="contact_person" name="contact_person" class="form-input" placeholder=" " required>
-                <label for="contact_person" class="form-label">Contact Person</label>
-            </div>
-            
-            <div class="form-group">
-                <i class="form-icon fas fa-phone"></i>
-                <input type="tel" id="phone" name="phone" class="form-input" placeholder=" " required>
-                <label for="phone" class="form-label">Business Phone</label>
-            </div>
+        <div class="form-group">
+          <i class="form-icon fas fa-store"></i>
+          <input
+            type="text"
+            id="business_name"
+            name="business_name"
+            class="form-input"
+            placeholder=" "
+            required
+          />
+          <label for="business_name" class="form-label">Business Name</label>
+        </div>
 
-            <div class="form-group">
-                <i class="form-icon fas fa-align-left"></i>
-                <textarea id="description" name="description" class="form-input" placeholder=" "></textarea>
-                <label for="description" class="form-label">Description of Services</label>
-            </div>
-            
-            <button type="submit" class="submit-btn">Save & Continue</button>
-        </form>
+        <div class="form-group">
+          <i class="form-icon fas fa-concierge-bell"></i>
+          <div class="select-wrapper">
+            <select
+              id="vendor_category"
+              name="vendor_category"
+              class="form-input"
+              required
+            >
+              <option value="" disabled selected></option>
+              <option value="catering">Catering</option>
+              <option value="photography">Photography</option>
+              <option value="florist">Florist</option>
+              <option value="music">Music / DJ</option>
+              <option value="decor">Decor & Rentals</option>
+            </select>
+            <label for="vendor_category" class="form-label"
+              >Vendor Category</label
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <i class="form-icon fas fa-user"></i>
+          <input
+            type="text"
+            id="contact_person"
+            name="contact_person"
+            class="form-input"
+            placeholder=" "
+            required
+          />
+          <label for="contact_person" class="form-label">Contact Person</label>
+        </div>
+
+        <div class="form-group">
+          <i class="form-icon fas fa-phone"></i>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            class="form-input"
+            placeholder=" "
+            required
+          />
+          <label for="phone" class="form-label">Business Phone</label>
+        </div>
+
+        <div class="form-group">
+          <i class="form-icon fas fa-align-left"></i>
+          <textarea
+            id="description"
+            name="description"
+            class="form-input"
+            placeholder=" "
+          ></textarea>
+          <label for="description" class="form-label"
+            >Description of Services</label
+          >
+        </div>
+
+        <button type="submit" class="submit-btn">Save & Continue</button>
+      </form>
     </main>
 
-    <script>
-        // --- Live Profile Picture Preview ---
-        document.getElementById('profile_pic').addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const picPreview = document.querySelector('.pic-preview');
-                picPreview.style.backgroundImage = `url(${URL.createObjectURL(file)})`;
-                picPreview.querySelector('.default-icon').style.display = 'none';
-            }
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+      } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+      import {
+        getStorage,
+        ref,
+        uploadBytes,
+        getDownloadURL,
+      } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyCwoCgB9o8JCGJltFfMCVb0EqRxRWSODZ0",
+        authDomain: "quantix-26ba5.firebaseapp.com",
+        projectId: "quantix-26ba5",
+        storageBucket: "quantix-26ba5.firebasestorage.app",
+        messagingSenderId: "503362009947",
+        appId: "1:503362009947:web:67ef295f8cd987cc55787e",
+        measurementId: "G-HJB25H1SWR",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const storage = getStorage(app);
+
+      const vendorForm = document.querySelector(".profile-form");
+
+      vendorForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const businessName = document.getElementById("business_name").value;
+        const vendorCategory = document.getElementById("vendor_category").value;
+        const contactPerson = document.getElementById("contact_person").value;
+        const phone = document.getElementById("phone").value;
+        const description = document.getElementById("description").value;
+        const file = document.getElementById("profile_pic").files[0];
+
+        let logoURL = "";
+        if (file) {
+          const storageRef = ref(
+            storage,
+            `vendor_logos/${Date.now()}_${file.name}`
+          );
+          await uploadBytes(storageRef, file);
+          logoURL = await getDownloadURL(storageRef);
+        }
+
+        await addDoc(collection(db, "vendors"), {
+          name: businessName,
+          category: vendorCategory,
+          nameOfContactPerson: contactPerson,
+          contactNumber: phone,
+          description,
+          logoURL,
+          createdAt: new Date(),
         });
-        
-        // --- Logic for Floating Labels ---
-        document.querySelectorAll('.form-input').forEach(input => {
-            // Use a function to avoid repetition
-            const checkValue = () => {
-                if (input.value) {
-                    input.classList.add('has-value');
-                } else {
-                    input.classList.remove('has-value');
-                }
-            };
-            input.addEventListener('blur', checkValue);
-            // 'change' event is needed for <select>
-            if (input.tagName === 'SELECT') {
-                input.addEventListener('change', checkValue);
-            }
-            // Check on page load in case of browser auto-fill
-            checkValue();
-        });
+
+        alert("Vendor profile saved successfully!");
+        vendorForm.reset();
+      });
     </script>
-</body>
+
+    <script>
+      // --- Live Profile Picture Preview ---
+      document
+        .getElementById("profile_pic")
+        .addEventListener("change", function () {
+          const file = this.files[0];
+          if (file) {
+            const picPreview = document.querySelector(".pic-preview");
+            picPreview.style.backgroundImage = `url(${URL.createObjectURL(
+              file
+            )})`;
+            picPreview.querySelector(".default-icon").style.display = "none";
+          }
+        });
+
+      // --- Logic for Floating Labels ---
+      document.querySelectorAll(".form-input").forEach((input) => {
+        // Use a function to avoid repetition
+        const checkValue = () => {
+          if (input.value) {
+            input.classList.add("has-value");
+          } else {
+            input.classList.remove("has-value");
+          }
+        };
+        input.addEventListener("blur", checkValue);
+        // 'change' event is needed for <select>
+        if (input.tagName === "SELECT") {
+          input.addEventListener("change", checkValue);
+        }
+        // Check on page load in case of browser auto-fill
+        checkValue();
+      });
+    </script>
+  </body>
 </html>
