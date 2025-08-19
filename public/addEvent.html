@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Event</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <<main class="profile-container">
+    <h1>Create Your <span class="accent-text">Event</span></h1>
+    <p>Fill out the details below to set up your event.</p>
+
+    <form class="profile-form" id="eventForm">
+        <div class="form-group">
+            <i class="form-icon fas fa-calendar-alt"></i>
+            <input type="text" id="name" name="name" class="form-input" placeholder=" " required>
+            <label for="name" class="form-label">Event Name</label>
+        </div>
+
+        <div class="form-group">
+            <i class="form-icon fas fa-calendar"></i>
+            <input type="date" id="date" name="date" class="form-input" placeholder=" " required>
+            <label for="date" class="form-label">Event Date</label>
+        </div>
+
+        <div class="form-group">
+            <i class="form-icon fas fa-clock"></i>
+            <input type="time" id="time" name="time" class="form-input" placeholder=" " required>
+            <label for="time" class="form-label">Event Time</label>
+        </div>
+
+        <div class="form-group">
+            <i class="form-icon fas fa-palette"></i>
+            <input type="text" id="theme" name="theme" class="form-input" placeholder=" ">
+            <label for="theme" class="form-label">Theme</label>
+        </div>
+
+        <div class="form-group">
+            <i class="form-icon fas fa-user"></i>
+            <input type="text" id="host_name" name="host_name" class="form-input" placeholder=" " required>
+            <label for="host_name" class="form-label">Host Name</label>
+        </div>
+
+        <div class="form-group">
+            <i class="form-icon fas fa-envelope"></i>
+            <input type="email" id="host_email" name="host_email" class="form-input" placeholder=" " required>
+            <label for="host_email" class="form-label">Host Email</label>
+        </div>
+
+        <div class="form-group">
+            <i class="form-icon fas fa-phone"></i>
+            <input type="tel" id="host_phone" name="host_phone" class="form-input" placeholder=" ">
+            <label for="host_phone" class="form-label">Host Phone</label>
+        </div>
+
+        <div class="form-group">
+            <i class="form-icon fas fa-align-left"></i>
+            <textarea id="description" name="description" class="form-input" placeholder=" "></textarea>
+            <label for="description" class="form-label">Event Description</label>
+        </div>
+
+        <button type="submit" class="submit-btn">Save Event</button>
+    </form>
+</main>
+
+<script>
+    //Logic for Floating Labels
+    document.querySelectorAll('.form-input').forEach(input => {
+
+    //check on blur in case user deletes value
+    input.addEventListener('blur', () => {
+        if(input.value) {
+            input.classList.add('has-value');
+        } else {
+            input.classList.remove('has-value');
+        }
+    });
+    
+    // Check on page load in case of browser auto-fill
+    if(input.value) {
+      input.classList.add('has-value');
+    }
+
+    /*Float on typing or selecting a date/time
+    input.addEventListener('input', () => {
+        if(input.value) {
+            input.classList.add('has-value');
+        } else {
+            input.classList.remove('has-value');
+        }
+    });*/
+
+    
+});
+
+
+  //Form Submission
+  document.getElementById("eventForm").addEventListener("submit", function(e){
+      e.preventDefault();
+        const event = {
+            name: document.getElementById("name").value,
+            date: document.getElementById("date").value,
+            time: document.getElementById("time").value,
+            theme: document.getElementById("theme").value,
+            host_name: document.getElementById("host_name").value,
+            host_email: document.getElementById("host_email").value,
+            host_phone: document.getElementById("host_phone").value,
+            description: document.getElementById("description").value
+      };
+      console.log("Event Saved:", event);
+      alert("Event details saved!");
+
+
+      //connect to Database/ backend API here
+  });
+</script>
+
+</body>
+</html>
