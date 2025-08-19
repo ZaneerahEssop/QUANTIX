@@ -319,6 +319,8 @@ body.dashboard-body {
     grid-template-columns: 2fr 1fr;
     gap: 2rem;
 }
+
+/* --- Event Cards --- */
 .cards-row {
     display: flex;
     gap: 1.5rem;
@@ -361,6 +363,8 @@ body.dashboard-body {
 .view-btn:hover {
     background: var(--coral);
 }
+
+/* --- CHAT SECTION --- */
 .chat-section {
     background: var(--blush);
     border-radius: 14px;
