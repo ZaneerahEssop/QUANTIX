@@ -1,6 +1,11 @@
 import React from "react";
 
 function VendorDashboard() {
+  // Click handler for "View all" button
+  const handleViewAll = () => {
+    console.log("View all clicked");
+  };
+
   return (
     <div className="dashboard-main">
       {/* Header */}
@@ -15,9 +20,9 @@ function VendorDashboard() {
           {/* Upcoming Events Section */}
           <div className="section-header">
             <h2 className="section-title">Upcoming Events</h2>
-            <a href="#" className="section-link">
+            <button onClick={handleViewAll} className="section-link">
               View all
-            </a>
+            </button>
           </div>
 
           <div className="cards-row">
