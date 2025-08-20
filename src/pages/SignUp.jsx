@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { auth, provider } from "../firebase";
+import { auth, provider, db } from "../firebase"; // ✅ added db
 import { signInWithPopup } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore"; // ✅ Firestore
 import { useNavigate } from "react-router-dom";
 import "../App.css";
 
@@ -17,9 +18,13 @@ function SignUp() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Store UID + role
-      localStorage.setItem("uid", user.uid);
-      localStorage.setItem("role", role);
+      // ✅ Save role in Firestore users collection
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        role: role,
+        createdAt: new Date(),
+      });
 
       // Navigate to the correct form
       if (role === "planner") navigate("/planner-form");
@@ -32,7 +37,9 @@ function SignUp() {
 
   return (
     <main className="profile-container">
-      <h1>Welcome to <span className="accent-text">Event-ually Perfect</span></h1>
+      <h1>
+        Welcome to <span className="accent-text">Event-ually Perfect</span>
+      </h1>
       <div className="logo-placeholder"></div>
       <p>Select your role to get started with a tailored experience.</p>
 
