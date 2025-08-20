@@ -1,21 +1,35 @@
 import React, { useState } from "react";
-import { auth, provider } from "../firebase";
+import { auth, provider, db } from "../firebase"; // ✅ added db
 import { signInWithPopup, signOut } from "firebase/auth";
-import "../App.css"; // ✅ shared CSS
-import { Link } from "react-router-dom";
+import { doc, getDoc } from "firebase/firestore"; // ✅ Firestore
+import { useNavigate, Link } from "react-router-dom";
+import "../App.css";
 
 function Landingpage() {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
-  const signInWithGoogle = () => {
-    signInWithPopup(auth, provider)
-      .then((result) => {
-        setUser(result.user);
-        console.log(result.user);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+  const signInWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const loggedInUser = result.user;
+      setUser(loggedInUser);
+
+      // ✅ Fetch role from Firestore
+      const userDoc = await getDoc(doc(db, "users", loggedInUser.uid));
+      if (userDoc.exists()) {
+        const role = userDoc.data().role;
+
+        if (role === "planner") navigate("/planner-dashboard");
+        else if (role === "vendor") navigate("/vendor-dashboard");
+        else navigate("/"); // fallback
+      } else {
+        // If new user logs in without signing up → send to signup
+        navigate("/signup");
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const logOut = () => {
@@ -35,9 +49,7 @@ function Landingpage() {
         Welcome to <span className="accent-text">Event-ually Perfect</span>
       </h1>
       <div className="logo-placeholder"></div>
-      <p>
-        Login to get started planning or managing your event experience.
-      </p>
+      <p>Login to get started planning or managing your event experience.</p>
 
       {user ? (
         <div>
@@ -57,8 +69,8 @@ function Landingpage() {
       )}
 
       <p className="signup-note">
-  First time? <Link to="/signup" className="signup-link">Sign up here</Link>
-</p>
+        First time? <Link to="/signup" className="signup-link">Sign up here</Link>
+      </p>
     </main>
   );
 }
