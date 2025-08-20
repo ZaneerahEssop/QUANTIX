@@ -2,6 +2,13 @@
 import React from "react";
 
 export default function PlannerDashboard() {
+
+  // Click handler for "View all" button
+  const handleViewAll = () => {
+    // Example: navigate somewhere or just log
+    console.log("View all clicked");
+  };
+
   return (
     <div className="dashboard-main">
       <div className="dashboard-header">
@@ -32,17 +39,21 @@ export default function PlannerDashboard() {
             >
               Upcoming Events
             </h2>
-            <a
-              href="#"
+            <button
+              onClick={handleViewAll}
               style={{
+                background: "none",
+                border: "none",
                 color: "var(--blush)",
                 textDecoration: "none",
                 fontWeight: 500,
                 fontSize: "1rem",
+                cursor: "pointer",
+                padding: 0,
               }}
             >
               View all
-            </a>
+            </button>
           </div>
 
           <div className="cards-row">
