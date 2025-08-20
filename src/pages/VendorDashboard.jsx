@@ -1,11 +1,9 @@
 import React from "react";
 
-// The import for "./VendorDashboard.css" has been removed.
-// The component will now use the global styles from index.css.
-
 function VendorDashboard() {
   return (
     <div className="dashboard-main">
+      {/* Header */}
       <div className="dashboard-header">
         <h1>Hi, Vendor Name!</h1>
         <button className="add-btn">+ Add Service</button>
@@ -14,33 +12,10 @@ function VendorDashboard() {
       <div className="dashboard-grid">
         {/* Left Column */}
         <div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "0.7rem",
-            }}
-          >
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "1.3rem",
-                fontWeight: 600,
-                color: "var(--text-primary)",
-              }}
-            >
-              Upcoming Events
-            </h2>
-            <a
-              href="#"
-              style={{
-                color: "var(--blush)",
-                textDecoration: "none",
-                fontWeight: 500,
-                fontSize: "1rem",
-              }}
-            >
+          {/* Upcoming Events Section */}
+          <div className="section-header">
+            <h2 className="section-title">Upcoming Events</h2>
+            <a href="#" className="section-link">
               View all
             </a>
           </div>
@@ -81,6 +56,7 @@ function VendorDashboard() {
             </div>
           </div>
 
+          {/* Pending Requests */}
           <div className="section-card">
             <h2>Pending Requests</h2>
             <ul className="pending-list">
@@ -105,6 +81,7 @@ function VendorDashboard() {
             </ul>
           </div>
 
+          {/* Chat Section */}
           <div className="chat-section">
             <h2>Chat with Planners</h2>
             <div className="chat-box">
