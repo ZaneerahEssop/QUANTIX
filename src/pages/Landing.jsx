@@ -39,8 +39,8 @@ const Landing = () => {
         <div className="nav-links">
           <a href="#services">Services</a>
           <a href="#about">About</a>
-          <button className="nav-button" onClick={() => handleNavigation('signup.html')}>Sign Up</button>
-          <button className="nav-button" onClick={() => handleNavigation('login.html')}>Login</button>
+          <button className="nav-button" onClick={() => handleNavigation('signup')}>Sign Up</button>
+          <button className="nav-button" onClick={() => handleNavigation('login')}>Login</button>
         </div>
       </nav>
 
@@ -49,7 +49,7 @@ const Landing = () => {
         <div className="hero-content">
           <h1>Event-ually <span className="gradient">Perfect</span></h1>
           <p>We give you all the tools needed to create unforgettable experiences tailored to your vision. From intimate gatherings to grand celebrations, we handle every detail so you can enjoy the moment.</p>
-          <button className="hero-button" onClick={() => handleNavigation('SignUp.jsx')}>Get Started</button>
+          <button className="hero-button" onClick={() => handleNavigation('signup')}>Get Started</button>
         </div>
       </section>
 
@@ -117,7 +117,7 @@ const Landing = () => {
                 the same excitement as your first success. We don't just plan events—we design experiences 
                 that disappear into the background, leaving only the joy of connection.
               </p>
-              <button className="hero-button" onClick={() => handleNavigation('Sign')}>Let's Create Together</button>
+              <button className="hero-button" onClick={() => handleNavigation('signup')}>Let's Create Together</button>
             </div>
           </div>
         </div>
