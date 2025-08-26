@@ -31,9 +31,11 @@
 }
 
 html, body, #root {
-  width: 100%;
-  min-height: 100vh;
+  /*width: 100%;*/
+ min-height: 100vh;
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 body {
@@ -41,25 +43,31 @@ body {
   color: var(--text-dark);
   line-height: 1.6;
   background-color: white;
+  margin: 0;
+  padding: 0;
 }
 
 /* ===== LANDING PAGE CONTAINER ===== */
 .landing-page {
-  width: 100%;
+  width: 100vw;
   min-height: 100vh;
   background-color: white;
+  margin: 0;
+  padding: 0;
+  position: relative;
 }
 
-/* ===== NAVIGATION ===== */
 /* ===== NAVIGATION ===== */
 nav {
   position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 5% 1.5rem 0; /* Remove left padding, keep right padding */
+  padding: 1.5rem 5%;
   background-color: white;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   z-index: 1000;
@@ -124,7 +132,8 @@ nav {
 
 /* ===== HERO SECTION ===== */
 .hero {
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
   background-image: url("./images/petals.jpg");
   background-size: cover;
   background-position: center;
@@ -134,8 +143,9 @@ nav {
   justify-content: flex-start;
   text-align: left;
   position: relative;
-  padding: 0 5%; /* Make sure hero has the same padding */
-  margin-top: 80px;
+  margin: 0;
+  padding: 0 5%;
+  margin-top: 0;
 }
 
 .hero::after {
@@ -190,13 +200,20 @@ nav {
   box-shadow: 0 6px 25px rgba(246, 162, 140, 0.6);
 }
 
+.gradient {
+  background: linear-gradient(30deg, var(--blush), var(--coral));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 /* ===== CONTENT SECTIONS ===== */
 .content-section {
-  min-height: 100vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6rem 5%; /* Same 5% padding */
+  margin: 0;
 }
 
 .section-container {
@@ -204,7 +221,7 @@ nav {
   width: 100%;
   margin: 0 auto;
   text-align: center;
-  /* Remove padding: 0 5%; if content-section already has it */
+  padding: 0 5%;
 }
 
 .section-smallTitle {
@@ -247,6 +264,8 @@ nav {
 /* Services Section */
 .services {
   background-color: #f8f9fa;
+  margin: 0;
+  padding: 6rem 0;
 }
 
 .value-grid {
@@ -259,13 +278,13 @@ nav {
 
 .my-block {
   background: var(--card-background);
-  border-radius: 8px;
+  /*border-radius: 8px;*/
   box-shadow: 0 2px 10px rgba(239, 106, 179, 0.07);
-  border: 2px solid var(--blush);
-  padding: 2rem;
-  max-width: 400px;
-  flex: 1;
-  min-width: 280px;
+  /*border: 2px solid var(--blush);*/
+  /*padding: 2rem;*/
+  /*max-width: 400px;*/
+  /*flex: 1;*/
+  /*min-width: 280px;*/
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -358,7 +377,6 @@ nav {
   }
   
   .hero {
-    margin-top: 70px;
     text-align: center;
     justify-content: center;
   }
@@ -423,11 +441,11 @@ nav {
   }
   
   .content-section {
-    padding: 4rem 5%;
+    padding: 4rem 0;
   }
   
   .my-block {
     min-width: 250px;
-    padding: 1.5rem;
+   /* padding: 1.5rem; */
   }
 }
