@@ -5,9 +5,10 @@ import { doc, getDoc } from "firebase/firestore"; // ✅ Firestore
 import { useNavigate, Link } from "react-router-dom";
 import "../App.css";
 
-function Landingpage() {
+function Login() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+
 
   const signInWithGoogle = async () => {
     try {
@@ -75,4 +76,4 @@ function Landingpage() {
   );
 }
 
-export default Landingpage;
+export default Login;
