@@ -1,3 +1,8 @@
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
 /* ===== FONTS & VARIABLES ===== */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css');
@@ -23,19 +28,31 @@
   --content-width: 80%;
 }
 
-/* ===== BASE STYLES ===== */
+/* ===== BASE & CORE LAYOUT ===== */
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  box-sizing: border-box; /* This is crucial */
 }
 
 html, body, #root {
-  /*width: 100%;*/
- min-height: 100vh;
-  overflow-x: hidden;
+  width: 100%;
+  height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden; /* Prevents horizontal scroll */
+}
+
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+body {
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
 }
 
 body {
@@ -43,18 +60,21 @@ body {
   color: var(--text-dark);
   line-height: 1.6;
   background-color: white;
-  margin: 0;
-  padding: 0;
 }
 
-/* ===== LANDING PAGE CONTAINER ===== */
+/* Let sections be 100% width by default */
 .landing-page {
-  width: 100vw;
-  min-height: 100vh;
-  background-color: white;
+  width: 100%;
+  position: relative;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+.content-section {
   position: relative;
+  width: 100%;
 }
 
 /* ===== NAVIGATION ===== */
@@ -63,7 +83,8 @@ nav {
   top: 0;
   left: 0;
   right: 0;
-  width: 100%;
+  /* width: 100% is fine here because of position: fixed */
+  width: 100%; 
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -132,20 +153,25 @@ nav {
 
 /* ===== HERO SECTION ===== */
 .hero {
+  position: relative;
+  width: 100%;
+  min-width: 100vw;
   height: 100vh;
-  width: 100vw;
+  margin: 0;
+  padding: 0;
   background-image: url("./images/petals.jpg");
   background-size: cover;
-  background-position: center;
+  background-position: center center;
+  background-repeat: no-repeat;
   background-attachment: fixed;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   text-align: left;
-  position: relative;
-  margin: 0;
-  padding: 0 5%;
-  margin-top: 0;
+  z-index: 0;
+  overflow: hidden;
+  padding-left: 0; /* Ensure no left padding on the hero itself */
+  margin-bottom: 4rem; /* Add space below hero */
 }
 
 .hero::after {
@@ -153,6 +179,7 @@ nav {
   position: absolute;
   top: 0;
   left: 0;
+  right: 0;
   width: 100%;
   height: 100%;
   background: rgba(0,0,0,0.3);
@@ -164,7 +191,20 @@ nav {
   z-index: 1;
   max-width: var(--section-max-width);
   width: 100%;
-  color: var(--text-light);
+  color: white;
+  padding: 0 10% 0 5%; /* More padding on the right to push content left */
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  margin: 0 auto 0 0; /* Align to the left */
+  box-sizing: border-box;
+  padding-left: 5%; /* Ensure left padding is consistent */
+  margin-left: 0; /* Remove any left margin */
+}
+
+/* Reset text color for other sections */
+.services .section-container,
+.about .section-container {
+  color: var(--text-dark);
+  text-shadow: none;
 }
 
 .hero h1 {
@@ -208,20 +248,15 @@ nav {
 }
 
 /* ===== CONTENT SECTIONS ===== */
-.content-section {
-  width: 100vw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-}
-
 .section-container {
   max-width: var(--section-max-width);
   width: 100%;
   margin: 0 auto;
   text-align: center;
   padding: 0 5%;
+  position: relative;
+  z-index: 1;
+  color: var(--text-dark);
 }
 
 .section-smallTitle {
@@ -262,10 +297,18 @@ nav {
 }
 
 /* Services Section */
+.content-section {
+  padding: 6rem 0;
+  position: relative;
+  z-index: 1;
+  scroll-margin-top: 120px; /* Increased space for fixed header */
+  margin-bottom: 4rem; /* Add more space between sections */
+}
+
 .services {
   background-color: #f8f9fa;
-  margin: 0;
-  padding: 6rem 0;
+  scroll-margin-top: 120px; /* Match other sections */
+  margin-bottom: 6rem; /* Extra space after services */
 }
 
 .value-grid {
@@ -278,17 +321,14 @@ nav {
 
 .my-block {
   background: var(--card-background);
-  /*border-radius: 8px;*/
   box-shadow: 0 2px 10px rgba(239, 106, 179, 0.07);
-  /*border: 2px solid var(--blush);*/
-  /*padding: 2rem;*/
-  /*max-width: 400px;*/
-  /*flex: 1;*/
-  /*min-width: 280px;*/
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  padding: 2rem; /* Added padding for better spacing */
+  flex: 1;
+  min-width: 280px;
 }
 
 .my-block i {
@@ -314,47 +354,62 @@ nav {
 /* About Section */
 .about {
   background-color: white;
+  padding: 3rem 0;
+  position: relative;
+  min-height: calc(100vh - 80px); /* Full viewport height minus header */
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .about-content {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
 }
 
 .highlight-first {
-  font-size: 1.2rem;
-  line-height: 1.8;
-  margin-bottom: 2.5rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
 }
 
 .about-features {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 2rem;
-  margin: 3rem 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
 }
 
 .feature-block {
-  flex: 1;
-  min-width: 200px;
   text-align: center;
-  padding: 1.5rem;
-  background: rgba(255,255,255,0.7);
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(229, 172, 191, 0.1);
+  padding: 1.25rem;
+  background: rgba(255,255,255,0.9);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(229, 172, 191, 0.1);
 }
 
 .feature-icon {
-  font-size: 2rem;
+  font-size: 1.75rem;
   color: var(--coral);
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .feature-title {
   color: var(--coral);
   margin-bottom: 0.5rem;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.mission-statement {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(255, 245, 245, 0.9);
+  border-radius: 10px;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .mission-statement {
@@ -372,10 +427,6 @@ nav {
 
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 768px) {
-  :root {
-    --content-width: 90%;
-  }
-  
   .hero {
     text-align: center;
     justify-content: center;
@@ -411,26 +462,17 @@ nav {
 
 @media (max-width: 480px) {
   nav {
-    padding: 1rem 5%;
+    flex-direction: column; /* Stack nav items on small screens */
+    gap: 1rem;
+    padding: 1rem;
   }
-  
-  .logo {
-    font-size: 1.25rem;
-  }
-  
+
   .nav-links {
     gap: 0.8rem;
+    justify-content: center;
+    width: 100%;
   }
-  
-  .nav-links a {
-    font-size: 0.9rem;
-  }
-  
-  .nav-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
-  }
-  
+
   .hero h1 {
     font-size: 2rem;
   }
@@ -442,10 +484,5 @@ nav {
   
   .content-section {
     padding: 4rem 0;
-  }
-  
-  .my-block {
-    min-width: 250px;
-   /* padding: 1.5rem; */
   }
 }

@@ -1,32 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import '../LandingPage.css';
 
 const Landing = () => {
-  useEffect(() => {
-    // Smooth scrolling for nav links
-    const handleSmoothScroll = (e) => {
-      if (e.target.tagName === 'A' && e.target.getAttribute('href')?.startsWith('#')) {
-        e.preventDefault();
-        const targetId = e.target.getAttribute('href');
-        const targetElement = document.querySelector(targetId);
-        const yOffset = -80; // Adjust for fixed header
-        
-        if (targetElement) {
-          window.scrollTo({
-            top: targetElement.offsetTop + yOffset,
-            behavior: 'smooth'
-          });
-        }
-      }
-    };
-
-    document.addEventListener('click', handleSmoothScroll);
-    
-    return () => {
-      document.removeEventListener('click', handleSmoothScroll);
-    };
-  }, []);
-
   const handleNavigation = (path) => {
     window.location.href = path;
   };
