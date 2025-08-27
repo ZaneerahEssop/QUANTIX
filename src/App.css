@@ -91,10 +91,15 @@ h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.75rem; }
     z-index: 2;
 }
 
+.form-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
 .form-input {
     width: 100%;
     padding: 1rem 1rem 1rem 3rem;
-    border: 1px solid var(--peach); /* Peach for borders */
+    border: 1px solid var(--peach);
     border-radius: 12px;
     font-size: 1rem;
     font-family: 'Poppins', sans-serif;
@@ -117,52 +122,89 @@ h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.75rem; }
 }
 
 .form-input:focus + .form-label,
+.form-input:not(:placeholder-shown) + .form-label,
+.form-input[value]:not([value=""]) + .form-label,
 .form-input.has-value + .form-label {
-    top: 0px;
+    top: 0;
     left: 2.7rem;
     transform: translateY(-50%) scale(0.8);
     background-color: white;
     padding: 0 0.3rem;
     font-weight: 500;
-    color: var(--peach); /* Peach for active label */
+    color: var(--peach);
 }
 
-.form-input:focus { outline: none; border-color: var(--blush); }
-.form-input:focus ~ .form-icon { color: var(--blush); }
-.form-input:focus ~ .form-label { color: var(--blush); }
+.form-input:focus {
+    outline: none;
+    border-color: var(--blush);
+}
 
-textarea.form-input { min-height: 120px; padding-top: 1.5rem; }
-textarea.form-input + .form-label { top: 1.2rem; }
+.form-input:focus ~ .form-icon,
+.form-input:focus + .form-label {
+    color: var(--blush);
+}
+
+textarea.form-input {
+    min-height: 120px;
+    padding-top: 1.5rem;
+}
+
+textarea.form-input + .form-label {
+    top: 1.2rem;
+}
+
 textarea.form-input:focus + .form-label,
-textarea.form-input.has-value + .form-label { top: 0; }
+textarea.form-input.has-value + .form-label {
+    top: 0;
+}
 
-/* --- Custom Select (Dropdown) Styling --- */
-.select-wrapper { position: relative; }
-
-.select-wrapper .form-input {
-    appearance: none; /* Remove default arrow */
+/* --- Select Styling --- */
+select.form-input {
+    appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
     cursor: pointer;
-    padding-right: 3rem; /* Make space for custom arrow */
+    padding-right: 3rem;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E8B180' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
 }
 
-/* Custom Arrow Icon */
-.select-wrapper::after {
-    content: '\f078'; /* Font Awesome chevron-down icon */
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-    position: absolute;
-    top: 50%;
-    right: 1.2rem;
-    transform: translateY(-50%);
-    color: var(--peach);
-    pointer-events: none; /* Let clicks pass through to the select */
-    transition: color 0.3s, transform 0.3s;
-    z-index: 2;
+select.form-input:focus {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E5ACBF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    outline: none;
+    border-color: var(--blush);
 }
 
-.form-input:focus ~ .select-wrapper::after { color: var(--blush); }
+select.form-input option[value=""] {
+    color: var(--text-secondary);
+}
+
+/* --- Select Styling --- */
+select.form-input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E8B180' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+    cursor: pointer;
+    width: 100%;
+    height: 3.5rem;
+}
+
+select.form-input:focus {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E5ACBF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    outline: none;
+    border-color: var(--blush);
+}
+
+select.form-input:focus + .form-label {
+    color: var(--blush);
+}
 
 /* --- Button Styling --- */
 .submit-btn {
@@ -246,18 +288,93 @@ textarea.form-input.has-value + .form-label { top: 0; }
     opacity: 0;
 }
 .pic-preview {
-    width: 100px; height: 100px; border-radius: 50%;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
     background: linear-gradient(135deg, var(--coral), var(--blush));
     border: 4px solid var(--card-background);
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    background-size: cover; background-position: center;
-    display: flex; justify-content: center; align-items: center;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.pic-preview:hover {
+    transform: scale(1.05);
+}
+
+.default-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background-color: #FCD5CC; /* Light coral from our palette */
+    color: var(--coral); /* Coral text color */
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+    border-radius: 50%;
     transition: transform 0.3s ease;
 }
-.pic-preview:hover { transform: scale(1.05); }
-.pic-preview .default-icon { font-size: 40px; color: rgba(255,255,255,0.8); }
-#profile_pic_label { font-weight: 600; color: var(--coral); cursor: pointer; }
-#profile_pic { display: none; }
+
+.default-state i {
+    font-size: 40px;
+    margin-bottom: 8px;
+    color: white;
+}
+
+.default-state span {
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+}
+
+.pic-preview:hover {
+    transform: scale(1.05);
+}
+
+.uploading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.pic-upload-label {
+    display: block;
+    text-align: center;
+    cursor: pointer;
+}
+
+#profile_pic {
+    display: none;
+}
 
 /* --- Dashboard-Specific Styles --- */
 body.dashboard-body {
