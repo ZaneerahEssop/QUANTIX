@@ -102,6 +102,7 @@ function PlannerForm() {
               className="pic-preview"
               style={{
                 backgroundImage: profilePic ? `url(${profilePic})` : "none",
+                background: profilePic ? 'none' : 'linear-gradient(135deg, #FF7F50 0%, #FFDAB9 100%)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 cursor: 'pointer',
@@ -113,7 +114,6 @@ function PlannerForm() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#f0f2f5',
                 overflow: 'hidden'
               }}
             >
