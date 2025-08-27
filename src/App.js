@@ -46,7 +46,14 @@ function App() {
             </AuthLayout>
           } 
         />
-        <Route path="/planner-form" element={<PlannerForm />} />
+        <Route 
+          path="/planner-form" 
+          element={
+            <AuthLayout>
+              <PlannerForm />
+            </AuthLayout>
+          } 
+        />
         <Route path="/vendor-form" element={<VendorForm />} />
         <Route path="/planner-dashboard" element={<PlannerDashboard />} />
         <Route path="/vendor-dashboard" element={<VendorDashboard />} />
