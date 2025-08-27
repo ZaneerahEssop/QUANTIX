@@ -53,25 +53,32 @@ function Login() {
       <p>Login to get started planning or managing your event experience.</p>
 
       {user ? (
-        <div>
-          <p>Welcome, {user.displayName}</p>
-          <img
-            src={user.photoURL}
-            alt="profile"
-            style={{ borderRadius: "50%", marginTop: "10px" }}
-          />
-          <br />
-          <button onClick={logOut} className="submit-btn">Log out</button>
+        <div className="user-profile">
+          <div className="user-info">
+            <img
+              src={user.photoURL}
+              alt="profile"
+              className="profile-image"
+            />
+            <p className="welcome-text">Welcome, {user.displayName}!</p>
+          </div>
+          <button onClick={logOut} className="submit-btn">
+            Log out
+          </button>
         </div>
       ) : (
-        <button onClick={signInWithGoogle} className="submit-btn">
-          Login with Google
-        </button>
+        <>
+          <button onClick={signInWithGoogle} className="submit-btn">
+            Login with Google
+          </button>
+          <p className="login-prompt">
+            First time?{' '}
+            <Link to="/signup" className="login-link">
+              Sign up here
+            </Link>
+          </p>
+        </>
       )}
-
-      <p className="signup-note">
-        First time? <Link to="/signup" className="signup-link">Sign up here</Link>
-      </p>
     </main>
   );
 }
