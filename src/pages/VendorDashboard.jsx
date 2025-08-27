@@ -1,16 +1,52 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { auth, db } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 function VendorDashboard() {
+  const [vendorName, setVendorName] = useState("Vendor");
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          // Get vendor data from Firestore
+          const vendorDoc = await getDoc(doc(db, "vendors", user.uid));
+          if (vendorDoc.exists()) {
+            // Use name_of_vendor from the vendors collection
+            const vendorName = vendorDoc.data().name_of_vendor;
+            if (vendorName) {
+              setVendorName(vendorName);
+              return;
+            }
+          }
+          
+          // Fallback to email username if no name found in vendors collection
+          setVendorName(user.email ? user.email.split('@')[0] : "Vendor");
+          
+        } catch (error) {
+          console.error("Error fetching vendor data:", error);
+          // Fallback to email username if there's an error
+          setVendorName(user.email ? user.email.split('@')[0] : "Vendor");
+        }
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
   // Click handler for "View all" button
   const handleViewAll = () => {
     console.log("View all clicked");
   };
 
   return (
-    <div className="dashboard-main">
+    <div className="planner-dashboard-page">
+      <div className="planner-dashboard-content">
+        <div className="dashboard-main">
       {/* Header */}
       <div className="dashboard-header">
-        <h1>Hi, Vendor Name!</h1>
+        <h1>Hi, {vendorName}!</h1>
         <button className="add-btn">+ Add Service</button>
       </div>
 
@@ -167,6 +203,8 @@ function VendorDashboard() {
               <div className="day-number">4</div>
             </div>
           </div>
+        </div>
+      </div>
         </div>
       </div>
     </div>
