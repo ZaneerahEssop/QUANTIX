@@ -7,7 +7,7 @@ import { FaUserCircle, FaCamera } from 'react-icons/fa';
 function VendorForm() {
   const navigate = useNavigate();
   const [profilePic, setProfilePic] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading] = useState(false);
   const [formData, setFormData] = useState({
     category: "",
     contact_number: "",
@@ -64,6 +64,12 @@ function VendorForm() {
       return;
     }
     
+    // Ensure all required fields are filled
+    if (!formData.name_of_vendor || !formData.name_of_business || !formData.category) {
+      alert("Please fill in all required fields");
+      return;
+    }
+    
     try {
       const user = auth.currentUser;
       if (!user) {
@@ -101,7 +107,7 @@ function VendorForm() {
             <div
               className="pic-preview"
               style={{
-                backgroundImage: profilePic ? `url(${profilePic})` : "none",
+                backgroundImage: profilePic ? `url(${profilePic})` : 'none',
                 background: profilePic ? 'none' : 'linear-gradient(135deg, #FF7F50 0%, #FFDAB9 100%)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
@@ -114,8 +120,12 @@ function VendorForm() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                border: '2px solid #fff',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
               }}
+              aria-label="Profile picture preview"
+              role="img"
             >
               <div className="default-state">
                 {!profilePic ? (

@@ -6,7 +6,7 @@ import { FaUserCircle, FaCamera } from 'react-icons/fa';
 
 function PlannerForm() {
   const [profilePic, setProfilePic] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
