@@ -19,6 +19,21 @@
     --background-gradient: radial-gradient(circle at 100% 0%, #E2C5AE, #E5ACBF);
 }
 
+/* Planner Dashboard Specific Styles */
+.planner-dashboard-page {
+    min-height: 100vh;
+    background-color: #FFF0F5;
+    overflow-x: hidden;
+}
+
+.planner-dashboard-content {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
 /* --- Animations --- */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
