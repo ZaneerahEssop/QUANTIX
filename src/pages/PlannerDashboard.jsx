@@ -1,7 +1,41 @@
 // src/pages/PlannerDashboard.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { auth, db } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function PlannerDashboard() {
+  const [userName, setUserName] = useState("Planner");
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          // Get planner data from Firestore
+          const plannerDoc = await getDoc(doc(db, "planners", user.uid));
+          if (plannerDoc.exists()) {
+            // Use full_name from the planners collection
+            const fullName = plannerDoc.data().full_name;
+            if (fullName) {
+              setUserName(fullName);
+              return;
+            }
+          }
+          
+          // Fallback to email username if no name found in planners collection
+          setUserName(user.email ? user.email.split('@')[0] : "Planner");
+          
+        } catch (error) {
+          console.error("Error fetching planner data:", error);
+          // Fallback to email username if there's an error
+          setUserName(user.email ? user.email.split('@')[0] : "Planner");
+        }
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
   // Click handler for "View all" button
   const handleViewAll = () => {
@@ -10,16 +44,18 @@ export default function PlannerDashboard() {
   };
 
   return (
-    <div className="dashboard-main">
-      <div className="dashboard-header">
-        <h1>
-          <strong>Hi, Planner Name!</strong>
-        </h1>
-        <button className="add-btn">+ Add Event</button>
-      </div>
+    <div className="planner-dashboard-page">
+      <div className="planner-dashboard-content">
+        <div className="dashboard-main">
+          <div className="dashboard-header">
+            <h1>
+              <strong>Hi, {userName}!</strong>
+            </h1>
+            <button className="add-btn">+ Add Event</button>
+          </div>
 
-      <div className="dashboard-grid">
-        <div>
+          <div className="dashboard-grid">
+            <div>
           {/* Upcoming Events */}
           <div
             style={{
@@ -168,6 +204,8 @@ export default function PlannerDashboard() {
               <div className="day-number current-month">1</div>
               <div className="day-number current-month today">2</div>
               <div className="day-number current-month">3</div>
+            </div>
+          </div>
             </div>
           </div>
         </div>
