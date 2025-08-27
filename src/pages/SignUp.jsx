@@ -66,6 +66,16 @@ function SignUp() {
       <button type="button" className="submit-btn" onClick={handleSignUp}>
         Sign Up with Google
       </button>
+      
+      <p className="login-prompt">
+        Already have an account?{' '}
+        <a href="/login" className="login-link" onClick={(e) => {
+          e.preventDefault();
+          navigate('/login');
+        }}>
+          Login here
+        </a>
+      </p>
     </main>
   );
 }

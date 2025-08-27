@@ -26,15 +26,10 @@
 /* --- General Body & Layout Styling --- */
 body {
     font-family: 'Poppins', sans-serif;
-    background: var(--background-gradient);
     color: var(--text-primary);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 2rem;
     margin: 0;
     box-sizing: border-box;
+    min-height: 100vh;
 }
 
 /* --- Profile Card Container --- */
@@ -48,6 +43,8 @@ body {
     text-align: center;
     border-top: 5px solid var(--blush);
     animation: slideUp 0.7s ease-out forwards;
+    margin: 0 auto;
+    position: relative;
 }
 
 /* --- Typography --- */
@@ -188,6 +185,56 @@ textarea.form-input.has-value + .form-label { top: 0; }
 .submit-btn:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 25px hsla(14, 85%, 65%, 0.5);
+}
+
+/* Login/Signup Prompt */
+.login-prompt {
+    margin-top: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    text-align: center;
+}
+
+.login-link, .signup-link {
+    color: var(--blush);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+    cursor: pointer;
+    margin-left: 0.25rem;
+}
+
+.login-link:hover, .signup-link:hover {
+    color: var(--coral);
+    text-decoration: underline;
+}
+
+/* User Profile Styles */
+.user-profile {
+    text-align: center;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.profile-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--blush);
+}
+
+.welcome-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0;
 }
 
 /* --- Profile Picture Upload --- */
