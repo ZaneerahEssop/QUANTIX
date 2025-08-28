@@ -1,5 +1,5 @@
 // src/pages/AdminDashboard.jsx
-import React, { useState } from "react";
+import React from "react";
 import '../AdminDash.css';
 
 export default function AdminDashboard() {
