@@ -9,7 +9,7 @@ function VendorForm() {
   const [profilePic, setProfilePic] = useState(null);
   const [isUploading] = useState(false);
   const [formData, setFormData] = useState({
-    category: "",
+    category: [],
     contact_number: "",
     description: "",
     name_of_business: "",
@@ -236,8 +236,10 @@ function VendorForm() {
           <select
             name="category"
             className={`form-input ${formData.category ? "has-value" : ""}`}
-            value={formData.category}
-            onChange={handleChange}
+            value={formData.category[0] || ""}
+            onChange={(e) =>
+            setFormData({ ...formData, category: [e.target.value] }) // store as array
+            }
             required
           >
             <option value=""></option>
