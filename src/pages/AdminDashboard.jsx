@@ -1,17 +1,17 @@
 // src/pages/AdminDashboard.jsx
-import React, { useState } from "react";
+import React from "react";
 import '../AdminDash.css';
 
 export default function AdminDashboard() {
-  const [planners, setPlanners] = useState({
-    unapproved: [],
-    approved: []
-  });
+  // const [planners, setPlanners] = useState({
+  //   unapproved: [],
+  //   approved: []
+  // });
 
-  const handleApprove = (id) => {
-    // This function will be implemented when we have data
-    console.log("Approve planner with id:", id);
-  };
+  // const handleApprove = (id) => {
+  //   // This function will be implemented when we have data
+  //   console.log("Approve planner with id:", id);
+  // };
 
 
   return (
