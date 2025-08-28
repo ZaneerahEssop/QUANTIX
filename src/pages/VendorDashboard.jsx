@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
-import { collection,doc, getDoc,addDoc, arrayUnion,updateDoc } from "firebase/firestore";
+import {doc, getDoc, arrayUnion,updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
 function VendorDashboard() {
@@ -42,10 +42,6 @@ function VendorDashboard() {
     console.log("View all clicked");
   };
 
-  // Modal handlers
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
   const handleAddService = async (new_Service) => {
     try {
