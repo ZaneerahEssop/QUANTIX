@@ -5,7 +5,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #FFF6FA !important; /* Added from dashboard styles */
+  background: radial-gradient(circle at 100% 0%, #E2C5AE, #E5ACBF) !important;
+  min-height: 100vh;
 }
 
 code {
