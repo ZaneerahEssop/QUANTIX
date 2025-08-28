@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import SignUp from "./pages/SignUp";
 import PlannerForm from "./pages/PlannerForm";
 import VendorForm from "./pages/VendorForm";
+import AdminDashboard from "./pages/AdminDashboard";
 import PlannerDashboard from "./pages/PlannerDashboard";
 import VendorDashboard from "./pages/VendorDashboard";
 import './App.css';
@@ -55,6 +56,7 @@ function App() {
           } 
         />
         <Route path="/vendor-form" element={<VendorForm />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/planner-dashboard" element={<PlannerDashboard />} />
         <Route path="/vendor-dashboard" element={<VendorDashboard />} />
       </Routes>
