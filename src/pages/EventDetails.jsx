@@ -3,14 +3,210 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
-import { FaArrowLeft, FaEdit, FaSave, FaUpload, FaFilePdf, FaTimes } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaSave, FaUpload, FaFilePdf, FaTimes, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaStar, FaPlus, FaTrash, FaEnvelope } from 'react-icons/fa';
+import '../EventDetails.css';
+import EventTheme from './eventPages/EventTheme';
 
+// A component for the event schedule
+const EventSchedule = ({ schedule, onUpdate }) => {
+  const [editableSchedule, setEditableSchedule] = useState(schedule || []);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleAddItem = () => {
+    setEditableSchedule([...editableSchedule, { time: '', activity: '' }]);
+  };
+
+  const handleRemoveItem = (index) => {
+    const newSchedule = editableSchedule.filter((_, i) => i !== index);
+    setEditableSchedule(newSchedule);
+    onUpdate(newSchedule);
+  };
+
+  const handleItemChange = (index, field, value) => {
+    const newSchedule = [...editableSchedule];
+    newSchedule[index][field] = value;
+    setEditableSchedule(newSchedule);
+  };
+
+  const handleSave = () => {
+    onUpdate(editableSchedule);
+    setIsEditing(false);
+  };
+
+  return (
+    <div className="schedule-section">
+      <div className="section-header">
+        <h2>Schedule</h2>
+        {isEditing ? (
+          <button onClick={handleSave} className="save-button">
+            <FaSave /> Save
+          </button>
+        ) : (
+          <button onClick={() => setIsEditing(true)} className="edit-button">
+            <FaEdit /> Edit
+          </button>
+        )}
+      </div>
+      {isEditing ? (
+        <>
+          {editableSchedule.map((item, index) => (
+            <div key={index} className="schedule-item editable">
+              <input
+                type="time"
+                value={item.time}
+                onChange={(e) => handleItemChange(index, 'time', e.target.value)}
+              />
+              <input
+                type="text"
+                value={item.activity}
+                onChange={(e) => handleItemChange(index, 'activity', e.target.value)}
+                placeholder="Activity"
+              />
+              <button onClick={() => handleRemoveItem(index)} className="remove-btn">
+                <FaTrash />
+              </button>
+            </div>
+          ))}
+          <button onClick={handleAddItem} className="add-btn">
+            <FaPlus /> Add Activity
+          </button>
+        </>
+      ) : (
+        <div className="schedule-list">
+          {schedule.length > 0 ? (
+            schedule.map((item, index) => (
+              <div key={index} className="schedule-item">
+                <span className="schedule-time">{item.time}</span>
+                <span className="schedule-activity">{item.activity}</span>
+              </div>
+            ))
+          ) : (
+            <p>No schedule items have been added yet.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// A component for guest management
+const GuestManagement = ({ guests, onUpdate }) => {
+  const [newGuest, setNewGuest] = useState({ name: '', contact: '', dietary: '', isAttending: false });
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleAddGuest = () => {
+    if (newGuest.name.trim() !== '') {
+      onUpdate([...guests, { ...newGuest, id: Date.now() }]);
+      setNewGuest({ name: '', contact: '', dietary: '', isAttending: false });
+    }
+  };
+
+  const handleUpdateGuest = (guestId, field, value) => {
+    const updatedGuests = guests.map(guest => 
+      guest.id === guestId ? { ...guest, [field]: value } : guest
+    );
+    onUpdate(updatedGuests);
+  };
+
+  const handleRemoveGuest = (guestId) => {
+    const updatedGuests = guests.filter(guest => guest.id !== guestId);
+    onUpdate(updatedGuests);
+  };
+
+  const handleSendInvite = (guest) => {
+    alert(`Simulating sending an email invite to ${guest.name} at ${guest.contact}`);
+  };
+
+  return (
+    <div className="guests-section">
+      <div className="section-header">
+        <h2>Guest Management</h2>
+        {isEditing ? (
+          <button onClick={() => setIsEditing(false)} className="save-button">
+            <FaSave /> Save
+          </button>
+        ) : (
+          <button onClick={() => setIsEditing(true)} className="edit-button">
+            <FaEdit /> Edit
+          </button>
+        )}
+      </div>
+      {isEditing && (
+        <div className="add-guest-form">
+          <input
+            type="text"
+            placeholder="Guest Name"
+            value={newGuest.name}
+            onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })}
+          />
+          <input
+            type="email"
+            placeholder="Email or Phone"
+            value={newGuest.contact}
+            onChange={(e) => setNewGuest({ ...newGuest, contact: e.target.value })}
+          />
+          <input
+            type="text"
+            placeholder="Dietary Requirements"
+            value={newGuest.dietary}
+            onChange={(e) => setNewGuest({ ...newGuest, dietary: e.target.value })}
+          />
+          <button onClick={handleAddGuest}>
+            <FaPlus /> Add Guest
+          </button>
+        </div>
+      )}
+
+      <div className="guest-list">
+        {guests.length > 0 ? (
+          <ul>
+            {guests.map(guest => (
+              <li key={guest.id} className="guest-item">
+                <div className="guest-info">
+                  <input
+                    type="checkbox"
+                    checked={guest.isAttending}
+                    onChange={(e) => handleUpdateGuest(guest.id, 'isAttending', e.target.checked)}
+                    disabled={!isEditing}
+                  />
+                  <div>
+                    <strong>{guest.name}</strong>
+                    <br />
+                    <small>{guest.contact}</small>
+                    <br />
+                    <small>{guest.dietary}</small>
+                  </div>
+                </div>
+                {isEditing && (
+                  <div className="guest-actions">
+                    <button onClick={() => handleSendInvite(guest)} title="Send invite">
+                      <FaEnvelope />
+                    </button>
+                    <button onClick={() => handleRemoveGuest(guest.id)} className="delete-guest" title="Remove guest">
+                      <FaTrash />
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No guests have been added yet.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+// Main EventDetails component
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeView, setActiveView] = useState('overview'); // <-- New state for navigation
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -21,10 +217,13 @@ const EventDetails = () => {
   const [vendors, setVendors] = useState([]);
   const [selectedVendors, setSelectedVendors] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [schedule, setSchedule] = useState([]);
+  const [guests, setGuests] = useState([]); // <-- New state for guests
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [theme, setTheme] = useState({ name: '', colors: [], notes: '' });
 
-  // Fetch all required data in parallel
+  // Fetch all required data
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -36,7 +235,6 @@ const EventDetails = () => {
       }
 
       try {
-        // Fetch event and vendors in parallel
         const [eventDoc, vendorsSnapshot] = await Promise.all([
           getDoc(doc(db, `planners/${user.uid}/events`, eventId)),
           getDocs(collection(db, 'vendors'))
@@ -45,8 +243,10 @@ const EventDetails = () => {
         if (eventDoc.exists()) {
           const eventData = { id: eventDoc.id, ...eventDoc.data() };
           setEvent(eventData);
+          setSchedule(eventData.schedule || []);
+          setGuests(eventData.guests || []); // <-- Load guests from event data
+          setTheme(eventData.theme || { name: '', colors: [], notes: '' });
           
-          // Handle date
           let eventDate;
           if (eventData.date?.toDate) {
             eventDate = eventData.date.toDate();
@@ -61,22 +261,19 @@ const EventDetails = () => {
             date: eventDate.toISOString().split('T')[0],
             time: eventData.time || '',
             venue: eventData.venue || '',
-            notes: eventData.notes || ''
+            notes: eventData.notes || '',
           });
           setSelectedVendors(eventData.vendors || []);
           
-          // Set vendors
           setVendors(vendorsSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           })));
           
-          // Lazy load documents when needed
           if (eventData.documents?.length > 0) {
             const storageRef = ref(storage, `events/${eventId}`);
             listAll(storageRef).then(files => {
-              // Only load first 3 document previews initially
-              const initialFiles = files.items.slice(0, 3);
+              const initialFiles = files.items;
               Promise.all(
                 initialFiles.map(item => 
                   getDownloadURL(item).then(url => ({
@@ -106,7 +303,6 @@ const EventDetails = () => {
       [name]: value
     }));
 
-    // If date is being updated, also update the event's date for display
     if (name === 'date' && event) {
       setEvent(prev => ({
         ...prev,
@@ -117,17 +313,22 @@ const EventDetails = () => {
 
   const handleSave = async () => {
     try {
-      await updateDoc(doc(db, 'events', eventId), {
+      await updateDoc(doc(db, `planners/${auth.currentUser.uid}/events`, eventId), {
         ...formData,
         vendors: selectedVendors,
+        schedule: schedule,
+        guests: guests, // <-- Save guests to Firestore
+        theme: theme,
         updatedAt: new Date().toISOString()
       });
       setIsEditing(false);
-      // Update local event data
       setEvent(prev => ({
         ...prev,
         ...formData,
-        vendors: selectedVendors
+        vendors: selectedVendors,
+        schedule: schedule,
+        guests: guests,
+        theme: theme
       }));
     } catch (error) {
       console.error('Error updating event:', error);
@@ -150,16 +351,15 @@ const EventDetails = () => {
     const storageRef = ref(storage, `events/${eventId}/${file.name}`);
     
     try {
-      const snapshot = await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(snapshot.ref);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
       
       setDocuments(prev => [...prev, {
         name: file.name,
         url
       }]);
       
-      // Add to Firestore if needed
-      await updateDoc(doc(db, 'events', eventId), {
+      await updateDoc(doc(db, `planners/${auth.currentUser.uid}/events`, eventId), {
         documents: arrayUnion({
           name: file.name,
           url,
@@ -181,12 +381,10 @@ const EventDetails = () => {
       const fileRef = ref(storage, `events/${eventId}/${fileName}`);
       await deleteObject(fileRef);
       
-      // Update Firestore
-      await updateDoc(doc(db, 'events', eventId), {
+      await updateDoc(doc(db, `planners/${auth.currentUser.uid}/events`, eventId), {
         documents: arrayRemove(documents.find(doc => doc.name === fileName))
       });
       
-      // Update local state
       setDocuments(prev => prev.filter(doc => doc.name !== fileName));
     } catch (error) {
       console.error('Error deleting file:', error);
@@ -194,41 +392,16 @@ const EventDetails = () => {
   };
 
   if (isLoading) return (
-    <div className="loading" style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '200px',
-      fontSize: '1.2rem',
-      color: '#666'
-    }}>
+    <div className="loading">
       Loading event details...
     </div>
   );
   
   if (!event) return (
-    <div className="error" style={{
-      padding: '20px',
-      textAlign: 'center',
-      color: '#d32f2f',
-      backgroundColor: '#ffebee',
-      borderRadius: '8px',
-      margin: '20px',
-      border: '1px solid #ffcdd2'
-    }}>
+    <div className="error">
       <h2>Event Not Found</h2>
       <p>The requested event could not be found or you don't have permission to view it.</p>
-      <button 
-        onClick={() => navigate('/planner-dashboard')}
-        style={{
-          marginTop: '15px',
-          padding: '8px 16px',
-          backgroundColor: '#f5f5f5',
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}
-      >
+      <button onClick={() => navigate('/planner-dashboard')}>
         Back to Dashboard
       </button>
     </div>
@@ -238,7 +411,6 @@ const EventDetails = () => {
   const formatDisplayDate = (dateString) => {
     if (!dateString) return 'Not specified';
     try {
-      // If it's a Firestore timestamp
       if (dateString.toDate) {
         return dateString.toDate().toLocaleDateString('en-US', {
           year: 'numeric',
@@ -246,7 +418,6 @@ const EventDetails = () => {
           day: 'numeric'
         });
       }
-      // If it's already a Date object
       if (dateString instanceof Date && !isNaN(dateString.getTime())) {
         return dateString.toLocaleDateString('en-US', {
           year: 'numeric',
@@ -254,7 +425,6 @@ const EventDetails = () => {
           day: 'numeric'
         });
       }
-      // If it's an ISO date string
       const date = new Date(dateString);
       if (!isNaN(date.getTime())) {
         return date.toLocaleDateString('en-US', {
@@ -263,10 +433,10 @@ const EventDetails = () => {
           day: 'numeric'
         });
       }
-      return dateString; // Return as is if we can't parse it
+      return dateString;
     } catch (e) {
       console.error('Error formatting date:', e);
-      return dateString; // Return as is if there's an error
+      return dateString;
     }
   };
 
@@ -276,6 +446,32 @@ const EventDetails = () => {
         <button onClick={() => navigate(-1)} className="back-button">
           <FaArrowLeft /> Back to Dashboard
         </button>
+        <div className="button-group">
+          <button
+            onClick={() => setActiveView('overview')}
+            className={`new-button ${activeView === 'overview' ? 'active' : ''}`}
+          >
+            Event Overview
+          </button>
+          <button
+            onClick={() => setActiveView('guests')}
+            className={`new-button ${activeView === 'guests' ? 'active' : ''}`}
+          >
+            Guest Management
+          </button>
+          <button
+            onClick={() => setActiveView('vendors')}
+            className={`new-button ${activeView === 'vendors' ? 'active' : ''}`}
+          >
+            Vendor Management
+          </button>
+          <button
+            onClick={() => setActiveView('documents')}
+            className={`new-button ${activeView === 'documents' ? 'active' : ''}`}
+          >
+            Document Management
+          </button>
+        </div>
         <div className="header-actions">
           {isEditing ? (
             <button onClick={handleSave} className="save-button">
@@ -289,81 +485,87 @@ const EventDetails = () => {
         </div>
       </div>
 
-      <div className="event-content">
-        <div className="event-info">
-          {isEditing ? (
-            <>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Event Name"
-                className="edit-input"
-              />
-              <div className="form-group">
-                <label>Date:</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleInputChange}
-                  className="edit-input"
-                />
-              </div>
-              <div className="form-group">
-                <label>Time:</label>
-                <input
-                  type="time"
-                  name="time"
-                  value={formData.time}
-                  onChange={handleInputChange}
-                  className="edit-input"
-                />
-              </div>
-              <div className="form-group">
-                <label>Venue:</label>
-                <input
-                  type="text"
-                  name="venue"
-                  value={formData.venue}
-                  onChange={handleInputChange}
-                  placeholder="Venue"
-                  className="edit-input"
-                />
-              </div>
-              <div className="form-group">
-                <label>Notes:</label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  placeholder="Additional notes"
-                  className="edit-textarea"
-                  rows="4"
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <h1>{event.name}</h1>
-              <p><strong>Date:</strong> {formatDisplayDate(event.date)}</p>
-              <p><strong>Time:</strong> {event.time || 'Not specified'}</p>
-              <p><strong>Venue:</strong> {event.venue || 'Not specified'}</p>
-              {event.notes && (
-                <div className="notes">
-                  <h3>Notes:</h3>
-                  <p>{event.notes}</p>
-                </div>
-              )}
-            </>
-          )}
+      <div className="event-info-boxes">
+        <div className="info-box date-box">
+          <h4><FaCalendarAlt /> Date</h4>
+          <p>{isEditing ? (
+            <input 
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={handleInputChange}
+            />
+          ) : formatDisplayDate(event.date)}</p>
         </div>
+        <div className="info-box time-box">
+          <h4><FaClock /> Time</h4>
+          <p>{isEditing ? (
+            <input 
+              type="time"
+              name="time"
+              value={formData.time}
+              onChange={handleInputChange}
+            />
+          ) : event.time || 'Not specified'}</p>
+        </div>
+        <div className="info-box venue-box">
+          <h4><FaMapMarkerAlt /> Venue</h4>
+          <p>{isEditing ? (
+            <input 
+              type="text"
+              name="venue"
+              value={formData.venue}
+              onChange={handleInputChange}
+              placeholder="Venue"
+            />
+          ) : event.venue || 'Not specified'}</p>
+        </div>
+        <div className="info-box theme-box">
+          <h4><FaStar /> Theme</h4>
+          <p>{event.theme?.name || 'Not specified'}</p>
+        </div>
+      </div>
+      
+      <div className="event-sections">
+        {activeView === 'overview' && (
+          <>
+            <section>
+              <EventSchedule
+                schedule={schedule}
+                onUpdate={(newSchedule) => setSchedule(newSchedule)}
+              />
+            </section>
+            
+            <section>
+              <EventTheme
+                  theme={theme}
+                  onUpdate={(newTheme) => setTheme(newTheme)}
+              />
+            </section>
+          </>
+        )}
 
-        <div className="event-sections">
-          {/* Vendors Section */}
+        {activeView === 'guests' && (
+            <GuestManagement
+                guests={guests}
+                onUpdate={setGuests}
+            />
+        )}
+        
+        {activeView === 'vendors' && (
           <section className="vendors-section">
-            <h2>Vendors</h2>
+            <div className="section-header">
+              <h2>Vendors</h2>
+              {isEditing ? (
+                <button onClick={() => setIsEditing(false)} className="save-button">
+                  <FaSave /> Save
+                </button>
+              ) : (
+                <button onClick={() => setIsEditing(true)} className="edit-button">
+                  <FaEdit /> Edit
+                </button>
+              )}
+            </div>
             {isEditing ? (
               <div className="vendor-selection">
                 {vendors.map(vendor => (
@@ -398,31 +600,41 @@ const EventDetails = () => {
               </div>
             )}
           </section>
+        )}
 
-          {/* Documents Section */}
+        {activeView === 'documents' && (
           <section className="documents-section">
             <div className="documents-header">
               <h2>Documents</h2>
-              {isEditing && (
-                <div className="upload-area">
-                  <label className="upload-button">
-                    <FaUpload /> Upload Document
-                    <input
-                      type="file"
-                      onChange={handleFileUpload}
-                      style={{ display: 'none' }}
-                      disabled={isUploading}
-                    />
-                  </label>
-                  {isUploading && (
-                    <div className="upload-progress">
-                      <progress value={uploadProgress} max="100" />
-                      <span>Uploading... {uploadProgress}%</span>
-                    </div>
-                  )}
-                </div>
+              {isEditing ? (
+                <button onClick={() => setIsEditing(false)} className="save-button">
+                  <FaSave /> Save
+                </button>
+              ) : (
+                <button onClick={() => setIsEditing(true)} className="edit-button">
+                  <FaEdit /> Edit
+                </button>
               )}
             </div>
+            {isEditing && (
+              <div className="upload-area">
+                <label className="upload-button">
+                  <FaUpload /> Upload Document
+                  <input
+                    type="file"
+                    onChange={handleFileUpload}
+                    style={{ display: 'none' }}
+                    disabled={isUploading}
+                  />
+                </label>
+                {isUploading && (
+                  <div className="upload-progress">
+                    <progress value={uploadProgress} max="100" />
+                    <span>Uploading... {uploadProgress}%</span>
+                  </div>
+                )}
+              </div>
+            )}
             
             <div className="documents-list">
               {documents.length > 0 ? (
@@ -449,7 +661,7 @@ const EventDetails = () => {
               )}
             </div>
           </section>
-        </div>
+        )}
       </div>
     </div>
   );
