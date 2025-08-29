@@ -1,8 +1,8 @@
 // 1. Import Dependencies
-const express = require('express');
-const admin = require('firebase-admin');
-const cors = require('cors');
-require('dotenv').config(); // Loads environment variables from .env file
+const express = require("express");
+const admin = require("firebase-admin");
+const cors = require("cors");
+require("dotenv").config(); // Loads environment variables from .env file
 
 // 2. Initialize Express App
 const app = express();
@@ -12,48 +12,49 @@ const app = express();
 app.use(cors());
 // This allows your server to parse JSON data in the request body
 app.use(express.json());
-
 // 4. Initialize Firebase Admin SDK
 // Get your service account JSON file from your Firebase project settings
-const serviceAccount = require('./serviceAccountKey.json');
+const serviceAccount = require("./serviceAccountKey.json");
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.credential.cert(serviceAccount),
 });
 
 // A helper to access the Firestore database
 const db = admin.firestore();
 
+const newEventsRoute = require("./src/Routes/newEvent.routes");
+app.use("/api/events", newEventsRoute);
+
 // 5. Define a Basic API Endpoint (a "Route")
 // This is a simple test route to make sure the server is working.
 // When your React app sends a GET request to http://localhost:5000/api/hello,
 // this function will run.
-app.get('/api/hello', (req, res) => {
-  res.json({ message: 'Hello from the backend!' });
+app.get("/api/hello", (req, res) => {
+  res.json({ message: "Hello from the backend!" });
 });
 
 // Example: A route to get data from Firestore
-app.get('/api/items', async (req, res) => {
+app.get("/api/items", async (req, res) => {
   try {
-    const itemsCollection = db.collection('items'); // Assumes you have a collection named "items"
+    const itemsCollection = db.collection("items"); // Assumes you have a collection named "items"
     const snapshot = await itemsCollection.get();
-    
+
     if (snapshot.empty) {
-      return res.status(404).json({ message: 'No items found' });
+      return res.status(404).json({ message: "No items found" });
     }
 
     const items = [];
-    snapshot.forEach(doc => {
+    snapshot.forEach((doc) => {
       items.push({ id: doc.id, ...doc.data() });
     });
 
     res.status(200).json(items);
   } catch (error) {
-    console.error('Error fetching items from Firestore:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    console.error("Error fetching items from Firestore:", error);
+    res.status(500).json({ message: "Something went wrong" });
   }
 });
-
 
 // 6. Start the Server
 // Use the port from the .env file, or default to 5000
