@@ -1,6 +1,6 @@
 // EventTheme.jsx
 import React, { useState, useEffect } from 'react';
-import { FaPalette, FaPencilAlt, FaStickyNote,FaSave } from 'react-icons/fa';
+import { FaPencilAlt, FaSave } from 'react-icons/fa';
 //import { useParams, useNavigate } from 'react-router-dom';
 
 const predefinedColors = [
