@@ -8,7 +8,6 @@ import './VendorDashboard.css';
 
 function VendorDashboard() {
   const [vendorName, setVendorName] = useState("");
-  const [businessName, setBusinessName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ category: "" });
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -19,8 +18,7 @@ function VendorDashboard() {
   // Calendar state
   const [date, setDate] = useState(new Date());
   
-  // Function to fetch planner name by ID
-  const fetchPlannerName = async (plannerId) => {
+  const fetchPlannerName = React.useCallback(async (plannerId) => {
     if (!plannerId) return 'Unknown Planner';
     if (plannerNames[plannerId]) return plannerNames[plannerId];
     
@@ -36,7 +34,7 @@ function VendorDashboard() {
       console.error('Error fetching planner name:', error);
       return 'Planner';
     }
-  };
+  }, [plannerNames]);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
@@ -50,7 +48,6 @@ function VendorDashboard() {
             const vendorData = doc.data();
             if (vendorData) {
               setVendorName(vendorData.name_of_vendor || 'Vendor');
-              setBusinessName(vendorData.name_of_business || '');
               
               // Separate pending and accepted requests
               const pending = [];
@@ -116,7 +113,7 @@ function VendorDashboard() {
 
     // Cleanup subscription on unmount
     return () => unsubscribeAuth();
-  }, []);
+  }, [fetchPlannerName]);
   // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return 'Date not specified';
@@ -295,13 +292,6 @@ function VendorDashboard() {
       console.error('Error removing event:', error);
       alert('Failed to remove event. Please try again.');
     }
-  };
-
-  // Request actions styles
-  const requestActionsStyle = {
-    display: 'flex',
-    gap: '8px',
-    marginTop: '8px'
   };
 
   // Modal styles
