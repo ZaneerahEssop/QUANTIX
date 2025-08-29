@@ -28,3 +28,7 @@ yarn-error.log*
 
 # Firebase credentials
 serviceAccount.json
+<<<<<<< HEAD
+=======
+serviceAccountKey.json
+>>>>>>> origin/main

@@ -5,6 +5,9 @@ import { auth, db } from "../firebase";
 import { doc, getDoc, collection, setDoc, onSnapshot, deleteDoc, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { FaPlus, FaTrash, FaCheck, FaEye } from 'react-icons/fa';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
+
 
 export default function PlannerDashboard() {
   const navigate = useNavigate(); // Initialize the navigate function
@@ -14,6 +17,7 @@ export default function PlannerDashboard() {
   const [showAllEvents, setShowAllEvents] = useState(false); // State to toggle all events view
   const [newTask, setNewTask] = useState("");
   const [userId, setUserId] = useState(null);
+  const [date, setDate] = useState(new Date());
 
   // Fetch user data, tasks, and events
   useEffect(() => {
@@ -509,10 +513,17 @@ export default function PlannerDashboard() {
           </div>
         </div>
 
-        {/* Calendar (unchanged) */}
+        {/*Calendar */}
         <div>
-          <div className="calendar-card">
-            {/* ... */}
+          <div className="calendar-card card">
+            <Calendar
+              onChange={setDate}
+              value={date}
+              className="dashboard-calendar fixed-size-calendar"
+              next2Label={null}
+              prev2Label={null}
+              
+            />
           </div>
         </div>
           </div>
