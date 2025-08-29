@@ -2,11 +2,15 @@ import React, { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import {doc, getDoc, arrayUnion,updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 
 function VendorDashboard() {
   const [vendorName, setVendorName] = useState("Vendor");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ category: "" });
+  // Calendar state
+  const [date, setDate] = useState(new Date());
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -188,62 +192,16 @@ function VendorDashboard() {
           </div>
         </div>
 
-        {/* Right Column (Calendar) */}
+        {/*Calendar */}
         <div>
           <div className="calendar-card card">
-            <div className="calendar-header">
-              <button className="nav-btn">
-                <i className="fas fa-chevron-left"></i>
-              </button>
-              <h3>August</h3>
-              <button className="nav-btn">
-                <i className="fas fa-chevron-right"></i>
-              </button>
-            </div>
-            <div className="calendar-grid">
-              <div className="day-name">Mo</div>
-              <div className="day-name">Tu</div>
-              <div className="day-name">We</div>
-              <div className="day-name">Th</div>
-              <div className="day-name">Fr</div>
-              <div className="day-name">Sa</div>
-              <div className="day-name">Su</div>
-              <div className="day-number">28</div>
-              <div className="day-number">29</div>
-              <div className="day-number">30</div>
-              <div className="day-number">31</div>
-              <div className="day-number current-month">1</div>
-              <div className="day-number current-month">2</div>
-              <div className="day-number current-month">3</div>
-              <div className="day-number current-month">4</div>
-              <div className="day-number current-month">5</div>
-              <div className="day-number current-month">6</div>
-              <div className="day-number current-month">7</div>
-              <div className="day-number current-month today">8</div>
-              <div className="day-number current-month">9</div>
-              <div className="day-number current-month">10</div>
-              <div className="day-number current-month">11</div>
-              <div className="day-number current-month">12</div>
-              <div className="day-number current-month">13</div>
-              <div className="day-number current-month">14</div>
-              <div className="day-number current-month">15</div>
-              <div className="day-number current-month">16</div>
-              <div className="day-number current-month">17</div>
-              <div className="day-number current-month">18</div>
-              <div className="day-number current-month">19</div>
-              <div className="day-number current-month">20</div>
-              <div className="day-number current-month">21</div>
-              <div className="day-number current-month">22</div>
-              <div className="day-number current-month">23</div>
-              <div className="day-number current-month">24</div>
-              <div className="day-number current-month">25</div>
-              <div className="day-number current-month">26</div>
-              <div className="day-number current-month">27</div>
-              <div className="day-number">1</div>
-              <div className="day-number">2</div>
-              <div className="day-number">3</div>
-              <div className="day-number">4</div>
-            </div>
+            <Calendar
+              onChange={setDate}
+              value={date}
+              className="dashboard-calendar fixed-size-calendar"
+              next2Label={null}             // hides "next year" button
+              prev2Label={null}             // hides "previous year" button
+            />
           </div>
         </div>
 
