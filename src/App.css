@@ -19,6 +19,115 @@
     --background-gradient: radial-gradient(circle at 100% 0%, #E2C5AE, #E5ACBF);
 }
 
+/* Vendor Dashboard Styles */
+
+/* Request actions container */
+.request-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+/* Base button styles */
+.details-btn,
+.accept-btn, 
+.reject-btn {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* View details button */
+.details-btn {
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.details-btn:hover {
+  background: #e0e0e0;
+}
+
+/* Accept button */
+.accept-btn {
+  background: #FF7F50;
+  color: white;
+  min-width: 70px;
+  border: none;
+  transition: all 0.2s;
+}
+
+.accept-btn:hover {
+  background: #FF6347;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+/* Reject button */
+.reject-btn {
+  background: #FF7F50;
+  color: white;
+  min-width: 70px;
+  border: none;
+  transition: all 0.2s;
+}
+
+.reject-btn:hover {
+  background: #FF6347;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+/* Pending requests list */
+.pending-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pending-list li {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.event-details {
+  flex: 1;
+}
+
+.event-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 120px;
+  gap: 6px;
+}
+
+.pending-list li:last-child {
+  border-bottom: none;
+}
+
+.pending-list li > span {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.pending-list small {
+  display: block;
+  color: #666;
+  font-size: 0.85em;
+  margin-top: 2px;
+}
+
 /* Planner Dashboard Specific Styles */
 .planner-dashboard-page {
     min-height: 100vh;

@@ -155,29 +155,47 @@ export default function PlannerDashboard() {
 
           <div className="dashboard-grid">
             <div>
-          {/* Upcoming Events Section - Now Dynamic */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "0.7rem",
-            }}
-          >
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "1.3rem",
-                fontWeight: 600,
-                color: "#333",
-              }}
-            >
+          {/* Upcoming Events Section - Styled like Vendor Dashboard */}
+          <div className="section-header" style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1rem'
+          }}>
+            <h2 style={{
+              margin: 0,
+              fontSize: "1.3rem",
+              fontWeight: 600,
+              color: "#333",
+            }}>
               Upcoming Events
             </h2>
+            {events.length > 3 && (
+              <button 
+                onClick={() => setShowAllEvents(!showAllEvents)}
+                style={{
+                  background: 'var(--blush)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  transition: 'background-color 0.2s',
+                }}
+              >
+                {showAllEvents ? 'Show Less' : 'View All'}
+              </button>
+            )}
           </div>
 
-          <div className="cards-row">
-            {/* Show first 3 events or all events based on state */}
+          <div className="event-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '1rem',
+            width: '100%',
+            marginBottom: '1.5rem'
+          }}>
             {events.length > 0 ? (
               events.slice(0, showAllEvents ? events.length : 3).map((event) => {
                 // Handle different date formats
@@ -213,8 +231,18 @@ export default function PlannerDashboard() {
                 const formattedTime = event.time || 'All day';
                 
                 return (
-                  <div key={event.id} className="event-card" style={{position: 'relative'}}>
+                  <div key={event.id} className="event-card" style={{
+                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '1rem',
+                    background: 'white',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                  }}>
+                    <div style={{ flex: '1', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                       <button 
+                        className="delete-event-btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           deleteEvent(event.id);
@@ -235,53 +263,71 @@ export default function PlannerDashboard() {
                           justifyContent: 'center',
                           borderRadius: '50%',
                           transition: 'all 0.2s',
-                          ':hover': {
-                            background: 'rgba(255, 77, 79, 0.1)',
-                            transform: 'scale(1.1)'
-                          }
+                          zIndex: 2
                         }}
                         title="Delete event"
                       >
                         ×
                       </button>
-                      <h3 style={{paddingRight: '20px'}}>{event.name || "New Event"}</h3>
-                      <p>
-                        <span className="event-date">{formattedDate}</span><br />
-                        <span className="event-time">⏰ {formattedTime}</span>
+                      <h3 style={{
+                        paddingRight: '20px',
+                        margin: '0 0 10px 0',
+                        fontSize: '1.1rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        minHeight: '2.4em',
+                        lineHeight: '1.2em'
+                      }}>{event.name || "New Event"}</h3>
+                      <div style={{
+                        margin: '0 0 12px 0',
+                        fontSize: '0.9rem',
+                        color: '#555'
+                      }}>
+                        <div style={{display: 'block', marginBottom: '6px'}}>
+                          🗓️ {formattedDate}
+                        </div>
+                        <div style={{display: 'block', marginBottom: '6px'}}>
+                          ⏰ {formattedTime}
+                        </div>
                         {event.vendors?.length > 0 && (
-                          <span className="event-vendors">
-                            <br />Vendors: {event.vendors.length} selected
-                          </span>
+                          <div style={{display: 'block', marginBottom: '6px'}}>
+                             👥 Vendors: {event.vendors.length} selected
+                          </div>
                         )}
-                      </p>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 'auto', paddingTop: '10px' }}>
                       <button 
                         onClick={() => navigate(`/event/${event.id}`)}
                         style={{
-                          marginTop: '10px',
-                          padding: '6px 12px',
+                          width: '100%',
+                          padding: '6px 10px',
                           backgroundColor: 'var(--blush)',
                           color: 'white',
                           border: 'none',
-                          borderRadius: '4px',
+                          borderRadius: '6px',
                           cursor: 'pointer',
-                          fontSize: '0.9rem',
+                          fontSize: '0.85rem',
                           display: 'flex',
+                          justifyContent: 'center',
                           alignItems: 'center',
                           gap: '6px',
                           transition: 'background-color 0.2s',
-                          ':hover': {
-                            backgroundColor: 'var(--coral)'
-                          }
                         }}
                       >
                         <FaEye /> View Details
                       </button>
                     </div>
+                  </div>
                 );
               })
             ) : (
               // Displayed when there are no events
               <div style={{
+                gridColumn: '1 / -1',
                 width: '100%',
                 background: '#fff',
                 borderRadius: '12px',
@@ -311,40 +357,16 @@ export default function PlannerDashboard() {
                 </button>
               </div>
             )}
-            
-            {/* View All / Show Less button */}
-            {events.length > 3 && (
-              <div style={{ width: '100%', textAlign: 'center', marginTop: '16px' }}>
-                <button 
-                  onClick={() => setShowAllEvents(!showAllEvents)}
-                  style={{
-                    background: 'transparent',
-                    color: 'var(--blush)',
-                    border: '1px solid var(--blush)',
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '500',
-                    transition: 'all 0.2s',
-                    ':hover': {
-                      background: 'rgba(229, 172, 191, 0.1)'
-                    }
-                  }}
-                >
-                  {showAllEvents ? 'Show Less' : `View All (${events.length})`}
-                </button>
-              </div>
-            )}
           </div>
 
-          {/* Checklist Section (unchanged) */}
+          {/* Checklist Section */}
           <div className="section-card" style={{
             background: '#fff',
             borderRadius: '12px',
             padding: '20px',
             boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-            marginBottom: '24px'
+            marginBottom: '24px',
+            border: '2px solid #FFC0CB'
           }}>
             <div style={{
               marginBottom: '16px',
