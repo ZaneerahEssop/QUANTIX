@@ -41,6 +41,7 @@ html, body, #root {
   margin: 0 !important;
   padding: 0 !important;
   overflow-x: hidden; /* Prevents horizontal scroll */
+ 
 }
 
 * {
@@ -49,17 +50,16 @@ html, body, #root {
   padding: 0;
 }
 
-body {
-  width: 100%;
-  overflow-x: hidden;
-  position: relative;
-}
+
 
 body {
   font-family: 'Poppins', sans-serif;
   color: var(--text-dark);
   line-height: 1.6;
   background-color: white;
+    width: 100%;
+  overflow-x: hidden;
+  position: relative;
 }
 
 /* Let sections be 100% width by default */
@@ -70,6 +70,7 @@ body {
   padding: 0;
   overflow-x: hidden;
   max-width: 100%;
+  background-color:#f8f9fa;
 }
 
 .content-section {
