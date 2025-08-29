@@ -9,7 +9,7 @@ import {
   query,
   orderBy,
   doc,
-  setDoc,
+  //setDoc,
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
@@ -191,8 +191,8 @@ export default function AddEventForm() {
       );
 
       // 2. Prepare the event data to save in Firestore
-      const newEventRef = doc(collection(db, `planners/${user.uid}/events`));
-      const eventData = {
+      //const newEventRef = doc(collection(db, `planners/${user.uid}/events`));
+      /*const eventData = {
         ...formData,
         vendors: selectedVendors.map((vendor) => ({
           id: vendor.id,
@@ -203,7 +203,7 @@ export default function AddEventForm() {
         documents: documentURLs, // Save the array of document objects
         createdBy: user.uid,
         createdAt: new Date().toISOString(),
-      };
+      };*/
 
       // 3. Save the event data to Firestore
       const response = await fetch("http://localhost:5000/api/events", {
