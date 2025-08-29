@@ -1029,37 +1029,100 @@ body.dashboard-body {
     justify-content: center;
     margin-top: 2rem;
     flex-wrap: wrap;
+    align-items: stretch;
 }
 .role-card {
-    background: var(--card-background);
-    border: 2px solid var(--border-color, #ddd);
+    background: #fff;
+    border: 2px solid #e0e0e0;
     border-radius: 14px;
     box-shadow: 0 4px 18px rgba(0,0,0,0.07);
-    padding: 2rem 1.5rem 1.5rem 1.5rem;
+    padding: 2rem 1.5rem;
     width: 260px;
-    text-align: center;
+    min-height: 220px;
     color: var(--text-primary);
-    transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+    transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    text-align: center;
     cursor: pointer;
-    border-width: 2px;
-    border-style: solid;
-    border-color: var(--peach);
-    outline: none;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.role-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px solid var(--blush);
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.role-card.vendor-card::after {
+    border-color: var(--coral);
+}
+
+.role-card.selected::after,
+.role-card:hover::after {
+    opacity: 1;
 }
 .role-card.selected, .role-card:hover {
     box-shadow: 0 8px 32px rgba(45, 45, 130, 0.13);
     border-color: var(--blush);
     background: hsl(260, 35%, 95%);
+    outline: 2px solid var(--blush);
+    outline-offset: -1px;
+}
+
+.vendor-card {
+    border: 1.5px solid #666; /* Slightly thicker border */
+}
+
+.vendor-card.selected,
+.vendor-card:hover {
+    border-color: var(--coral);
+}
+
+.vendor-card.selected,
+.vendor-card:hover {
+    outline: 2px solid #e07d5a; /* Darker shade of coral for better visibility */
+    outline-offset: -1px;
+    background: hsl(14, 85%, 97%);
 }
 .role-card input[type="radio"]:focus + .card-icon {
     outline: 2px solid var(--blush);
 }
 .card-icon {
     font-size: 2.5rem;
-    margin-bottom: 1rem;
+    margin: 0 0 1.2rem 0;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.role-card h2 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.5rem;
+    line-height: 1.2;
+}
+
+.role-card p {
+    margin: 0;
+    line-height: 1.5;
+    font-size: 0.95rem;
 }
 .submit-btn {
     width: 100%;
