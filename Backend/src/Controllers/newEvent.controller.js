@@ -1,42 +1,41 @@
-// Backend/src/controllers/eventController.js
 const { db } = require("../Config/firebase.js"); // your Firestore connection
 
 const createEvent = async (req, res) => {
   try {
+    // Destructure the fields your React form is actually sending
     const {
-      event_id,
       name,
-      theme,
-      planner_id,
-      venue,
-      vendors_id = [],
       date,
-      start_time,
-      end_time,
+      time,
+      planner_id, // This is now used to build the correct path
+      vendors_id = [],
+      documents = [],
     } = req.body;
 
-    // Create event doc in Firestore
+    // A simple validation to ensure core data is present
+    if (!name || !date || !planner_id) {
+        return res.status(400).json({ error: "Missing required fields: name, date, and planner_id are required." });
+    }
+
+    // Create the event object to save in Firestore
     const newEvent = {
-      event_id,
       name,
-      theme,
-      planner_id,
-      venue,
-      vendors_id,
       date,
-      start_time,
-      end_time,
+      time: time || "",
+      planner_id, // It's good practice to still save this inside the document for easy reference
+      vendors_id,
+      documents,
       createdAt: new Date(),
     };
 
-    await db.collection("events").add(newEvent);
+    // --- EDIT: This line now saves the event to the correct subcollection ---
+    const docRef = await db.collection('planners').doc(planner_id).collection('events').add(newEvent);
 
     res
       .status(201)
-      .json({ message: "Event created successfully", event: newEvent });
+      .json({ message: "Event created successfully", id: docRef.id, event: newEvent });
   } catch (error) {
     console.error("Error creating event:", error);
-    console.error("Error Stack:", error.stack);
     res
       .status(500)
       .json({ error: "Internal server error", details: error.message });
