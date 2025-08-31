@@ -235,22 +235,27 @@ function VendorForm() {
           <i className="form-icon fas fa-tag"></i>
           <select
             name="category"
-            className={`form-input ${formData.category ? "has-value" : ""}`}
+            className={`form-input ${formData.category && formData.category[0] ? "has-value" : ""}`}
             value={formData.category[0] || ""}
             onChange={(e) =>
-            setFormData({ ...formData, category: [e.target.value] }) // store as array
+              setFormData({ ...formData, category: [e.target.value] }) // store as array
             }
             required
+            style={{ 
+              color: formData.category && formData.category[0] ? 'var(--text-primary)' : 'transparent' 
+            }}
           >
-            <option value=""></option>
-            <option value="Catering">Catering</option>
-            <option value="Flowers">Flowers</option>
-            <option value="Venue">Venue</option>
-            <option value="Photography">Photography</option>
-            <option value="Music">Music</option>
-            <option value="Decor">Decor</option>
+            <option value="" disabled style={{ color: '#000000' }}></option>
+            <option value="Catering" style={{ color: '#000000' }}>Catering</option>
+            <option value="Flowers" style={{ color: '#000000' }}>Flowers</option>
+            <option value="Venue" style={{ color: '#000000' }}>Venue</option>
+            <option value="Photography" style={{ color: '#000000' }}>Photography</option>
+            <option value="Music" style={{ color: '#000000' }}>Music</option>
+            <option value="Decor" style={{ color: '#000000' }}>Decor</option>
           </select>
-          <label className="form-label">Category</label>
+          <label className={`form-label ${formData.category && formData.category[0] ? 'floating' : ''}`}>
+            Category
+          </label>
         </div>
 
         {/* Description */}

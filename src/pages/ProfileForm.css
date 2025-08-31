@@ -1,0 +1,347 @@
+/* === Root Variables === */
+:root {
+    --primary-color: #FF7F50; /* Coral from original forms */
+    --primary-gradient: linear-gradient(135deg, #FF7F50 0%, #FFDAB9 100%);
+    --text-dark: #333;
+    --text-light: #666;
+    --border-color: #ddd;
+    --background-white: #fff;
+  }
+  
+  /* === Main Container & Typography === */
+  .profile-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2.5rem;
+    background-color: var(--background-white);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  }
+  
+  .profile-container h1 {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+  }
+  
+  .accent-text { 
+    color: #FFB6C1 !important; 
+  }
+  
+  .profile-container p {
+    text-align: center;
+    color: var(--text-light);
+    margin-bottom: 2.5rem;
+    font-size: 1rem;
+  }
+  
+  /* === Form Structure === */
+  .profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+  
+  .form-group {
+    position: relative;
+  }
+  
+  .form-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+    transition: color 0.3s ease;
+  }
+  
+  .form-input {
+    width: 100%;
+    padding: 14px 20px 14px 45px;
+    border: 1px solid var(--border-color);
+    color: var(--text-dark);
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: var(--background-white);
+    transition: all 0.3s ease;
+    outline: none;
+    height: 48px;
+    box-sizing: border-box;
+  }
+  
+  .form-label {
+    position: absolute;
+    left: 45px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    background-color: var(--background-white);
+    padding: 0 8px 0 0;
+    margin: 0;
+    line-height: 1;
+  }
+  
+  /* Dropdown Styling */
+  select.form-input option {
+    color: #000000;
+    background: white;
+    padding: 8px;
+  }
+
+  select.form-input:focus option {
+    color: #000000;
+  }
+
+  select.form-input option:checked {
+    color: #000000;
+    background: #f0f0f0;
+  }
+
+  /* Floating Label Effect */
+  .form-input:focus {
+    border-color: var(--primary-color);
+  }
+  
+  .form-input:focus + .form-label,
+  .form-input.has-value + .form-label {
+    top: 0;
+    left: 35px;
+    font-size: 0.8rem;
+    padding: 0 5px;
+    color: var(--primary-color);
+    transform: translateY(-50%);
+  }
+  
+  .form-input:focus ~ .form-icon {
+    color: var(--primary-color);
+  }
+  
+  /* Read-only email field styling */
+  .readonly-email-container {
+    position: relative;
+  }
+  
+  .readonly-badge {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #f0f0f0;
+    color: #666;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+  }
+  
+  .readonly-badge i {
+    font-size: 0.7rem;
+  }
+  
+  .form-input[readonly] {
+    background-color: #f9f9f9;
+    cursor: not-allowed;
+    border-style: dashed;
+    padding-right: 120px; /* Make room for the badge */
+  }
+  
+  /* === Profile Picture Upload (Exact Match) === */
+  .profile-pic-group {
+    text-align: center;
+  }
+  
+  .pic-upload-label {
+    display: inline-block;
+    cursor: pointer;
+  }
+  
+  .pic-preview {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background-size: cover;
+    background-position: center;
+  }
+  
+  .pic-preview .default-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: white;
+  }
+  
+  .pic-preview .default-state span {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  
+  .pic-preview .change-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    text-align: center;
+    padding: 8px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  
+  /* === Category Selection (Vendor) === */
+  .category-group label {
+    display: block;
+    margin-bottom: 1rem;
+    color: var(--text-dark);
+    font-weight: 500;
+  }
+  
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .category-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+  }
+  
+  .category-label.selected {
+    border-color: var(--primary-color);
+    background-color: rgba(255, 127, 80, 0.1);
+  }
+  
+  .checkbox-custom {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+  
+  .category-label.selected .checkbox-custom {
+    border-color: var(--primary-color);
+    background-color: var(--primary-color);
+  }
+  
+  .category-label span {
+    font-weight: normal;
+    color: var(--text-dark);
+    font-size: 0.9rem;
+  }
+  
+  .category-label.selected span {
+    font-weight: 600;
+    color: var(--primary-color);
+  }
+  
+  
+  /* === Buttons & Other Elements === */
+  .form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    width: 100%;
+  }
+  
+  .submit-btn, .cancel-btn {
+    width: 100%;
+    margin: 0;
+    height: 48px;
+    padding: 0 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    border: none;
+    background: var(--primary-gradient);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    line-height: 1.2;
+  }
+  
+  .submit-btn:hover:not(:disabled), .cancel-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0.95;
+  }
+  
+  .cancel-btn {
+    background: var(--primary-gradient);
+    opacity: 0.9;
+  }
+  
+  .cancel-btn:hover {
+    opacity: 1;
+  }
+  
+  .submit-btn:disabled, .cancel-btn:disabled {
+    background: #f0f0f0;
+    color: #aaa;
+    border-color: #e0e0e0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.7;
+  }
+  
+  .back-button {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+  }
+  
+  .loading {
+    text-align: center;
+    padding: 4rem;
+    font-size: 1.2rem;
+  }

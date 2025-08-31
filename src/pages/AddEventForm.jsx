@@ -3,9 +3,9 @@ import "../App.css";
 import "./AddEventForm.css";
 import React, { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
-import { collection, doc, setDoc, getDocs, query, orderBy, updateDoc, arrayUnion } from "firebase/firestore";
+import { collection, doc, setDoc, getDocs, query, orderBy } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { FaCalendarAlt, FaClock, FaUsers, FaTrash, FaUpload, FaSearch, FaTimes, FaFileAlt } from "react-icons/fa";
+import { FaCalendarAlt, FaClock, FaUsers, FaFileAlt } from "react-icons/fa";
 
 export default function AddEventForm() {
   const navigate = useNavigate();
@@ -18,9 +18,7 @@ export default function AddEventForm() {
   const [selectedVendors, setSelectedVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [isLoading, setIsLoading] = useState(true);
   const [documents, setDocuments] = useState([]);
-  const [requestStatus, setRequestStatus] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,8 +36,6 @@ export default function AddEventForm() {
         setFilteredVendors(vendorsData);
       } catch (error) {
         console.error("Error fetching vendors:", error);
-      } finally {
-        setIsLoading(false);
       }
     };
     fetchVendors();
