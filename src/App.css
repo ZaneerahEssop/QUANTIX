@@ -306,7 +306,10 @@ body {
 
 /* --- Typography --- */
 h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.75rem; }
-.accent-text { color: var(--blush); }
+.accent-text {
+  color: var(--blush) !important;
+  font-weight: 700;
+}
 .profile-container p { color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 1.05rem; }
 
 /* Add styles for "Sign up here" and "Login here" links */
