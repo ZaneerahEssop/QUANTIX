@@ -10,6 +10,8 @@ import PlannerDashboard from "./pages/PlannerDashboard";
 import VendorDashboard from "./pages/VendorDashboard";
 import AddEventForm from "./pages/AddEventForm";
 import EventDetails from "./pages/EventDetails";
+import EditPlannerProfile from "./pages/EditPlannerProfile";
+import EditVendorProfile from "./pages/EditVendorProfile";
 import './App.css';
 
 // Layout component for auth pages (login/signup)
@@ -62,8 +64,10 @@ function App() {
         <Route path="/planner-dashboard" element={<PlannerDashboard />} />
         <Route path="/vendor-dashboard" element={<VendorDashboard />} />
         <Route path="/add-event" element={<AddEventForm />} />
-        <Route path="/event/:eventId" element={<EventDetails />} />
-        <Route path="/vendor-dashboard" element={<VendorDashboard />} />
+        <Route path="/event-details/:eventId" element={<EventDetails />} />
+        <Route path="/edit-planner-profile" element={<EditPlannerProfile />} />
+        <Route path="/edit-vendor-profile" element={<EditVendorProfile />} />
+        <Route path="*" element={<Navigate to="/landing" replace />} />
       </Routes>
     </Router>
   );
