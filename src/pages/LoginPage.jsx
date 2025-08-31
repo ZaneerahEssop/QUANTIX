@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { auth, provider, db } from "../firebase"; // ✅ added db
+import { auth, provider, db } from "../firebase";
 import { signInWithPopup, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore"; // ✅ Firestore
+import { doc, getDoc } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
 import "../App.css";
+import "./AuthPages.css";
 
 function Login() {
   const [user, setUser] = useState(null);
@@ -45,11 +46,10 @@ function Login() {
   };
 
   return (
-    <main className="profile-container">
+    <div className="auth-container">
       <h1>
         Welcome to <span className="accent-text">Event-ually Perfect</span>
       </h1>
-      <div className="logo-placeholder"></div>
       <p>Login to get started planning or managing your event experience.</p>
 
       {user ? (
@@ -57,29 +57,29 @@ function Login() {
           <div className="user-info">
             <img
               src={user.photoURL}
-              alt="profile"
+              alt="Profile"
               className="profile-image"
             />
-            <p className="welcome-text">Welcome, {user.displayName}!</p>
+            <p className="welcome-text">Welcome back, {user.displayName}!</p>
           </div>
-          <button onClick={logOut} className="submit-btn">
-            Log out
+          <button onClick={logOut} className="auth-btn">
+            <i className="fas fa-sign-out-alt"></i> Log out
           </button>
         </div>
       ) : (
         <>
-          <button onClick={signInWithGoogle} className="submit-btn">
-            Login with Google
+          <button onClick={signInWithGoogle} className="auth-btn">
+            <i className="fab fa-google"></i> Login with Google
           </button>
-          <p className="login-prompt">
+          <p className="auth-prompt">
             First time?{' '}
-            <Link to="/signup" className="login-link">
+            <Link to="/signup" className="auth-link">
               Sign up here
             </Link>
           </p>
         </>
       )}
-    </main>
+    </div>
   );
 }
 
