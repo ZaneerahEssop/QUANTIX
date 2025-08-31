@@ -32,7 +32,7 @@
   
   .profile-container p {
     text-align: center;
-    color: var(--text-light);
+    color: #000000 !important; /* Ensures black color is applied */
     margin-bottom: 2.5rem;
     font-size: 1rem;
   }
@@ -64,7 +64,7 @@
     width: 100%;
     padding: 14px 20px 14px 45px;
     border: 1px solid var(--border-color);
-    color: var(--text-dark);
+    color: #000000; /* Changed to black for better visibility */
     border-radius: 8px;
     font-size: 1rem;
     background-color: var(--background-white);
@@ -274,15 +274,17 @@
   
   /* === Buttons & Other Elements === */
   .form-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     gap: 1rem;
     margin-top: 1.5rem;
     width: 100%;
   }
   
   .submit-btn, .cancel-btn {
-    width: 100%;
+    flex: 0 1 auto;
+    min-width: 140px;
     margin: 0;
     height: 48px;
     padding: 0 24px;
@@ -295,7 +297,7 @@
     border: none;
     background: var(--primary-gradient);
     color: white;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
@@ -309,8 +311,10 @@
   }
   
   .cancel-btn {
-    background: var(--primary-gradient);
+    background: linear-gradient(135deg, #FFB6C1 0%, #FFDAB9 100%);
     opacity: 0.9;
+    position: relative;
+    top: 12px;
   }
   
   .cancel-btn:hover {
