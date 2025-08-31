@@ -1,65 +1,115 @@
-// 1. Import Dependencies
-const express = require("express");
-const admin = require("firebase-admin");
-const cors = require("cors");
-require("dotenv").config(); // Loads environment variables from .env file
+// Backend/server.js
 
-// 2. Initialize Express App
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
+
+// --- File Imports ---
+const { admin, auth } = require("./src/Config/firebase");
+const eventRoutes = require("./src/Routes/newEvent.routes"); // Your existing event routes
+const guestRoutes = require("./src/Routes/guest.routes");   // The new guest routes
+
+// --- App & Middleware Setup ---
 const app = express();
 
-// 3. Configure Middleware
-// This allows your server to accept requests from your React app
-app.use(cors());
-// This allows your server to parse JSON data in the request body
+// Configure CORS
+const corsOptions = {
+  origin: 'http://localhost:3000', // Your frontend URL
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
-// 4. Initialize Firebase Admin SDK
-// Get your service account JSON file from your Firebase project settings
-const serviceAccount = require("./serviceAccountKey.json");
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
-// A helper to access the Firestore database
-const db = admin.firestore();
-
-const newEventsRoute = require("./src/Routes/newEvent.routes");
-app.use("/api/events", newEventsRoute);
-
-// 5. Define a Basic API Endpoint (a "Route")
-// This is a simple test route to make sure the server is working.
-// When your React app sends a GET request to http://localhost:5000/api/hello,
-// this function will run.
-app.get("/api/hello", (req, res) => {
-  res.json({ message: "Hello from the backend!" });
-});
-
-// Example: A route to get data from Firestore
-app.get("/api/items", async (req, res) => {
+// --- Authentication Middleware ---
+const authenticate = async (req, res, next) => {
+  console.log('Authentication middleware triggered');
+  console.log('Request headers:', JSON.stringify(req.headers, null, 2));
+  
+  const { authorization } = req.headers;
+  
+  if (!authorization) {
+    console.error('No authorization header found');
+    return res.status(401).json({ error: 'Unauthorized: No authorization header provided' });
+  }
+  
+  if (!authorization.startsWith('Bearer ')) {
+    console.error('Invalid authorization header format');
+    return res.status(401).json({ error: 'Unauthorized: Invalid token format. Use Bearer token' });
+  }
+  
+  const token = authorization.split('Bearer ')[1];
+  
+  if (!token) {
+    console.error('No token found in authorization header');
+    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+  }
+  
   try {
-    const itemsCollection = db.collection("items"); // Assumes you have a collection named "items"
-    const snapshot = await itemsCollection.get();
-
-    if (snapshot.empty) {
-      return res.status(404).json({ message: "No items found" });
+    console.log('Verifying token...');
+    const decodedToken = await auth.verifyIdToken(token);
+    console.log('Token verified successfully:', { uid: decodedToken.uid, email: decodedToken.email });
+    
+    if (!decodedToken.uid) {
+      console.error('No UID in decoded token');
+      return res.status(401).json({ error: 'Unauthorized: Invalid token data' });
     }
-
-    const items = [];
-    snapshot.forEach((doc) => {
-      items.push({ id: doc.id, ...doc.data() });
-    });
-
-    res.status(200).json(items);
+    
+    req.user = { uid: decodedToken.uid, email: decodedToken.email };
+    next();
   } catch (error) {
-    console.error("Error fetching items from Firestore:", error);
-    res.status(500).json({ message: "Something went wrong" });
+    console.error('Error verifying Firebase token:', {
+      error: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+    return res.status(403).json({ 
+      error: 'Unauthorized: Invalid or expired token',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    // Test Firestore connection
+    const firestorePing = await db.collection('test').doc('ping').get();
+    
+    // Test Auth connection
+    const authPing = await auth.getUser('test');
+    
+    res.status(200).json({
+      status: 'ok',
+      firebase: {
+        firestore: 'connected',
+        auth: 'connected',
+        app: admin.app().name
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
-// 6. Start the Server
-// Use the port from the .env file, or default to 5000
-const PORT = process.env.PORT || 5000;
+// --- API Routes ---
+// Apply the authentication middleware to all routes under /api/events
+app.use("/api/events", authenticate, eventRoutes);
+app.use("/api/events", authenticate, guestRoutes); // Use the new guest routes
 
+// --- Start Server ---
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`✅ Server is running on port ${PORT}`);
 });
