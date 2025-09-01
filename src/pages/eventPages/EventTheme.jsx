@@ -1,7 +1,5 @@
-// EventTheme.jsx
 import React, { useState, useEffect } from 'react';
-import { FaPencilAlt, FaSave } from 'react-icons/fa';
-//import { useParams, useNavigate } from 'react-router-dom';
+import { FaPencilAlt, FaSave, FaEdit, FaTimes } from 'react-icons/fa';
 
 const predefinedColors = [
     '#E5ACBF', // Blush
@@ -15,23 +13,23 @@ const predefinedColors = [
     '#6c757d'  // Gray
 ];
 
-const EventTheme = ({ theme, onUpdate, isEditing }) => {
-    const [editableTheme, setEditableTheme] = useState(theme || { name: '', colors: [], notes: '' });
+const EventTheme = ({ theme, onUpdate, isEditing, onToggleEdit, onSave }) => {
+    const [localTheme, setLocalTheme] = useState(theme || { name: '', colors: [], notes: '' });
 
     useEffect(() => {
-        setEditableTheme(theme || { name: '', colors: [], notes: '' });
+        setLocalTheme(theme || { name: '', colors: [], notes: '' });
     }, [theme]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setEditableTheme(prev => ({
+        setLocalTheme(prev => ({
             ...prev,
             [name]: value
         }));
     };
 
     const handleColorToggle = (color) => {
-        setEditableTheme(prev => {
+        setLocalTheme(prev => {
             const newColors = prev.colors.includes(color)
                 ? prev.colors.filter(c => c !== color)
                 : [...prev.colors, color];
@@ -40,12 +38,34 @@ const EventTheme = ({ theme, onUpdate, isEditing }) => {
     };
 
     const handleSave = () => {
-        onUpdate(editableTheme);
+        onUpdate(localTheme);
+        onSave();
+    };
+
+    const handleCancel = () => {
+        setLocalTheme(theme || { name: '', colors: [], notes: '' });
+        onToggleEdit();
     };
 
     return (
         <div className="theme-section">
-            <h2><FaPencilAlt /> Theme</h2>
+            <div className="section-header">
+                <h2><FaPencilAlt /> Theme</h2>
+                {!isEditing ? (
+                    <button onClick={onToggleEdit} className="edit-component-btn">
+                        <FaEdit />
+                    </button>
+                ) : (
+                    <div className="component-actions">
+                        <button onClick={handleSave} className="save-component-btn">
+                            <FaSave /> Save
+                        </button>
+                        <button onClick={handleCancel} className="cancel-component-btn">
+                            <FaTimes /> Cancel
+                        </button>
+                    </div>
+                )}
+            </div>
             {isEditing ? (
                 <div className="theme-edit-form">
                     <div className="form-group">
@@ -53,7 +73,7 @@ const EventTheme = ({ theme, onUpdate, isEditing }) => {
                         <input
                             type="text"
                             name="name"
-                            value={editableTheme.name}
+                            value={localTheme.name}
                             onChange={handleInputChange}
                             placeholder="e.g., Rustic Elegance"
                         />
@@ -64,7 +84,7 @@ const EventTheme = ({ theme, onUpdate, isEditing }) => {
                             {predefinedColors.map((color) => (
                                 <div
                                     key={color}
-                                    className={`color-swatch ${editableTheme.colors.includes(color) ? 'selected' : ''}`}
+                                    className={`color-swatch ${localTheme.colors.includes(color) ? 'selected' : ''}`}
                                     style={{ backgroundColor: color }}
                                     onClick={() => handleColorToggle(color)}
                                 ></div>
@@ -75,15 +95,12 @@ const EventTheme = ({ theme, onUpdate, isEditing }) => {
                         <label>Notes:</label>
                         <textarea
                             name="notes"
-                            value={editableTheme.notes}
+                            value={localTheme.notes}
                             onChange={handleInputChange}
                             placeholder="Add notes on decor, florals, etc."
                             rows="4"
                         ></textarea>
                     </div>
-                    <button onClick={handleSave} className="save-theme-btn">
-                        <FaSave /> Save Theme
-                    </button>
                 </div>
             ) : (
                 <div className="theme-display">
@@ -111,7 +128,6 @@ const EventTheme = ({ theme, onUpdate, isEditing }) => {
                         <span className="detail-label">Notes:</span>
                         <p>{theme?.notes || 'No notes added'}</p>
                     </div>
-                    <button onClick={() => onUpdate(editableTheme)} className="edit-theme-button">Edit theme</button>
                 </div>
             )}
         </div>
