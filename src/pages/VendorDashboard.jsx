@@ -5,18 +5,16 @@ import { onAuthStateChanged } from "firebase/auth";
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './VendorDashboard.css';
+import Navbar from '../components/Navbar';
 
 function VendorDashboard() {
   const [vendorName, setVendorName] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ category: "" });
   const [pendingRequests, setPendingRequests] = useState([]);
   const [acceptedEvents, setAcceptedEvents] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [plannerNames, setPlannerNames] = useState({});
-  const [showAllEvents, setShowAllEvents] = useState(false);
-  // Calendar state
   const [date, setDate] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
+  const [showAllEvents, setShowAllEvents] = useState(false);
   
   const fetchPlannerName = React.useCallback(async (plannerId) => {
     if (!plannerId) return 'Unknown Planner';
@@ -127,25 +125,6 @@ function VendorDashboard() {
     return timeString; // Assuming time is already in a readable format
   };
 
-
-  const handleAddService = async (new_Service) => {
-    try {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const vendorRef = doc(db, "vendors", user.uid);
-
-      await updateDoc(vendorRef, {
-        category: arrayUnion(new_Service) // adds to the array without duplicates
-      });
-
-      alert(`${new_Service} added successfully!`);
-      setFormData({ category: "" });
-    } catch (error) {
-      console.error("Error adding service:", error);
-      alert("Failed to add service. Try again.");
-    }
-  };
 
   const handleRequestResponse = async (request, status) => {
     const user = auth.currentUser;
@@ -294,34 +273,28 @@ function VendorDashboard() {
     }
   };
 
-  // Modal styles
-  const styles = {
-    overlay: {
-      position: "fixed",
-      top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 1000,
-    },
-    modal: {
-      background: "white",
-      padding: "2rem",
-      borderRadius: "8px",
-      minWidth: "300px",
-    },
-  };
-
-
   return (
-    <div className="planner-dashboard-page">
-      <div className="planner-dashboard-content">
-        <div className="dashboard-main">
-          {/* Header */}
-          <div className="dashboard-header">
-            <h1>Hi, {vendorName}!</h1>
-            <button className="add-btn" onClick={() => setIsModalOpen(true)}>+ Add Service</button>
+    <div className="vendor-dashboard" style={{
+      minHeight: '100vh',
+      background: 'radial-gradient(circle at 100% 0%, #FFE4C4, #FFB6C1)',
+      paddingTop: '80px',
+    }}>
+      <Navbar />
+      <div style={{
+        backgroundColor: 'white',
+        minHeight: '80vh',
+        maxWidth: '1200px',
+        margin: '2rem auto',
+        borderRadius: '30px',
+        padding: '2rem',
+        boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
+      }}>
+        <div className="vendor-dashboard-content">
+          <div className="dashboard-main">
+            {/* Header */}
+            <div className="dashboard-header">
+              <h1>Hi, {vendorName}!</h1>
+            </div>
           </div>
 
           <div className="dashboard-grid">
@@ -523,10 +496,12 @@ function VendorDashboard() {
                               width: '100%',
                               textAlign: 'center'
                             }}
-                            onClick={() => {
-                              // TODO: Implement view details functionality
-                              console.log('View details for request:', request);
+                            onClick={(e) => {
+                              e.preventDefault();
+                              // No navigation, just show a tooltip or message
+                              alert('Event details view coming soon!');
                             }}
+                            title="Event details view coming soon"
                           >
                             <i className="fa fa-info-circle"></i> Details
                           </button>
@@ -574,60 +549,10 @@ function VendorDashboard() {
             </div>
           </div>
 
-          {/* Add Service Modal */}
-          {isModalOpen && (
-            <div style={styles.overlay}>
-              <div style={styles.modal}>
-                <h2>Add a New Service to your catalog</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!formData.category) return alert("Please select a category");
-                    handleAddService(formData.category);
-                    setIsModalOpen(false);
-                  }}
-                >
-                  {/* Category Dropdown */}
-                  <div className="form-group">
-                    <i className="form-icon fas fa-tag"></i>
-                    <select
-                      name="category"
-                      className={`form-input ${formData.category ? "has-value" : ""}`}
-                      value={formData.category}
-                      onChange={(e) => setFormData({ category: e.target.value })}
-                      required
-                    >
-                      <option value=""></option>
-                      <option value="Catering">Catering</option>
-                      <option value="Flowers">Flowers</option>
-                      <option value="Venue">Venue</option>
-                      <option value="Photography">Photography</option>
-                      <option value="Music">Music</option>
-                      <option value="Decor">Decor</option>
-                    </select>
-                    <label className="form-label">Category</label>
-                  </div>
-
-                  <div style={{ marginTop: "1rem", display: "flex", gap: "1rem" }}>
-                    <button type="submit" className="add-btn">
-                      Add Service
-                    </button>
-                    <button
-                      type="button"
-                      className="add-btn"
-                      onClick={() => setIsModalOpen(false)}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default VendorDashboard;
