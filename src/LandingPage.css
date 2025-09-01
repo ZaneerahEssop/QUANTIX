@@ -135,21 +135,21 @@ nav {
   width: 100%;
 }
 
-.nav-button {
-  background-color: var(--coral);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+nav .nav-button {
+  background-color: var(--peach) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 50px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
 }
 
-.nav-button:hover {
-  background-color: var(--peach);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(232, 177, 128, 0.4);
+nav .nav-button:hover {
+  background-color: #f0b48c !important; /* Slightly darker peach on hover */
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 15px rgba(232, 177, 128, 0.4) !important;
 }
 
 /* ===== HERO SECTION ===== */
