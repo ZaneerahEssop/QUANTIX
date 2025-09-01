@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { auth, db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { FaUserCircle, FaCamera } from 'react-icons/fa';
+import { FaUserCircle, FaCamera, FaArrowLeft } from 'react-icons/fa';
 
 function PlannerForm() {
   const [profilePic, setProfilePic] = useState(null);
@@ -88,7 +88,26 @@ function PlannerForm() {
   };
 
   return (
-    <main className="profile-container">
+    <div className="profile-container">
+      <div style={{ textAlign: 'left', marginBottom: '1rem' }}>
+        <button 
+          onClick={() => navigate(-1)} 
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--peach)',
+            cursor: 'pointer',
+            padding: '0.5rem 1rem',
+            fontSize: '1rem',
+            fontWeight: '600',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <FaArrowLeft /> Back
+        </button>
+      </div>
       <h1>
         Set Up Your <span className="accent-text">Planner</span> Profile
       </h1>
@@ -219,7 +238,7 @@ function PlannerForm() {
           Save & Continue
         </button>
       </form>
-    </main>
+    </div>
   );
 }
 

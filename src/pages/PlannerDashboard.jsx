@@ -167,9 +167,22 @@ export default function PlannerDashboard() {
             <button 
               className="nav-button" 
               onClick={handleAddEvent}
-              style={{ marginLeft: '1rem' }}
+              style={{
+                marginLeft: '1rem',
+                backgroundColor: 'var(--peach)',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '50px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
             >
-              + Add Event
+              <FaPlus /> Add Event
             </button>
           </div>
 
