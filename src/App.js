@@ -12,6 +12,7 @@ import AddEventForm from "./pages/AddEventForm";
 import EventDetails from "./pages/EventDetails";
 import EditPlannerProfile from "./pages/EditPlannerProfile";
 import EditVendorProfile from "./pages/EditVendorProfile";
+import VendorEventDetails from "./pages/VendorEventDetails";
 import './App.css';
 
 // Layout component for auth pages (login/signup)
@@ -67,6 +68,7 @@ function App() {
         <Route path="/event-details/:eventId" element={<EventDetails />} />
         <Route path="/edit-planner-profile" element={<EditPlannerProfile />} />
         <Route path="/edit-vendor-profile" element={<EditVendorProfile />} />
+        <Route path="/vendor/event/:eventId" element={<VendorEventDetails />} />
         <Route path="*" element={<Navigate to="/landing" replace />} />
       </Routes>
     </Router>

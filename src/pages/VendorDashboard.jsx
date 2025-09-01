@@ -429,6 +429,7 @@ function VendorDashboard() {
                         </div>
                         <div style={{ marginTop: 'auto', paddingTop: '0.5rem' }}>
                           <button 
+                            onClick={() => window.location.href = `/vendor/event/${event.eventId}`}
                             style={{
                               width: '100%',
                               padding: '8px 12px',
