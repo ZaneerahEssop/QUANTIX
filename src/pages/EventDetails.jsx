@@ -4,7 +4,7 @@ import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, getDocs, q
 // EDIT: Removed 'storage' from firebase imports as it's not used with Cloudinary
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { FaArrowLeft, FaEdit, FaSave, FaUpload, FaFilePdf, FaTimes, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaStar, FaPlus, FaTrash, FaEnvelope, FaUsers } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaSave, FaUpload, FaFilePdf, FaTimes, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaStar, FaPlus, FaTrash, FaEnvelope } from 'react-icons/fa';
 import '../EventDetails.css';
 import EventTheme from './eventPages/EventTheme';
 
@@ -392,27 +392,9 @@ const VendorManagement = ({ eventId,  eventDate }) => {
   };
 
 //price functions
-const handleUpdateVendorPrice = async (vendorId, price) => {
-  if (!auth.currentUser) return;
 
-  try {
-    const updatedVendors = selectedVendors.map(vendor =>
-      vendor.uniqueId === vendorId ? { ...vendor, price: Number(price) } : vendor
-    );
-    setSelectedVendors(updatedVendors);
 
-    // Save to Firestore
-    const eventRef = doc(db, `planners/${auth.currentUser.uid}/events`, eventId);
-    await updateDoc(eventRef, {
-      vendors: updatedVendors,
-      updatedAt: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error updating vendor price:', error);
-  }
-};
 
- // NEW FUNCTION: Handle price edit start
   const handleStartEditPrice = (vendorId, currentPrice) => {
     setEditingVendorId(vendorId);
     setTempPrice(currentPrice || '');
@@ -857,15 +839,15 @@ const handleUpdateVendorPrice = async (vendorId, price) => {
 // Main EventDetails component
 const EventDetails = () => {
   // Booking notes state: { [vendorId-category]: note }
-  const [bookingNotes, setBookingNotes] = useState({});
+  //const [bookingNotes, setBookingNotes] = useState({});
   const { eventId } = useParams();
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState('overview');
   const [formData, setFormData] = useState({ name: '', date: '', time: '', venue: '', notes: '' });
-  const [selectedVendors, setSelectedVendors] = useState([]);
-  const [vendors, setVendors] = useState([]);
+  const [ setSelectedVendors] = useState([]);
+  const [ setVendors] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [schedule, setSchedule] = useState([]);
   const [guests, setGuests] = useState([]);
@@ -882,9 +864,9 @@ const EventDetails = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   
   // Vendor management state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [vendorCategories, setVendorCategories] = useState([]);
+  //const [searchTerm] = useState('');
+  //const [selectedCategory] = useState('All');
+  const [ setVendorCategories] = useState([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -943,51 +925,7 @@ const EventDetails = () => {
     return () => unsubscribe();
   }, [eventId, navigate]);
 
-  // Vendor management functions
-  const handleAddVendor = (vendor) => {
-    if (!selectedVendors.some(v => v.id === vendor.id)) {
-      setSelectedVendors(prev => [...prev, vendor]);
-      
-      // If it's a venue vendor, update the venue details
-      const vendorCategory = safeToString(vendor.category);
-      if (vendorCategory.toLowerCase().includes('venue')) {
-        setFormData(prev => ({
-          ...prev,
-          venue: safeToString(vendor.name_of_business)
-        }));
-      }
-    }
-  };
-
-  const handleRemoveVendor = (vendorId) => {
-    const vendorToRemove = selectedVendors.find(v => v.id === vendorId);
-    setSelectedVendors(prev => prev.filter(v => v.id !== vendorId));
-    
-    // If it's a venue vendor and it matches the current venue, clear the venue field
-    if (vendorToRemove) {
-      const vendorCategory = safeToString(vendorToRemove.category);
-      const vendorName = safeToString(vendorToRemove.name_of_business);
-      
-      if (vendorCategory.toLowerCase().includes('venue') && 
-          formData.venue === vendorName) {
-        setFormData(prev => ({
-          ...prev,
-          venue: ''
-        }));
-      }
-    }
-  };
-
-  // Vendor filtering
-  const filteredVendors = vendors.filter(vendor => {
-    const vendorCategory = safeToString(vendor.category);
-    const vendorName = safeToString(vendor.name_of_business);
-    
-    const matchesSearch = vendorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vendorCategory.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || vendorCategory === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+ 
 
   const toggleComponentEdit = (component) => {
     setEditingComponents(prev => ({
