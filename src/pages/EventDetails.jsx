@@ -864,8 +864,7 @@ const EventDetails = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   
   // Vendor management state
-  //const [searchTerm] = useState('');
-  //const [selectedCategory] = useState('All');
+  
   const [ setVendorCategories] = useState([]);
 
   useEffect(() => {
@@ -925,7 +924,7 @@ const EventDetails = () => {
     return () => unsubscribe();
   }, [eventId, navigate]);
 
- 
+  
 
   const toggleComponentEdit = (component) => {
     setEditingComponents(prev => ({
