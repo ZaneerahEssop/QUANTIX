@@ -14,7 +14,10 @@ const createEvent = async (req, res) => {
 
     // A simple validation to ensure core data is present
     if (!name || !date || !planner_id) {
-        return res.status(400).json({ error: "Missing required fields: name, date, and planner_id are required." });
+      return res.status(400).json({
+        error:
+          "Missing required fields: name, date, and planner_id are required.",
+      });
     }
 
     // Create the event object to save in Firestore
@@ -28,12 +31,14 @@ const createEvent = async (req, res) => {
       createdAt: new Date(),
     };
 
-    // --- EDIT: This line now saves the event to the correct subcollection ---
-    const docRef = await db.collection('planners').doc(planner_id).collection('events').add(newEvent);
+    const docRef = await db.collection("events").add(newEvent);
 
-    res
-      .status(201)
-      .json({ message: "Event created successfully", id: docRef.id, event: newEvent });
+    res.status(201).json({
+      success: true,
+      message: "Event created successfully",
+      id: docRef.id,
+      event: newEvent,
+    });
   } catch (error) {
     console.error("Error creating event:", error);
     res
