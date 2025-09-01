@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { FaArrowLeft, FaEdit, FaSave, FaUpload, FaFilePdf, FaTimes, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaStar, FaPlus, FaTrash, FaEnvelope } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaSave, FaPlus, FaTrash, FaEnvelope } from 'react-icons/fa';
 import '../EventDetails.css';
 import EventTheme from './eventPages/EventTheme';
 
@@ -106,13 +106,10 @@ const EventDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState('overview');
   const [formData, setFormData] = useState({ name: '', date: '', time: '', venue: '', notes: '' });
-  const [vendors, setVendors] = useState([]);
   const [selectedVendors, setSelectedVendors] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [schedule, setSchedule] = useState([]);
   const [guests, setGuests] = useState([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [theme, setTheme] = useState({ name: '', colors: [], notes: '' });
 
   useEffect(() => {
@@ -141,7 +138,6 @@ const EventDetails = () => {
        
        console.log("Querying Firestore at path:", `planners/${user.uid}/events/${eventId}`);
         const eventDoc = await getDoc(eventRef);
-        const vendorsSnapshot = await getDocs(collection(db, 'vendors'));
         
         if (eventDoc.exists()) {
           const eventData = { id: eventDoc.id, ...eventDoc.data() };
@@ -158,7 +154,6 @@ const EventDetails = () => {
             notes: eventData.notes || '',
           });
           setSelectedVendors(eventData.vendors_id || []);
-          setVendors(vendorsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         } else {
           console.error("EVENT NOT FOUND in Firestore at the specified path.");
           setEvent(null); // This is what triggers the "Event Not Found" screen
@@ -183,7 +178,6 @@ const EventDetails = () => {
     return () => unsubscribe();
   }, [eventId, navigate]);
 
-  const handleInputChange = (e) => { /* Your existing code is perfect */ };
 
   // INTEGRATED: API-driven guest handlers
   const handleAddGuest = async (newGuestData) => {
@@ -257,10 +251,6 @@ const EventDetails = () => {
   };
 
   // Your other handlers (vendor, file upload, etc.) are preserved
-  const handleVendorToggle = (vendorId) => { /* ... */ };
-  const handleFileUpload = async (e) => { /* ... */ };
-  const handleDeleteDocument = async (docToDelete) => { /* ... */ };
-  const formatDisplayDate = (dateString) => { /* ... */ };
 
   if (isLoading) return <div className="loading">Loading event details...</div>;
   
