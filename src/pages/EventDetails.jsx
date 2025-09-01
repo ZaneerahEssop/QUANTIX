@@ -177,7 +177,7 @@ const GuestManagement = ({ guests, onUpdate, isEditing, onToggleEdit, onSave }) 
 
 //vendor and venue management
 // VendorManagement Component (now properly defined)
-const VendorManagement = ({ eventId,  eventDate }) => {
+const VendorManagement = ({ eventId, eventDate }) => {
   const [activeVendorTab, setActiveVendorTab] = useState('vendors-list');
   const [allVendors, setAllVendors] = useState([]);
   const [selectedVendors, setSelectedVendors] = useState([]);
@@ -193,7 +193,6 @@ const VendorManagement = ({ eventId,  eventDate }) => {
   const [compareFilterCategory, setCompareFilterCategory] = useState('all');
   const [editingVendorId, setEditingVendorId] = useState(null);
   const [tempPrice, setTempPrice] = useState('');
-  // NEW STATE: Track edit mode for this component
   const [isEditing, setIsEditing] = useState(false);
 
   // Load selected vendors from Firestore for this event
@@ -218,7 +217,7 @@ const VendorManagement = ({ eventId,  eventDate }) => {
     };
 
     fetchEventVendors();
-  }, [eventId]);
+  }, [eventId, auth, db]);
 
   // Save selected vendors to Firestore whenever they change
   useEffect(() => {
@@ -239,7 +238,7 @@ const VendorManagement = ({ eventId,  eventDate }) => {
     if (selectedVendors.length > 0) {
       saveVendorsToFirestore();
     }
-  }, [selectedVendors, eventId]);
+  }, [selectedVendors, eventId, auth, db]);
 
   // Fetch all vendors and check booking status
   useEffect(() => {
@@ -308,7 +307,7 @@ const VendorManagement = ({ eventId,  eventDate }) => {
     };
 
     fetchVendorsAndBookings();
-  }, [eventDate]);
+  }, [eventDate, db]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -335,7 +334,7 @@ const VendorManagement = ({ eventId,  eventDate }) => {
     }
   };
 
-  const handleSelectVendor = (vendor, manualPrice= null) => {
+  const handleSelectVendor = (vendor, manualPrice = null) => {
     // Check if vendor is already selected
     if (!selectedVendors.some(v => v.uniqueId === vendor.uniqueId)) {
       const vendorWithStatus = {
@@ -391,16 +390,12 @@ const VendorManagement = ({ eventId,  eventDate }) => {
     }
   };
 
-//price functions
-
-
-
   const handleStartEditPrice = (vendorId, currentPrice) => {
     setEditingVendorId(vendorId);
     setTempPrice(currentPrice || '');
   };
 
-  // NEW FUNCTION: Handle price edit save
+  // Handle price edit save
   const handleSaveEditPrice = async (vendorId) => {
     if (!auth.currentUser) return;
     
@@ -423,13 +418,13 @@ const VendorManagement = ({ eventId,  eventDate }) => {
     }
   };
 
-  // NEW FUNCTION: Handle price edit cancel
+  // Handle price edit cancel
   const handleCancelEditPrice = () => {
     setEditingVendorId(null);
     setTempPrice('');
   };
 
-    const getTodayDate = () => {
+  const getTodayDate = () => {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -437,15 +432,15 @@ const VendorManagement = ({ eventId,  eventDate }) => {
     return `${year}-${month}-${day}`;
   };
 
-    // NEW FUNCTION: Toggle edit mode
-    const toggleEditMode = () => {
-      setIsEditing(!isEditing);
-      // Reset editing states when turning off edit mode
-      if (isEditing) {
-        setEditingVendorId(null);
-        setTempPrice('');
-      }
-    };
+  // Toggle edit mode
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
+    // Reset editing states when turning off edit mode
+    if (isEditing) {
+      setEditingVendorId(null);
+      setTempPrice('');
+    }
+  };
 
   const isVendorAvailable = (vendorId) => {
     return !bookedVendors.includes(vendorId);
@@ -455,9 +450,6 @@ const VendorManagement = ({ eventId,  eventDate }) => {
     'Venue', 'Catering', 'Photography', 'Flowers', 
     'Music', 'Decor', 'Other'
   ];
-
-
-    // ... rest of your existing functions
 
   if (isLoading) {
     return <div className="loading">Loading vendors...</div>;
@@ -833,6 +825,7 @@ const VendorManagement = ({ eventId,  eventDate }) => {
     </div>
   );
 };
+
 
 
 
