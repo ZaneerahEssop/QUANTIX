@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, getDocs, query, where } from 'firebase/firestore';
+// EDIT: Removed 'storage' from firebase imports as it's not used with Cloudinary
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { FaArrowLeft, FaEdit, FaSave, FaUpload, FaFilePdf, FaTimes, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaStar, FaPlus, FaTrash, FaEnvelope, FaUsers } from 'react-icons/fa';
@@ -174,8 +175,689 @@ const GuestManagement = ({ guests, onUpdate, isEditing, onToggleEdit, onSave }) 
   );
 };
 
-// Main EventDetails Component
+//vendor and venue management
+// VendorManagement Component (now properly defined)
+const VendorManagement = ({ eventId,  eventDate }) => {
+  const [activeVendorTab, setActiveVendorTab] = useState('vendors-list');
+  const [allVendors, setAllVendors] = useState([]);
+  const [selectedVendors, setSelectedVendors] = useState([]);
+  const [bookedVendors, setBookedVendors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [newVendor, setNewVendor] = useState({
+    name: '',
+    type: '',
+    price: '',
+    availability: '',
+    notes: ''
+  });
+  const [compareFilterCategory, setCompareFilterCategory] = useState('all');
+  const [editingVendorId, setEditingVendorId] = useState(null);
+  const [tempPrice, setTempPrice] = useState('');
+  // NEW STATE: Track edit mode for this component
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Load selected vendors from Firestore for this event
+  useEffect(() => {
+    const fetchEventVendors = async () => {
+      if (!auth.currentUser) return;
+      
+      try {
+        const eventRef = doc(db, `planners/${auth.currentUser.uid}/events`, eventId);
+        const eventDoc = await getDoc(eventRef);
+        
+        if (eventDoc.exists()) {
+          const eventData = eventDoc.data();
+          // Load vendors connected to this event
+          if (eventData.vendors && Array.isArray(eventData.vendors)) {
+            setSelectedVendors(eventData.vendors);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching event vendors:', error);
+      }
+    };
+
+    fetchEventVendors();
+  }, [eventId]);
+
+  // Save selected vendors to Firestore whenever they change
+  useEffect(() => {
+    const saveVendorsToFirestore = async () => {
+      if (!auth.currentUser || selectedVendors.length === 0) return;
+      
+      try {
+        const eventRef = doc(db, `planners/${auth.currentUser.uid}/events`, eventId);
+        await updateDoc(eventRef, {
+          vendors: selectedVendors,
+          updatedAt: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error saving vendors to Firestore:', error);
+      }
+    };
+
+    if (selectedVendors.length > 0) {
+      saveVendorsToFirestore();
+    }
+  }, [selectedVendors, eventId]);
+
+  // Fetch all vendors and check booking status
+  useEffect(() => {
+    const fetchVendorsAndBookings = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch all vendors from Firestore
+        const vendorsSnapshot = await getDocs(collection(db, 'vendors'));
+        const vendorsData = vendorsSnapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        }));
+        
+        // Expand vendors with multiple categories into multiple entries
+        const expandedVendors = [];
+        vendorsData.forEach(vendor => {
+          if (Array.isArray(vendor.category) && vendor.category.length > 0) {
+            // Vendor has multiple categories - create an entry for each category
+            vendor.category.forEach(category => {
+              expandedVendors.push({
+                ...vendor,
+                displayCategory: category,
+                originalId: vendor.id,
+                uniqueId: `${vendor.id}_${category}`
+              });
+            });
+          } else {
+            // Vendor has single category or no category
+            expandedVendors.push({
+              ...vendor,
+              displayCategory: Array.isArray(vendor.category) 
+                ? vendor.category[0] || 'No category'
+                : vendor.category || vendor.type || 'No category',
+              originalId: vendor.id,
+              uniqueId: vendor.id
+            });
+          }
+        });
+        
+        setAllVendors(expandedVendors);
+
+        // If we have an event date, check for vendor conflicts
+        if (eventDate) {
+          // Fetch events happening on the same date to check for vendor conflicts
+          const eventsQuery = query(
+            collection(db, 'events'), 
+            where('date', '==', eventDate)
+          );
+          const querySnapshot = await getDocs(eventsQuery);
+          
+          const bookedVendorIds = new Set();
+          querySnapshot.forEach((doc) => {
+            const eventData = doc.data();
+            if (eventData.vendors_id && Array.isArray(eventData.vendors_id)) {
+              eventData.vendors_id.forEach(vendorId => bookedVendorIds.add(vendorId));
+            }
+          });
+          
+          setBookedVendors(Array.from(bookedVendorIds));
+        }
+      } catch (error) {
+        console.error('Error fetching vendors or bookings:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVendorsAndBookings();
+  }, [eventDate]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewVendor({ ...newVendor, [name]: value });
+  };
+
+  const handleAddVendor = () => {
+    if (newVendor.name && newVendor.type) {
+      const vendor = {
+        id: `external_${Date.now()}`, // Unique ID for external vendor
+        name_of_business: newVendor.name,
+        category: newVendor.type,
+        price: newVendor.price ? Number(newVendor.price) : 0,
+        availability: newVendor.availability,
+        notes: newVendor.notes,
+        status: 'not booked',
+        isExternal: true, // Flag to identify external vendors
+        displayCategory: newVendor.type,
+        originalId: `external_${Date.now()}`,
+        uniqueId: `external_${Date.now()}_${newVendor.type}`
+      };
+      setSelectedVendors([...selectedVendors, vendor]);
+      setNewVendor({ name: '', type: '', price: '', availability: '', notes: '' });
+    }
+  };
+
+  const handleSelectVendor = (vendor, manualPrice= null) => {
+    // Check if vendor is already selected
+    if (!selectedVendors.some(v => v.uniqueId === vendor.uniqueId)) {
+      const vendorWithStatus = {
+        ...vendor,
+        status: 'not booked',
+        // Ensure all required fields are present
+        name_of_business: vendor.name_of_business || vendor.name || 'Unnamed Vendor',
+        category: vendor.category || vendor.type || 'No category',
+        price: manualPrice !== null ? Number(manualPrice) : (vendor.price || 0),
+        isExternal: vendor.isExternal || false
+      };
+      setSelectedVendors([...selectedVendors, vendorWithStatus]);
+    }
+  };
+
+  const handleRemoveVendor = async (vendorId) => {
+    if (!auth.currentUser) return;
+    
+    try {
+      // Remove from local state
+      const updatedVendors = selectedVendors.filter(vendor => vendor.uniqueId !== vendorId);
+      setSelectedVendors(updatedVendors);
+      
+      // Update Firestore
+      const eventRef = doc(db, `planners/${auth.currentUser.uid}/events`, eventId);
+      await updateDoc(eventRef, {
+        vendors: updatedVendors,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error removing vendor:', error);
+    }
+  };
+
+  const handleUpdateVendorStatus = async (vendorId, status) => {
+    if (!auth.currentUser) return;
+    
+    try {
+      // Update local state
+      const updatedVendors = selectedVendors.map(vendor => 
+        vendor.uniqueId === vendorId ? { ...vendor, status } : vendor
+      );
+      setSelectedVendors(updatedVendors);
+      
+      // Update Firestore
+      const eventRef = doc(db, `planners/${auth.currentUser.uid}/events`, eventId);
+      await updateDoc(eventRef, {
+        vendors: updatedVendors,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error updating vendor status:', error);
+    }
+  };
+
+//price functions
+const handleUpdateVendorPrice = async (vendorId, price) => {
+  if (!auth.currentUser) return;
+
+  try {
+    const updatedVendors = selectedVendors.map(vendor =>
+      vendor.uniqueId === vendorId ? { ...vendor, price: Number(price) } : vendor
+    );
+    setSelectedVendors(updatedVendors);
+
+    // Save to Firestore
+    const eventRef = doc(db, `planners/${auth.currentUser.uid}/events`, eventId);
+    await updateDoc(eventRef, {
+      vendors: updatedVendors,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error updating vendor price:', error);
+  }
+};
+
+ // NEW FUNCTION: Handle price edit start
+  const handleStartEditPrice = (vendorId, currentPrice) => {
+    setEditingVendorId(vendorId);
+    setTempPrice(currentPrice || '');
+  };
+
+  // NEW FUNCTION: Handle price edit save
+  const handleSaveEditPrice = async (vendorId) => {
+    if (!auth.currentUser) return;
+    
+    try {
+      const updatedVendors = selectedVendors.map(vendor =>
+        vendor.uniqueId === vendorId ? { ...vendor, price: Number(tempPrice) } : vendor
+      );
+      setSelectedVendors(updatedVendors);
+      setEditingVendorId(null);
+      setTempPrice('');
+
+      // Save to Firestore
+      const eventRef = doc(db, `planners/${auth.currentUser.uid}/events`, eventId);
+      await updateDoc(eventRef, {
+        vendors: updatedVendors,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error updating vendor price:', error);
+    }
+  };
+
+  // NEW FUNCTION: Handle price edit cancel
+  const handleCancelEditPrice = () => {
+    setEditingVendorId(null);
+    setTempPrice('');
+  };
+
+    const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+    // NEW FUNCTION: Toggle edit mode
+    const toggleEditMode = () => {
+      setIsEditing(!isEditing);
+      // Reset editing states when turning off edit mode
+      if (isEditing) {
+        setEditingVendorId(null);
+        setTempPrice('');
+      }
+    };
+
+  const isVendorAvailable = (vendorId) => {
+    return !bookedVendors.includes(vendorId);
+  };
+
+  const vendorCategories = [
+    'Venue', 'Catering', 'Photography', 'Flowers', 
+    'Music', 'Decor', 'Other'
+  ];
+
+
+    // ... rest of your existing functions
+
+  if (isLoading) {
+    return <div className="loading">Loading vendors...</div>;
+  }
+
+  // Get available vendors (not already selected and not booked)
+  const availableVendors = allVendors.filter(vendor => 
+    !selectedVendors.some(selected => selected.uniqueId === vendor.uniqueId) && 
+    isVendorAvailable(vendor.originalId)
+  );
+
+  const handleSaveChanges = () => {
+    // Any save logic you need before exiting edit mode
+    setIsEditing(false);
+    setEditingVendorId(null);
+    setTempPrice('');
+  };
+
+  return (
+    <div className="vendor-management-section">
+      {/* Add Edit Mode Toggle Button */}
+      <div>
+       <div className="edit-mode-toggle">
+        {!isEditing && (
+          <button onClick={toggleEditMode} className="edit-component-btn">
+            <FaEdit /> Edit Vendors
+          </button>
+        )}
+        {isEditing && (
+          <div className="component-actions vendor-actions">
+            <button onClick={handleSaveChanges} className="save-component-btn">
+              <FaSave /> Save Vendors
+            </button>
+            <button onClick={toggleEditMode} className="cancel-component-btn">
+              <FaTimes /> Cancel
+            </button>
+          </div>
+        )}
+        </div>
+      </div>
+
+      <div className="vendor-tabs">
+        <button 
+          className={activeVendorTab === 'vendors-list' ? 'active' : ''}
+          onClick={() => setActiveVendorTab('vendors-list')}
+        >
+          Vendors & Venues
+        </button>
+        <button 
+          className={activeVendorTab === 'compare' ? 'active' : ''}
+          onClick={() => setActiveVendorTab('compare')}
+        >
+          Compare Prices
+        </button>
+        <button 
+          className={activeVendorTab === 'selected' ? 'active' : ''}
+          onClick={() => setActiveVendorTab('selected')}
+        >
+          Selected Vendors ({selectedVendors.length})
+        </button>
+        <button 
+          className={activeVendorTab === 'notes' ? 'active' : ''}
+          onClick={() => setActiveVendorTab('notes')}
+        >
+          Booking Notes
+        </button>
+      </div>
+
+      <div className="vendor-content">
+        {activeVendorTab === 'vendors-list' && (
+          <div className="vendor-list-container">
+            {/* Show available vendors first */}
+            <div className="vendors-list">
+              <h3>Available Vendors {eventDate && `for ${eventDate}`}</h3>
+              {availableVendors.length === 0 ? (
+                <p>No available vendors. All vendors are either booked or already selected.</p>
+              ) : (
+                <div className="vendor-items">
+                  {availableVendors.map(vendor => (
+                    <div key={vendor.uniqueId} className="vendor-item available">
+                      <div className="vendor-info">
+                        <h4>{vendor.name_of_business || vendor.name || 'Unnamed Vendor'}</h4>
+                        <p className="vendor-type">{vendor.displayCategory}</p>
+                        <div className="vendor-price-edit">
+                          {isEditing ? (
+                            <input
+                              type="number"
+                              value={vendor.price}
+                              placeholder="Enter price"
+                              onChange={(e) => {
+                                // Update the price in the available vendors list
+                                const updatedVendors = allVendors.map(v => 
+                                  v.uniqueId === vendor.uniqueId ? { ...v, price: e.target.value } : v
+                                );
+                                setAllVendors(updatedVendors);
+                              }}
+                              className="price-input"
+                            />
+                          ) : (
+                            <p className="vendor-price">{vendor.price ? `R${vendor.price}` : ''}</p>
+                          )}
+                        </div>
+
+                        <div className="vendor-status">
+                          <span className="status-available">Available</span>
+                        </div>
+                      </div>
+                      {isEditing && (
+                        <div className="vendor-actions">
+                          <button 
+                            onClick={() => handleSelectVendor(vendor, vendor.price)}
+                            className="select-vendor-btn"
+                          >
+                            Select Vendor
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Show "Add Vendor" form after the available vendors */}
+            {isEditing && (
+              <div className="add-vendor-form">
+                <h3>Add External Vendor</h3>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Vendor Type</label>
+                    <select 
+                      name="type" 
+                      value={newVendor.type} 
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select Type</option>
+                      {vendorCategories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Vendor Name</label>
+                    <input 
+                      type="text" 
+                      name="name" 
+                      value={newVendor.name} 
+                      onChange={handleInputChange}
+                      placeholder="Enter vendor name"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Price (R)</label>
+                    <input 
+                      type="number" 
+                      name="price" 
+                      value={newVendor.price} 
+                      onChange={handleInputChange}
+                      placeholder="Enter price"
+                      min="0"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Availability</label>
+                    <input 
+                      type="date" 
+                      name="availability" 
+                      value={newVendor.availability} 
+                      onChange={handleInputChange}
+                      min={getTodayDate()}
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Notes</label>
+                  <textarea 
+                    name="notes" 
+                    value={newVendor.notes} 
+                    onChange={handleInputChange}
+                    placeholder="Add any notes about this vendor"
+                  />
+                </div>
+                <button onClick={handleAddVendor} className="add-vendor-btn">
+                  Add to Selected Vendors
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeVendorTab === 'compare' && (
+          <div className="compare-prices">
+            <h3>Compare Vendor Prices</h3>
+            
+            {/* Add category filter dropdown */}
+            <div className="category-filter">
+              <label htmlFor="category-filter">Filter by Category: </label>
+              <select 
+                id="category-filter"
+                value={compareFilterCategory} 
+                onChange={(e) => setCompareFilterCategory(e.target.value)}
+              >
+                <option value="all">All Categories</option>
+                {vendorCategories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
+            
+            {allVendors.length === 0 && selectedVendors.length === 0 ? (
+              <p>No vendors to compare.</p>
+            ) : (
+              <div className="comparison-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Business Name</th>
+                      <th>Category</th>
+                      <th>Price</th>
+                      <th>Status</th>
+                      <th>Availability Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Filter vendors based on selected category */}
+                    {[...selectedVendors, ...allVendors]
+                      .filter(vendor => 
+                        compareFilterCategory === 'all' || 
+                        vendor.displayCategory === compareFilterCategory
+                      )
+                      .map(vendor => {
+                        const isSelected = selectedVendors.some(v => v.uniqueId === vendor.uniqueId);
+                        const isAvailable = isVendorAvailable(vendor.originalId);
+                        // Fix: Provide a default status if undefined
+                        const status = vendor.status || 'not selected';
+                        
+                        return (
+                          <tr 
+                            key={vendor.uniqueId} 
+                            className={
+                              isSelected ? 'selected-vendor-row' : 
+                              !isAvailable ? 'booked-row' : ''
+                            }
+                          >
+                            <td>{vendor.name_of_business || vendor.name || 'Unnamed Vendor'}</td>
+                            <td>{vendor.displayCategory}</td>
+                            <td>R{vendor.price || 'N/A'}</td>
+                            <td>
+                              {isSelected ? (
+                                <span className={`status-${status.replace(' ', '-')}`}>
+                                  {status}
+                                </span>
+                              ) : (
+                                'Not Selected'
+                              )}
+                            </td>
+                            <td>
+                              {isAvailable ? 
+                                <span className="status-available">Available</span> : 
+                                <span className="status-booked">Booked</span>
+                              }
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeVendorTab === 'selected' && (
+          <div className="selected-vendors">
+            <h3>Selected Vendors</h3>
+            {selectedVendors.length === 0 ? (
+              <p>No vendors selected yet. Select vendors from the available list or add new ones.</p>
+            ) : (
+              <div className="selected-vendors-list">
+                {selectedVendors.map(vendor => (
+                  <div key={vendor.uniqueId} className="selected-vendor-item">
+                    <div className="vendor-info">
+                      <h4>{vendor.name_of_business || vendor.name || 'Unnamed Vendor'}</h4>
+                      <p className="vendor-type">{vendor.displayCategory}</p>
+                      
+                      {/* Price display/edit section */}
+                      <div className="vendor-price-section">
+                        {editingVendorId === vendor.uniqueId ? (
+                          <div className="price-edit-container">
+                            <input
+                              type="number"
+                              value={tempPrice}
+                              onChange={(e) => setTempPrice(e.target.value)}
+                              className="price-edit-input"
+                              placeholder="Enter price"
+                              min="0"
+                            />
+                            <div className="price-edit-buttons">
+                              <button 
+                                onClick={() => handleSaveEditPrice(vendor.uniqueId)}
+                                className="save-price-btn"
+                              >
+                                Save
+                              </button>
+                              <button 
+                                onClick={handleCancelEditPrice}
+                                className="cancel-price-btn"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="price-display-container">
+                            <p className="vendor-price">R{vendor.price || 'N/A'}</p>
+                            {isEditing && (
+                              <button 
+                                onClick={() => handleStartEditPrice(vendor.uniqueId, vendor.price)}
+                                className="edit-price-btn"
+                              >
+                                Edit Price
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {vendor.isExternal && <p className="vendor-external">(External Vendor)</p>}
+                      <div className="vendor-status">
+                        <span className={`status-${vendor.status.replace(' ', '-')}`}>
+                          {vendor.status}
+                        </span>
+                      </div>
+                    </div>
+                    {isEditing && (
+                      <div className="vendor-actions">
+                        <select 
+                          value={vendor.status} 
+                          onChange={(e) => handleUpdateVendorStatus(vendor.uniqueId, e.target.value)}
+                          className="status-select"
+                        >
+                          <option value="not booked">Not Booked</option>
+                          <option value="pending">Pending</option>
+                          <option value="confirmed">Confirmed</option>
+                          <option value="booked">Booked</option>
+                        </select>
+                        <button 
+                          onClick={() => handleRemoveVendor(vendor.uniqueId)}
+                          className="remove-vendor-btn"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeVendorTab === 'notes' && (
+          <div className="booking-notes">
+            <h3>Booking Notes</h3>
+            <p>This section would contain notes about vendor bookings.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+
+// Main EventDetails component
 const EventDetails = () => {
+  // Booking notes state: { [vendorId-category]: note }
+  const [bookingNotes, setBookingNotes] = useState({});
   const { eventId } = useParams();
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
@@ -424,6 +1106,8 @@ const EventDetails = () => {
     }
   };
 
+
+
   const handleDeleteDocument = async (docToDelete) => {
     if (!window.confirm('Are you sure you want to delete this document?') || !auth.currentUser) return;
     try {
@@ -575,104 +1259,12 @@ const EventDetails = () => {
         )}
         
         {activeView === 'vendors' && (
-          <section className="vendors-section">
-            <div className="section-header">
-              <h2><FaUsers /> Vendors</h2>
-              {!editingComponents.vendors ? (
-                <button onClick={() => toggleComponentEdit('vendors')} className="edit-component-btn">
-                  <FaEdit />
-                </button>
-              ) : (
-                <div className="component-actions">
-                  <button onClick={() => handleSaveComponent('vendors', selectedVendors)} className="save-component-btn">
-                    <FaSave /> Save
-                  </button>
-                  <button onClick={() => toggleComponentEdit('vendors')} className="cancel-component-btn">
-                    <FaTimes /> Cancel
-                  </button>
-                </div>
-              )}
-            </div>
+            <VendorManagement 
+            eventId={eventId}
             
-            {editingComponents.vendors ? (
-              <div className="vendor-management-edit">
-                <div className="form-group-column">
-                  <h3>Add Vendors</h3>
-                  <input 
-                    type="text" 
-                    placeholder="Search vendors..." 
-                    value={searchTerm} 
-                    onChange={(e) => setSearchTerm(e.target.value)} 
-                  />
-                  <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-                    <option value="All">All Categories</option>
-                    {vendorCategories.map((cat, idx) => <option key={idx} value={cat}>{cat}</option>)}
-                  </select>
-                  <div className="vendor-list">
-                    {filteredVendors.map(vendor => (
-                      <div key={vendor.id} className="vendor-card">
-                        <div className="vendor-info">
-                          <strong>{safeToString(vendor.name_of_business) || 'Unnamed Vendor'}</strong>
-                          {vendor.category && <span>{safeToString(vendor.category)}</span>}
-                          {vendor.phone && <span>📞 {safeToString(vendor.phone)}</span>}
-                          {vendor.email && <span>✉️ {safeToString(vendor.email)}</span>}
-                        </div>
-                        <button 
-                          type="button" 
-                          onClick={() => handleAddVendor(vendor)}
-                          disabled={selectedVendors.some(v => v.id === vendor.id)}
-                        >
-                          {selectedVendors.some(v => v.id === vendor.id) ? 'Added' : 'Add'}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {selectedVendors.length > 0 && (
-                  <div className="selected-vendors">
-                    <h4>Selected Vendors:</h4>
-                    <ul>
-                      {selectedVendors.map(vendor => (
-                        <li key={vendor.id} className="selected-vendor-item">
-                          <div className="vendor-details">
-                            <strong>{safeToString(vendor.name_of_business) || 'Unnamed Vendor'}</strong> 
-                            {vendor.category && <span>({safeToString(vendor.category)})</span>}
-                          </div>
-                          <button 
-                            type="button" 
-                            onClick={() => handleRemoveVendor(vendor.id)}
-                            className="remove-vendor-btn"
-                          >
-                            Remove
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="vendors-list">
-                {selectedVendors.length > 0 ? (
-                  <ul className="vendor-display-list">
-                    {selectedVendors.map(vendor => (
-                      <li key={vendor.id} className="vendor-display-item">
-                        <div className="vendor-display-info">
-                          <strong>{safeToString(vendor.name_of_business) || 'Unnamed Vendor'}</strong>
-                          {vendor.category && <span>{safeToString(vendor.category)}</span>}
-                          {vendor.phone && <span>📞 {safeToString(vendor.phone)}</span>}
-                          {vendor.email && <span>✉️ {safeToString(vendor.email)}</span>}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (<p>No vendors selected</p>)}
-              </div>
-            )}
-          </section>
+            eventDate={formData.date}
+        />
         )}
-        
         {activeView === 'documents' && (
           <section className="documents-section">
             <div className="documents-header">
