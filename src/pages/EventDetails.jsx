@@ -217,7 +217,7 @@ const VendorManagement = ({ eventId, eventDate }) => {
     };
 
     fetchEventVendors();
-  }, [eventId, auth, db]);
+  }, [eventId]);
 
   // Save selected vendors to Firestore whenever they change
   useEffect(() => {
@@ -238,7 +238,7 @@ const VendorManagement = ({ eventId, eventDate }) => {
     if (selectedVendors.length > 0) {
       saveVendorsToFirestore();
     }
-  }, [selectedVendors, eventId, auth, db]);
+  }, [selectedVendors, eventId]);
 
   // Fetch all vendors and check booking status
   useEffect(() => {
@@ -307,7 +307,7 @@ const VendorManagement = ({ eventId, eventDate }) => {
     };
 
     fetchVendorsAndBookings();
-  }, [eventDate, db]);
+  }, [eventDate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -915,7 +915,7 @@ const EventDetails = () => {
     });
     
     return () => unsubscribe();
-  }, [eventId, navigate]);
+  }, [eventId, navigate, setSelectedVendors, setVendorCategories, setVendors]);
 
   
 
