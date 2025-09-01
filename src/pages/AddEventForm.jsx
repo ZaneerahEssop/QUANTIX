@@ -187,10 +187,25 @@ export default function AddEventForm() {
 
   return (
     <main className="profile-container">
-      <button onClick={() => navigate(-1)} className="back-button">
-        <FaArrowLeft /> Back
-      </button>
-
+      <div style={{ textAlign: 'left', marginBottom: '1rem' }}>
+        <button 
+          onClick={() => navigate(-1)} 
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--peach)',
+            cursor: 'pointer',
+            padding: '0.5rem 1rem',
+            fontSize: '1rem',
+            fontWeight: '600',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <FaArrowLeft /> Back
+        </button>
+      </div>
       <h1>Create a New <span className="accent-text">Event</span></h1>
       <p>Fill in the details for your new event and assign vendors.</p>
 
