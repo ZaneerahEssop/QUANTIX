@@ -108,16 +108,6 @@ app.get('/health', async (req, res) => {
 app.use("/api/events", authenticate, eventRoutes);
 app.use("/api/events", authenticate, guestRoutes); // Use the new guest routes
 
-// --- Serve Vite / React frontend ---
-const path = require('path');
-
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// Fallback for SPA routing (all other routes serve index.html)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
-});
-
 // --- Start Server ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
