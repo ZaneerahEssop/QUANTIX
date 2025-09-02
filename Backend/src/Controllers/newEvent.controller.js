@@ -1,4 +1,6 @@
 const { db } = require("../Config/firebase.js"); // your Firestore connection
+// EDIT: Removed client-side imports that were causing the crash
+// const { doc, collection, addDoc } = require("firebase/firestore");
 
 const createEvent = async (req, res) => {
   try {
@@ -31,7 +33,14 @@ const createEvent = async (req, res) => {
       createdAt: new Date(),
     };
 
-    const docRef = await db.collection("events").add(newEvent);
+    // --- THIS IS THE FIX ---
+    // Use the correct Firebase Admin SDK syntax to add a doc to a subcollection
+    const docRef = await db
+      .collection("planners")
+      .doc(planner_id)
+      .collection("events")
+      .add(newEvent);
+    // --- END OF FIX ---
 
     res.status(201).json({
       success: true,
@@ -48,3 +57,4 @@ const createEvent = async (req, res) => {
 };
 
 module.exports = { createEvent };
+
