@@ -31,13 +31,13 @@
     "vite": "^7.1.4",
     "vitest": "^3.2.4"
   },
-  "scripts": {
-    "start": "vite",
-    "dev": "vite --host --port $PORT --open false",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "coverage": "vitest run --coverage"
-  }
+ "scripts": {
+  "start": "serve dist -s -L -p $PORT",
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview",
+  "test": "vitest",
+  "test:ui": "vitest --ui",
+  "coverage": "vitest run --coverage"
+}
 }
