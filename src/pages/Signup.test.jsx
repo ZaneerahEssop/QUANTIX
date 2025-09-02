@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import Signup from './Signup';
+import Signup from './SignUp';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
 // --- BRINGING THE ROBUST MOCKS BACK ---
