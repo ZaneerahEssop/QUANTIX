@@ -14,16 +14,17 @@ const app = express();
 
 // Configure CORS
 const corsOptions = {
-  origin: '*', // Allow all origins for development
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  origin: 'http://localhost:3000', // Your frontend URL
   credentials: true,
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Enable pre-flight for all routes
 app.use(express.json());
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // --- Authentication Middleware ---
 const authenticate = async (req, res, next) => {
