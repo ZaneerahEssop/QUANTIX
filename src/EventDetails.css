@@ -1329,3 +1329,233 @@
   display: inline-flex;
   gap: 8px;
 }
+
+
+/* Booking Notes Tab Styles */
+.booking-notes {
+  padding: 20px;
+}
+
+.booking-notes h3 {
+  color: #333;
+  margin-bottom: 25px;
+  font-size: 24px;
+  border-bottom: 2px solid #4CAF50;
+  padding-bottom: 10px;
+}
+
+.booking-notes h4 {
+  color: #555;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.booked-vendors-section, 
+.add-booking-notes-section, 
+.existing-booking-notes {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.booked-vendors-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.booked-vendor-item {
+  padding: 15px;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #4CAF50;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.booked-vendor-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.booked-vendor-item h5 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.booked-vendor-item .vendor-type {
+  color: #666;
+  margin: 0 0 8px 0;
+  font-size: 14px;
+}
+
+.booked-vendor-item .vendor-price {
+  color: #4CAF50;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+}
+
+.booked-vendor-item .status-confirmed,
+.booked-vendor-item .status-booked {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.booked-vendor-item .status-confirmed {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.booked-vendor-item .status-booked {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.no-booked-vendors, .no-notes-message {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+  background: white;
+  border-radius: 6px;
+  border: 1px dashed #ddd;
+}
+
+.booking-notes-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 15px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+.booking-notes-textarea:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.save-notes-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.save-notes-btn:hover {
+  background-color: #45a049;
+  transform: translateY(-1px);
+}
+
+.save-notes-btn:active {
+  transform: translateY(0);
+}
+
+.existing-booking-notes {
+  background: #fff8e1;
+  border-color: #ffd54f;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .booking-notes {
+    padding: 15px;
+  }
+  
+  .booked-vendors-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .booked-vendors-section,
+  .add-booking-notes-section,
+  .existing-booking-notes {
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+}
+
+/* Animation for new notes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.booked-vendor-item {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Additional styles for functional version */
+.saved-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.saved-note-item {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  border-left: 4px solid #ffd54f;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.note-date {
+  color: #888;
+  font-size: 12px;
+  margin: 0 0 8px 0;
+  font-style: italic;
+}
+
+.note-content {
+  color: #333;
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.save-notes-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.save-notes-btn:disabled:hover {
+  background-color: #cccccc;
+  transform: none;
+}
+
+.delete-note-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-note-btn:hover {
+  background: #c82333;
+}
