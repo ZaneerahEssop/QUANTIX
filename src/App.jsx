@@ -4,7 +4,7 @@ import { Routes, Route, Navigate} from "react-router-dom";
 import LandingPage from "./pages/Landing";
 import LoginPage from "./pages/LoginPage";
 // The filename is corrected to 'Signup.jsx' with a lowercase 'u'.
-import SignUp from "./pages/Signup.jsx";
+import SignUp from "./pages/SignUp.jsx";
 import PlannerForm from "./pages/PlannerForm";
 import VendorForm from "./pages/VendorForm";
 import AdminDashboard from "./pages/AdminDashboard";
