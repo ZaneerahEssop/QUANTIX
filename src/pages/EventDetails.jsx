@@ -194,6 +194,8 @@ const VendorManagement = ({ eventId, eventDate }) => {
   const [editingVendorId, setEditingVendorId] = useState(null);
   const [tempPrice, setTempPrice] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [bookingNotes, setBookingNotes] = useState('');
+  const [savedNotes, setSavedNotes] = useState([]);
 
   // Load selected vendors from Firestore for this event
   useEffect(() => {
@@ -309,6 +311,22 @@ const VendorManagement = ({ eventId, eventDate }) => {
     fetchVendorsAndBookings();
   }, [eventDate]);
 
+  useEffect(() => {
+  const loadSavedNotes = () => {
+    try {
+      const savedNotesData = localStorage.getItem(`vendorBookingNotes_${eventId}`);
+      if (savedNotesData) {
+        const parsedNotes = JSON.parse(savedNotesData);
+        setSavedNotes(parsedNotes);
+      }
+    } catch (error) {
+      console.error('Error loading booking notes from localStorage:', error);
+    }
+  };
+
+  loadSavedNotes();
+}, [eventId]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewVendor({ ...newVendor, [name]: value });
@@ -333,13 +351,12 @@ const VendorManagement = ({ eventId, eventDate }) => {
       setNewVendor({ name: '', type: '', price: '', availability: '', notes: '' });
     }
   };
-
-  const handleSelectVendor = (vendor, manualPrice = null) => {
+const handleSelectVendor =async (vendor, manualPrice = null) => {
     // Check if vendor is already selected
     if (!selectedVendors.some(v => v.uniqueId === vendor.uniqueId)) {
       const vendorWithStatus = {
         ...vendor,
-        status: 'not booked',
+        status: vendor.status || 'not booked',
         // Ensure all required fields are present
         name_of_business: vendor.name_of_business || vendor.name || 'Unnamed Vendor',
         category: vendor.category || vendor.type || 'No category',
@@ -347,7 +364,23 @@ const VendorManagement = ({ eventId, eventDate }) => {
         isExternal: vendor.isExternal || false
       };
       setSelectedVendors([...selectedVendors, vendorWithStatus]);
-    }
+
+          // ONLY send request if this is NOT an external vendor
+      if (!vendor.isExternal) {
+        try {
+          // Get event data first
+          const eventRef = doc(db, `planners/${auth.currentUser.uid}/events`, eventId);
+          const eventDoc = await getDoc(eventRef);
+          
+          if (eventDoc.exists()) {
+            await addRequestToVendor(vendor.originalId, eventDoc.data());
+          }
+        } 
+        catch (error) {
+          console.error('Error sending request to vendor:', error);
+        }
+      }
+    } 
   };
 
   const handleRemoveVendor = async (vendorId) => {
@@ -367,6 +400,41 @@ const VendorManagement = ({ eventId, eventDate }) => {
     } catch (error) {
       console.error('Error removing vendor:', error);
     }
+  };
+
+  const addRequestToVendor = async (vendorId, eventData) => {
+  try {
+    const vendorRef = doc(db, 'vendors', vendorId);
+    const vendorDoc = await getDoc(vendorRef);
+    
+    if (vendorDoc.exists()) {
+      const currentRequests = vendorDoc.data().requests || [];
+      
+      // Check if request already exists
+      const requestExists = currentRequests.some(
+        req => req.eventId === eventId && req.plannerId === auth.currentUser.uid
+      );
+      
+      if (!requestExists) {
+        // Add new request to vendor
+        await updateDoc(vendorRef, {
+          requests: arrayUnion({
+            eventId: eventId || 'unknown-event',
+            plannerId: auth.currentUser.uid || 'unknown-planner',
+            status: 'pending',
+            sentAt: new Date().toISOString(),
+            eventName: eventData.eventName || 'New Event',
+            eventDate: eventData.date || 'Date not specified',
+            eventTime: eventData.time || 'Time not specified',
+            venue: eventData.venue || 'Venue not specified'
+          })
+        });
+        console.log('Request sent to vendor:', vendorId);
+      }
+    }
+  } catch (error) {
+    console.error('Error adding request to vendor:', error);
+  }
   };
 
   const handleUpdateVendorStatus = async (vendorId, status) => {
@@ -687,8 +755,7 @@ const VendorManagement = ({ eventId, eventDate }) => {
                       .map(vendor => {
                         const isSelected = selectedVendors.some(v => v.uniqueId === vendor.uniqueId);
                         const isAvailable = isVendorAvailable(vendor.originalId);
-                        // Fix: Provide a default status if undefined
-                        const status = vendor.status || 'not selected';
+                        
                         
                         return (
                           <tr 
@@ -703,9 +770,9 @@ const VendorManagement = ({ eventId, eventDate }) => {
                             <td>R{vendor.price || 'N/A'}</td>
                             <td>
                               {isSelected ? (
-                                <span className={`status-${status.replace(' ', '-')}`}>
-                                  {status}
-                                </span>
+                                    <span className={`status-${(vendor.status || 'not booked').replace(' ', '-')}`}>
+                                        {vendor.status || 'not booked'}
+                                      </span>
                               ) : (
                                 'Not Selected'
                               )}
@@ -783,7 +850,7 @@ const VendorManagement = ({ eventId, eventDate }) => {
                       
                       {vendor.isExternal && <p className="vendor-external">(External Vendor)</p>}
                       <div className="vendor-status">
-                        <span className={`status-${vendor.status.replace(' ', '-')}`}>
+                        <span className={`status-${vendor.status?.replace(' ', '-')|| 'not-booked'}`}>
                           {vendor.status}
                         </span>
                       </div>
@@ -815,12 +882,105 @@ const VendorManagement = ({ eventId, eventDate }) => {
           </div>
         )}
 
-        {activeVendorTab === 'notes' && (
-          <div className="booking-notes">
-            <h3>Booking Notes</h3>
-            <p>This section would contain notes about vendor bookings.</p>
-          </div>
-        )}
+{activeVendorTab === 'notes' && (
+  <div className="booking-notes">
+    <h3>Booking Notes</h3>
+    
+    {/* Display booked/confirmed vendors */}
+    <div className="booked-vendors-section">
+      <h4>Confirmed/Booked Vendors</h4>
+      {selectedVendors.filter(vendor => 
+        vendor.status === 'confirmed' || vendor.status === 'booked'
+      ).length === 0 ? (
+        <p className="no-booked-vendors">No vendors have been confirmed or booked yet.</p>
+      ) : (
+        <div className="booked-vendors-list">
+          {selectedVendors
+            .filter(vendor => vendor.status === 'confirmed' || vendor.status === 'booked')
+            .map(vendor => (
+              <div key={vendor.uniqueId} className="booked-vendor-item">
+                <div className="vendor-info">
+                  <h5>{vendor.name_of_business || vendor.name || 'Unnamed Vendor'}</h5>
+                  <p className="vendor-type">{vendor.displayCategory}</p>
+                  <p className="vendor-price">R{vendor.price || 'N/A'}</p>
+                  <span className={`status-${vendor.status?.replace(' ', '-') || 'not-booked'}`}>
+                    {vendor.status || 'not booked'}
+                  </span>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      )}
+    </div>
+
+    {/* Add booking notes section */}
+    <div className="add-booking-notes-section">
+      <h4>Add Booking Notes</h4>
+      <textarea 
+        className="booking-notes-textarea"
+        value={bookingNotes}
+        onChange={(e) => setBookingNotes(e.target.value)}
+        placeholder="Add notes about your vendor bookings, contracts, deadlines, or important details..."
+        rows={6}
+      />
+      <button 
+        className="save-notes-btn"
+        onClick={() => {
+          if (bookingNotes.trim()) {
+            const newNote = {
+              id: Date.now(),
+              content: bookingNotes.trim(),
+              createdAt: new Date().toISOString(),
+              vendors: selectedVendors
+                .filter(v => v.status === 'confirmed' || v.status === 'booked')
+                .map(v => v.uniqueId)
+            };
+            
+            // Update state
+            const updatedNotes = [...savedNotes, newNote];
+            setSavedNotes(updatedNotes);
+            setBookingNotes('');
+            
+            // Save to localStorage
+            localStorage.setItem(`vendorBookingNotes_${eventId}`, JSON.stringify(updatedNotes));
+          }
+        }}
+        disabled={!bookingNotes.trim()}
+      >
+        Save Notes
+      </button>
+    </div>
+
+    {/* Display existing booking notes */}
+    <div className="existing-booking-notes">
+      <h4>Existing Booking Notes</h4>
+      {savedNotes.length === 0 ? (
+        <p className="no-notes-message">No booking notes have been added yet.</p>
+      ) : (
+        <div className="saved-notes-list">
+          {savedNotes.map(note => (
+            <div key={note.id} className="saved-note-item">
+              <p className="note-date">{new Date(note.createdAt).toLocaleDateString()}</p>
+              <p className="note-content">{note.content}</p>
+              <button 
+                className="delete-note-btn"
+                onClick={() => {
+                  const updatedNotes = savedNotes.filter(n => n.id !== note.id);
+                  setSavedNotes(updatedNotes);
+                  localStorage.setItem(`vendorBookingNotes_${eventId}`, JSON.stringify(updatedNotes));
+                }}
+                title="Delete note"
+              >
+                <FaTrash size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+  )}
       </div>
     </div>
   );
@@ -839,8 +999,10 @@ const EventDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState('overview');
   const [formData, setFormData] = useState({ name: '', date: '', time: '', venue: '', notes: '' });
-  const [ setSelectedVendors] = useState([]);
-  const [ setVendors] = useState([]);
+  // eslint-disable-next-line no-unused-vars
+  const [ selectedVendors,setSelectedVendors] = useState([]);
+  // eslint-disable-next-line no-unused-vars
+  const [ vendors,setVendors] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [schedule, setSchedule] = useState([]);
   const [guests, setGuests] = useState([]);
@@ -857,8 +1019,8 @@ const EventDetails = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   
   // Vendor management state
-  
-  const [ setVendorCategories] = useState([]);
+  // eslint-disable-next-line no-unused-vars
+  const [ vendorCategories, setVendorCategories] = useState([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -915,7 +1077,7 @@ const EventDetails = () => {
     });
     
     return () => unsubscribe();
-  }, [eventId, navigate, setSelectedVendors, setVendorCategories, setVendors]);
+  }, [eventId, navigate]);
 
   
 
