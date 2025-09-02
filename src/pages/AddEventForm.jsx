@@ -4,8 +4,6 @@ import { auth, db } from "../firebase";
 // EDIT: Removed axios import
 import {
   collection,
-  doc,
-  setDoc,
   getDocs,
   query,
   orderBy,
