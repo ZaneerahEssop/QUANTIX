@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
-import axios from "axios";
+// EDIT: Removed axios import
 import {
   collection,
   doc,
@@ -70,11 +70,8 @@ export default function AddEventForm() {
 
   useEffect(() => {
     let result = [...allVendors];
-
-    // Category filtering
     if (selectedCategory !== "All") {
       result = result.filter((vendor) => {
-        // Handle both array and string data types for category
         if (Array.isArray(vendor.category)) {
           return vendor.category.includes(selectedCategory);
         }
@@ -84,15 +81,11 @@ export default function AddEventForm() {
         return false;
       });
     }
-
-    // Search term filtering
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter((vendor) => {
         const nameMatch = vendor.name_of_business.toLowerCase().includes(term);
         let categoryMatch = false;
-
-        // Handle both array and string data types for category search
         if (Array.isArray(vendor.category)) {
           categoryMatch = vendor.category.some((c) =>
             c.toLowerCase().includes(term)
@@ -101,11 +94,9 @@ export default function AddEventForm() {
         if (typeof vendor.category === "string") {
           categoryMatch = vendor.category.toLowerCase().includes(term);
         }
-
         return nameMatch || categoryMatch;
       });
     }
-
     setFilteredVendors(result);
   }, [searchTerm, selectedCategory, allVendors]);
 
@@ -158,83 +149,84 @@ export default function AddEventForm() {
     return <FaFileAlt />;
   };
 
+  // --- EDIT: Replaced all axios calls with fetch ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Basic form validation
     if (!formData.name || !formData.date || !formData.time) {
       alert("Please fill in the Event Name, Date, and Time.");
       return;
     }
-
     const user = auth.currentUser;
     if (!user) {
       alert("You must be logged in to create an event.");
       return;
     }
-
     const selectedDateTime = new Date(`${formData.date}T${formData.time}`);
     if (selectedDateTime < new Date()) {
       alert("Please select a date and time that is in the future.");
       return;
     }
-
     setIsSubmitting(true);
 
     try {
-      // Upload files to Cloudinary
       const uploadedURLs = [];
       if (documents && documents.length > 0) {
         for (const file of documents) {
           const data = new FormData();
           data.append("file", file);
-          data.append("upload_preset", "event_uploads"); // replace with your preset
+          data.append("upload_preset", "event_uploads"); // ❗️ PASTE YOUR UPLOAD PRESET
+          data.append("resource_type", "auto");
 
-          const cloudRes = await axios.post(
-            "https://api.cloudinary.com/v1_1/db4slx3ga/upload",
-            data
+          const cloudRes = await fetch(
+            "https://api.cloudinary.com/v1_1/db4slx3ga/upload", // ❗️ PASTE YOUR CLOUD NAME
+            {
+              method: "POST",
+              body: data,
+            }
           );
-
-          uploadedURLs.push(cloudRes.data.secure_url);
+          if (!cloudRes.ok) throw new Error("Cloudinary upload failed");
+          const cloudData = await cloudRes.json();
+          uploadedURLs.push({ name: file.name, url: cloudData.secure_url });
         }
       }
 
-      // Prepare event data
       const eventData = {
         name: formData.name,
         date: formData.date,
         time: formData.time,
-        planner_id: user.uid, // send planner_id for backend to know where to save
+        planner_id: user.uid,
         vendors_id: selectedVendors.map((v) => v.id),
         documents: uploadedURLs,
       };
 
-      // Send to your API
       const token = await user.getIdToken();
-      const response = await axios.post(
+      const response = await fetch(
         "http://localhost:5000/api/events",
-        eventData,
         {
+          method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify(eventData),
         }
       );
 
-      if (response.status === 201) {
+      if (response.ok) {
         alert("Event created successfully via API!");
         navigate("/planner-dashboard");
       } else {
-        alert("Failed to create event via API.");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create event via API.");
       }
     } catch (error) {
       console.error("API Error creating event:", error);
-      alert("Error creating event. Check console for details.");
+      alert(`Error creating event: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <main className="profile-container">
@@ -450,3 +442,4 @@ export default function AddEventForm() {
     </main>
   );
 }
+
