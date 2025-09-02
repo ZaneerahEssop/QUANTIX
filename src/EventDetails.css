@@ -1,3 +1,7 @@
+/* Import Fonts (Poppins & Font Awesome for icons) */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css');
+
 /* Booking Notes Input Styling */
 .booking-notes-input {
     width: 100%;
@@ -25,9 +29,6 @@
     margin-top: 2px;
     margin-bottom: 2px;
 }
-/* Import Fonts (Poppins & Font Awesome for icons) */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css');
 
 /* --- Color & Style Variables --- */
 :root {
