@@ -35,8 +35,13 @@
     "vitest": "^3.2.4"
   },
   "scripts": {
+<<<<<<< HEAD
     "start": "serve dist -s -L -p $PORT",
     "dev": "vite",
+=======
+    "start": "serve dist -s -l $PORT ",
+    "dev": "vite --host --port $PORT --open false",
+>>>>>>> e8f3eff84983dcb4beeb555d7c28b9327389c2c0
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
