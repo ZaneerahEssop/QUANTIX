@@ -33,7 +33,7 @@
   },
   "scripts": {
     "start": "vite",
-    "dev": "vite",
+    "dev": "vite --host --port $PORT --open false",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
