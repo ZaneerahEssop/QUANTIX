@@ -1,86 +1,58 @@
-import React, { useState } from "react";
-import { auth, provider, db } from "../firebase";
-import { signInWithPopup, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { useNavigate, Link } from "react-router-dom";
-import "../App.css";
-import "./AuthPages.css";
+// src/pages/LoginPage.jsx
+import { useEffect, useState } from 'react';
+import { supabase } from '../client'; // Ensure this path is correct
 
-function Login() {
-  const [user, setUser] = useState(null);
-  const navigate = useNavigate();
+export default function LoginPage() {
+  const [session, setSession] = useState(null);
 
+  // This useEffect hook listens for changes in the auth state (e.g., user signs in or out)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
-  const signInWithGoogle = async () => {
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const loggedInUser = result.user;
-      setUser(loggedInUser);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
 
-      // ✅ Fetch role from Firestore
-      const userDoc = await getDoc(doc(db, "users", loggedInUser.uid));
-      if (userDoc.exists()) {
-        const role = userDoc.data().role;
+    // Clean up the subscription on unmount
+    return () => subscription.unsubscribe();
+  }, []);
 
-        if (role === "planner") navigate("/planner-dashboard");
-        else if (role === "vendor") navigate("/vendor-dashboard");
-        else navigate("/"); // fallback
-      } else {
-        // If new user logs in without signing up → send to signup
-        navigate("/signup");
-      }
-    } catch (error) {
-      console.error(error);
+  // Function to handle the Google sign-in
+  const handleGoogleSignIn = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    });
+
+    if (error) {
+      console.error('Error with Google sign-in:', error.message);
+    } else {
+      console.log('Redirecting to Google for authentication...');
     }
   };
 
-  const logOut = () => {
-    signOut(auth)
-      .then(() => {
-        setUser(null);
-        console.log("User signed out");
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  };
-
-  return (
-    <div className="auth-container">
-      <h1>
-        Welcome to <span className="accent-text">Event-ually Perfect</span>
-      </h1>
-      <p>Login to get started planning or managing your event experience.</p>
-
-      {user ? (
-        <div className="user-profile">
-          <div className="user-info">
-            <img
-              src={user.photoURL}
-              alt="Profile"
-              className="profile-image"
-            />
-            <p className="welcome-text">Welcome back, {user.displayName}!</p>
-          </div>
-          <button onClick={logOut} className="auth-btn">
-            <i className="fas fa-sign-out-alt"></i> Log out
-          </button>
-        </div>
-      ) : (
-        <>
-          <button onClick={signInWithGoogle} className="auth-btn">
-            <i className="fab fa-google"></i> Login with Google
-          </button>
-          <p className="auth-prompt">
-            First time?{' '}
-            <Link to="/signup" className="auth-link">
-              Sign up here
-            </Link>
-          </p>
-        </>
-      )}
-    </div>
-  );
+  // Conditionally render UI based on whether a user is logged in
+  if (session) {
+    // If a session exists, the user is logged in. You can redirect them
+    // or show a different component (e.g., a dashboard).
+    return (
+      <div>
+        <h1>Welcome back, {session.user.email}!</h1>
+        <button onClick={async () => await supabase.auth.signOut()}>
+          Sign Out
+        </button>
+      </div>
+    );
+  } else {
+    // If no session exists, show the sign-in button.
+    return (
+      <div>
+        <h1>Sign in to your account</h1>
+        <button onClick={handleGoogleSignIn}>
+          Sign in with Google 🌐
+        </button>
+      </div>
+    );
+  }
 }
-
-export default Login;
