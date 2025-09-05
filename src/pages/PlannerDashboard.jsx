@@ -1,16 +1,21 @@
-// src/pages/DashboardPage.jsx
+// ...existing code...
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../client';
 
 export default function PlannerDashboard({ session }) {
   const [loading, setLoading] = useState(true);
   const [todos, setTodos] = useState([]);
+  const navigate = useNavigate();
 
-  // Fetch data from the 'todos' table
   useEffect(() => {
     async function getTodos() {
       setLoading(true);
-      if (!session) return;
+      if (!session || !session.user) {
+        setLoading(false);
+        setTodos([]);
+        return;
+      }
 
       const { user } = session;
       const { data, error } = await supabase
@@ -27,17 +32,27 @@ export default function PlannerDashboard({ session }) {
       setLoading(false);
     }
     getTodos();
-  }, [session]); // The dependency array ensures this effect runs when the session changes.
+  }, [session]);
 
   async function handleSignOut() {
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Error signing out:', error.message);
+    } else {
+      navigate('/login');
     }
   }
 
   if (loading) {
     return <div>Loading...</div>;
+  }
+
+  if (!session || !session.user) {
+    return (
+      <div>
+        <h1>You are signed out.</h1>
+      </div>
+    );
   }
 
   return (

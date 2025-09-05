@@ -7,6 +7,7 @@ import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Landing from './pages/Landing';
 import LoginPage from './pages/LoginPage';
+import SignUpPage from './pages/SignUpPage';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -30,7 +31,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<LoginPage />} />
+  <Route path="/login" element={<LoginPage />} />
+  <Route path="/signup" element={<SignUpPage />} />
   <Route path="/dashboard" element={<PlannerDashboard session={session} />} />
       </Routes>
     </BrowserRouter>
