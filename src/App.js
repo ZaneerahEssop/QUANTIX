@@ -1,8 +1,12 @@
 // src/App.js
 import { useEffect, useState } from 'react';
 import { supabase } from './client';
-import LoginPage from './pages/LoginPage';
+// import LoginPage from './pages/LoginPage';
 import PlannerDashboard from './pages/PlannerDashboard'; // Assuming you have a dashboard page
+import './App.css';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Landing from './pages/Landing';
+import LoginPage from './pages/LoginPage';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -22,11 +26,13 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Conditionally render components based on the session state
-  if (!session) {
-    return <LoginPage />;
-  } else {
-    // Pass the session down as a prop if needed by other components
-    return <PlannerDashboard session={session} />;
-  }
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<LoginPage />} />
+  <Route path="/dashboard" element={<PlannerDashboard session={session} />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
