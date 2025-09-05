@@ -1,7 +1,7 @@
 // src/App.js
 import { useEffect, useState } from 'react';
 import { supabase } from './client';
-import LoginPage from './pages/loginPage';
+import LoginPage from './pages/LoginPage';
 import PlannerDashboard from './pages/PlannerDashboard'; // Assuming you have a dashboard page
 
 export default function App() {
