@@ -1,9 +1,11 @@
 // src/pages/LoginPage.jsx
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../client'; // Ensure this path is correct
 
 export default function LoginPage() {
   const [session, setSession] = useState(null);
+  const navigate = useNavigate();
 
   // This useEffect hook listens for changes in the auth state (e.g., user signs in or out)
   useEffect(() => {
@@ -23,8 +25,10 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`
+      }
     });
-
     if (error) {
       console.error('Error with Google sign-in:', error.message);
     } else {
@@ -32,20 +36,16 @@ export default function LoginPage() {
     }
   };
 
+  // Redirect to dashboard if session exists
+  useEffect(() => {
+    if (session) {
+      navigate('/dashboard');
+    }
+  }, [session, navigate]);
+
   // Conditionally render UI based on whether a user is logged in
-  if (session) {
-    // If a session exists, the user is logged in. You can redirect them
-    // or show a different component (e.g., a dashboard).
-    return (
-      <div>
-        <h1>Welcome back, {session.user.email}!</h1>
-        <button onClick={async () => await supabase.auth.signOut()}>
-          Sign Out
-        </button>
-      </div>
-    );
-  } else {
-    // If no session exists, show the sign-in button.
+  // Only show sign-in UI if not logged in
+  if (!session) {
     return (
       <div>
         <h1>Sign in to your account</h1>
