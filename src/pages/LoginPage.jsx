@@ -20,9 +20,24 @@ function LoginPage() {
   }, []);
 
   useEffect(() => {
-    if (session) {
-      navigate("/dashboard");
+    async function redirectByRole() {
+      if (session && session.user) {
+        // Fetch role from Supabase users table
+        const { data, error } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        if (error || !data) {
+          navigate('/dashboard');
+          return;
+        }
+        if (data.role === 'planner') navigate('/dashboard');
+        else if (data.role === 'vendor') navigate('/vendor-dashboard');
+        else navigate('/dashboard');
+      }
     }
+    redirectByRole();
   }, [session, navigate]);
 
   const handleGoogleSignIn = async () => {
