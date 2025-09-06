@@ -8,6 +8,10 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Landing from './pages/Landing';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
+import PlannerForm from './pages/PlannerForm';
+import VendorForm from './pages/VendorForm';
+import VendorDashboard from './pages/VendorDashboard';
+import PostSignupRedirect from './pages/PostSignupRedirect';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -34,6 +38,10 @@ export default function App() {
   <Route path="/login" element={<LoginPage />} />
   <Route path="/signup" element={<SignUpPage />} />
   <Route path="/dashboard" element={<PlannerDashboard session={session} />} />
+  <Route path="/planner-form" element={<PlannerForm />} />
+  <Route path="/vendor-form" element={<VendorForm />} />
+  <Route path="/vendor-dashboard" element={<VendorDashboard />} />
+  <Route path="/post-signup" element={<PostSignupRedirect />} />
       </Routes>
     </BrowserRouter>
   );
