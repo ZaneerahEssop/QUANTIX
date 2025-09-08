@@ -224,12 +224,12 @@ export default function PlannerDashboard({ session }) {
             width: '40px',
             height: '40px',
             margin: '0 auto 1rem',
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid #3498db',
+            border: '4px solid #FFF0F5',
+            borderTop: '4px solid #FFB6C1',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }} />
-          <h3>Loading your dashboard...</h3>
+          <h3 style={{ color: '#FFB6C1' }}>Loading your dashboard...</h3>
         </div>
       </div>
     );

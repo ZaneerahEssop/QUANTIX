@@ -31,12 +31,16 @@ function SignUpPage() {
       setShowRoleWarning(true);
       return;
     }
-    // Save role in localStorage for use after OAuth redirect
-    localStorage.setItem('signupRole', role);
+    // Save role in sessionStorage for use after OAuth redirect
+    sessionStorage.setItem('signupRole', role);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/post-signup`
+        redirectTo: `${window.location.origin}/post-signup`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       }
     });
     if (error) {

@@ -1,10 +1,9 @@
 // src/App.js
 import { useEffect, useState } from 'react';
 import { supabase } from './client';
-// import LoginPage from './pages/LoginPage';
-import PlannerDashboard from './pages/PlannerDashboard'; // Assuming you have a dashboard page
+import PlannerDashboard from './pages/PlannerDashboard';
 import './App.css';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
@@ -12,6 +11,7 @@ import PlannerForm from './pages/PlannerForm';
 import VendorForm from './pages/VendorForm';
 import VendorDashboard from './pages/VendorDashboard';
 import PostSignupRedirect from './pages/PostSignupRedirect';
+import LoadingPage from './pages/LoadingPage';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -35,13 +35,18 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
-  <Route path="/login" element={<LoginPage />} />
-  <Route path="/signup" element={<SignUpPage />} />
-  <Route path="/dashboard" element={<PlannerDashboard session={session} />} />
-  <Route path="/planner-form" element={<PlannerForm />} />
-  <Route path="/vendor-form" element={<VendorForm />} />
-  <Route path="/vendor-dashboard" element={<VendorDashboard />} />
-  <Route path="/post-signup" element={<PostSignupRedirect />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/loading" element={<LoadingPage />} />
+        <Route path="/dashboard" element={
+          session ? <PlannerDashboard session={session} /> : <Navigate to="/loading" />
+        } />
+        <Route path="/planner-form" element={<PlannerForm />} />
+        <Route path="/vendor-form" element={<VendorForm />} />
+        <Route path="/vendor-dashboard" element={
+          session ? <VendorDashboard session={session} /> : <Navigate to="/loading" />
+        } />
+        <Route path="/post-signup" element={<PostSignupRedirect />} />
       </Routes>
     </BrowserRouter>
   );
