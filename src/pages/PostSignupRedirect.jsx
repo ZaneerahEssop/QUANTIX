@@ -14,8 +14,8 @@ export default function PostSignupRedirect() {
         navigate("/login");
         return;
       }
-      // Get role from localStorage
-      const role = localStorage.getItem("signupRole");
+      // Get role from sessionStorage
+      const role = sessionStorage.getItem("signupRole");
       if (role) {
         // Check if user exists in users table
         const { data: userExists } = await supabase
@@ -38,10 +38,13 @@ export default function PostSignupRedirect() {
               console.error("Error inserting user:", insertError.message);
             }
         }
+        // Clear the role from sessionStorage after use
+        sessionStorage.removeItem('signupRole');
+        
         // Redirect to correct form
-  if (role === "planner") navigate("/planner-form");
-  else if (role === "vendor") navigate("/vendor-form");
-  else navigate("/");
+        if (role === "planner") navigate("/planner-form");
+        else if (role === "vendor") navigate("/vendor-form");
+        else navigate("/");
       } else {
         // If no role, fallback to dashboard
         navigate("/dashboard");
