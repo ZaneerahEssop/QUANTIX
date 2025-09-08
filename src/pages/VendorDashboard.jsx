@@ -49,6 +49,17 @@ export default function VendorDashboard({ session }) {
       return;
     }
 
+    // Ensure user role is set in the session
+    const updateUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && !user.user_metadata?.role) {
+        await supabase.auth.updateUser({
+          data: { role: 'vendor' }
+        });
+      }
+    };
+    updateUserRole();
+
     const userId = session.user.id;
     const fetchInitialData = async () => {
       try {
