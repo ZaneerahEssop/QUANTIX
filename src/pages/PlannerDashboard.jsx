@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../client";
-import { FaPlus, FaTrash, FaCheck } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaCheck, FaUser } from 'react-icons/fa';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import Navbar from '../components/Navbar';
@@ -9,6 +9,8 @@ import Navbar from '../components/Navbar';
 export default function PlannerDashboard({ session }) {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("Planner");
+  const [preview, setPreview] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
   // Load tasks from localStorage on initial render
   const [tasks, setTasks] = useState(() => {
     const savedTasks = localStorage.getItem('dashboardTasks');
@@ -43,6 +45,10 @@ export default function PlannerDashboard({ session }) {
           .select('*')
           .eq('planner_id', session.user.id)
           .single();
+          
+          if (plannerData?.profile_picture) {
+            setPreview(plannerData.profile_picture);
+          }
           
         if (plannerError) {
           console.log('No planner found for user, using email as name');
@@ -271,21 +277,68 @@ export default function PlannerDashboard({ session }) {
         <div className="planner-dashboard-content">
           <div className="dashboard-main">
             {/* Welcome Section */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h1 style={{
-                fontSize: '2rem',
-                color: '#333',
-                margin: '0 0 0.5rem 0'
-              }}>
-                Welcome back, {userName}!
-              </h1>
-              <p style={{
-                color: '#666',
-                margin: 0,
-                fontSize: '1rem'
-              }}>
-                Here's what's happening with your plans today.
-              </p>
+            <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+              <div 
+                style={{ 
+                  width: '80px', 
+                  height: '80px', 
+                  borderRadius: '50%', 
+                  backgroundColor: preview ? 'transparent' : '#FFDAB9', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  border: '3px solid white',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s',
+                }}
+                onClick={() => preview && setShowImageModal(true)}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                {preview ? (
+                  <img 
+                    src={preview} 
+                    alt="Profile" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                ) : (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#FFDAB9',
+                  }}>
+                    <FaUser style={{ 
+                      fontSize: '2.5rem', 
+                      color: '#FFFFFF',
+                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))',
+                      width: '100%',
+                      height: '100%',
+                      padding: '0.5rem'
+                    }} />
+                  </div>
+                )}
+              </div>
+              <div>
+                <h1 style={{
+                  fontSize: '2rem',
+                  color: '#333',
+                  margin: '0 0 0.5rem 0'
+                }}>
+                  Welcome back, {userName}!
+                </h1>
+                <p style={{
+                  color: '#666',
+                  margin: 0,
+                  fontSize: '1rem'
+                }}>
+                  Here's what's happening with your plans today.
+                </p>
+              </div>
             </div>
 
             {/* Upcoming Events and Calendar Row */}
@@ -797,6 +850,61 @@ export default function PlannerDashboard({ session }) {
           </div>
         </div>
       </div>
+      
+      {/* Profile Picture Modal */}
+      {showImageModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowImageModal(false)}
+        >
+          <div 
+            style={{
+              maxWidth: '90%',
+              maxHeight: '90%',
+              position: 'relative',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={preview} 
+              alt="Profile Preview" 
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '80vh', 
+                borderRadius: '8px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+              }} 
+            />
+            <button
+              onClick={() => setShowImageModal(false)}
+              style={{
+                position: 'absolute',
+                top: '-40px',
+                right: '0',
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                fontSize: '24px',
+                cursor: 'pointer',
+                padding: '8px',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
