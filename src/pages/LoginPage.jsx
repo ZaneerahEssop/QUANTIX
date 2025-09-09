@@ -42,13 +42,18 @@ function LoginPage() {
   }, [session, navigate]);
 
   const handleGoogleSignIn = async () => {
-    console.log('Initiating Google OAuth with redirect URL:', OAUTH_REDIRECT_URL);
+    // Always use localhost for development
+    const redirectUrl = window.location.hostname === 'localhost' 
+      ? 'http://localhost:3000/loading'
+      : OAUTH_REDIRECT_URL;
+      
+    console.log('Initiating Google OAuth with redirect URL:', redirectUrl);
     
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: OAUTH_REDIRECT_URL,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

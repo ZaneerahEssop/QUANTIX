@@ -1,28 +1,41 @@
 import { createClient } from '@supabase/supabase-js';
 import { CONFIG } from './config';
 
+// Always use cloud Supabase instance for now
+const supabaseUrl = CONFIG.supabaseUrl;
+const supabaseAnonKey = CONFIG.supabaseAnonKey;
+
 // Debug logging
 console.log('Supabase Config:', {
-  url: CONFIG.supabaseUrl ? '✓ Configured' : '✗ Missing',
-  key: CONFIG.supabaseAnonKey ? '✓ Configured' : '✗ Missing',
-  baseUrl: CONFIG.baseUrl || '✗ Missing'
+  supabaseUrl,
+  supabaseAnonKey: supabaseAnonKey ? '*** Configured' : '✗ Missing',
+  baseUrl: CONFIG.baseUrl
 });
 
-if (!CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey) {
+if (!supabaseUrl || !supabaseAnonKey) {
   const errorMsg = 'Missing required Supabase configuration. Please check your environment variables.';
   console.error(errorMsg, {
-    supabaseUrl: CONFIG.supabaseUrl,
-    supabaseAnonKey: CONFIG.supabaseAnonKey ? '***' : 'Missing',
-    windowEnv: typeof window !== 'undefined' ? window.env : 'Not available'
+    supabaseUrl,
+    supabaseAnonKey: supabaseAnonKey ? '***' : 'Missing'
   });
   throw new Error(errorMsg);
 }
 
-export const supabase = createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    storage: window.sessionStorage
-  }
+// Configure auth options
+const authOptions = {
+  autoRefreshToken: true,
+  persistSession: true,
+  detectSessionInUrl: true,
+  storage: window.sessionStorage
+};
+
+// Ensure proper redirect URL
+const baseUrl = CONFIG.baseUrl || window.location.origin;
+authOptions.flowType = 'pkce';
+authOptions.redirectTo = `${baseUrl}/loading`;
+
+console.log('Using redirect URL:', authOptions.redirectTo);
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: authOptions
 });
