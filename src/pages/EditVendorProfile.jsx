@@ -598,7 +598,7 @@ const EditVendorProfile = ({ session }) => {
               maxWidth: '500px',
               margin: '0 auto 10px auto'
             }}>
-              {['Catering', 'Photography', 'Venue', 'Flowers', 'Decoration', 'Music'].map((category) => {
+              {['Catering', 'Photography', 'Venue', 'Flowers', 'Decor', 'Music'].map((category) => {
                 const isSelected = formData.categories.some(cat => 
                   cat.toLowerCase() === category.toLowerCase()
                 );
