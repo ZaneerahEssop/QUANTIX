@@ -13,6 +13,7 @@ import VendorDashboard from './pages/VendorDashboard';
 import PostSignupRedirect from './pages/PostSignupRedirect';
 import LoadingPage from './pages/LoadingPage';
 import EditVendorProfile from './pages/EditVendorProfile';
+import EditPlannerProfile from './pages/EditPlannerProfile';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -50,6 +51,9 @@ export default function App() {
         <Route path="/post-signup" element={<PostSignupRedirect />} />
         <Route path="/edit-vendor-profile" element={
           session ? <EditVendorProfile session={session} /> : <Navigate to="/login" />
+        } />
+        <Route path="/edit-planner-profile" element={
+          session ? <EditPlannerProfile session={session} /> : <Navigate to="/login" />
         } />
       </Routes>
     </BrowserRouter>
