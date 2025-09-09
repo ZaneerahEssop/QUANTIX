@@ -1,4 +1,3 @@
-
 import "../AddEventForm.css";
 import React, { useState, useEffect } from "react";
 import { supabase } from '../client';
@@ -36,8 +35,8 @@ export default function AddEventForm() {
       try {
         const { data, error } = await supabase
           .from('vendors')
-          .select('*')
-          .order('name_of_business');
+          .select('vendor_id, business_name, service_type, contact_number, description')
+          .order('business_name', { ascending: true });
         
         if (error) throw error;
         
@@ -54,24 +53,26 @@ export default function AddEventForm() {
 
   useEffect(() => {
     let result = [...allVendors];
-    if (selectedCategory !== "All") result = result.filter(v => v.category === selectedCategory);
+    if (selectedCategory !== "All") {
+      result = result.filter(v => v.service_type === selectedCategory);
+    }
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(v =>
-        v.name_of_business.toLowerCase().includes(term) ||
-        (v.category && v.category.toLowerCase().includes(term))
+        v.business_name.toLowerCase().includes(term) ||
+        (v.service_type && v.service_type.toLowerCase().includes(term))
       );
     }
     setFilteredVendors(result);
   }, [searchTerm, selectedCategory, allVendors]);
 
   const handleAddVendor = (vendor) => {
-    if (selectedVendors.some(v => v.id === vendor.id)) return;
+    if (selectedVendors.some(v => v.vendor_id === vendor.vendor_id)) return;
     setSelectedVendors([...selectedVendors, vendor]);
   };
 
   const handleRemoveVendor = (vendorId) => {
-    setSelectedVendors(selectedVendors.filter(v => v.id !== vendorId));
+    setSelectedVendors(selectedVendors.filter(v => v.vendor_id !== vendorId));
   };
 
   const handleFileChange = (e) => {
@@ -128,21 +129,49 @@ export default function AddEventForm() {
       );
 
       // Save event to Supabase
-      const { data: event, error } = await supabase
+      const startTime = formData.time ? `${formData.date}T${formData.time}` : `${formData.date}T00:00:00`;
+      
+      const { data: event, error: eventError } = await supabase
         .from('events')
         .insert({
           name: formData.name,
-          date: formData.date,
-          time: formData.time || "All day",
-          vendor_ids: selectedVendors.map(v => v.id),
-          documents: documentURLs,
+          start_time: startTime,
           planner_id: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
         })
         .select();
 
-      if (error) throw error;
+      if (eventError) throw eventError;
+
+      // Save vendor relationships and documents if event was created
+      if (event && event[0]) {
+        const eventId = event[0].event_id;
+        
+        // Save vendor relationships
+        for (const vendor of selectedVendors) {
+          const { error: vendorError } = await supabase
+            .from('event_vendors')
+            .insert({
+              event_id: eventId,
+              vendor_id: vendor.vendor_id
+            });
+            
+          if (vendorError) console.error("Error saving vendor relationship:", vendorError);
+        }
+        
+        // Save documents
+        for (const doc of documentURLs) {
+          const { error: fileError } = await supabase
+            .from('files')
+            .insert({
+              event_id: eventId,
+              file_name: doc.name,
+              file_url: doc.url,
+              uploaded_by: user.id
+            });
+            
+          if (fileError) console.error("Error saving file:", fileError);
+        }
+      }
 
       alert("Event created successfully!");
       navigate("/dashboard");
@@ -191,6 +220,7 @@ export default function AddEventForm() {
               className="form-input"
               required 
             />
+            <label className="form-label">Date</label>
           </div>
           
           <div className="form-group" style={{flex: 1}}>
@@ -251,22 +281,22 @@ export default function AddEventForm() {
           ) : (
             <div className="vendor-grid">
               {filteredVendors.map(vendor => (
-                <div key={vendor.id} className="vendor-card">
+                <div key={vendor.vendor_id} className="vendor-card">
                   <div className="vendor-info">
-                    <h4>{vendor.name_of_business}</h4>
-                    <span className="vendor-category">{vendor.category}</span>
-                    {vendor.contact_info && (
-                      <p className="vendor-contact">{vendor.contact_info}</p>
+                    <h4>{vendor.business_name}</h4>
+                    <span className="vendor-category">{vendor.service_type}</span>
+                    {vendor.contact_number && (
+                      <p className="vendor-contact">{vendor.contact_number}</p>
                     )}
                   </div>
                   <button 
                     type="button" 
                     onClick={() => handleAddVendor(vendor)}
                     className="add-vendor-btn"
-                    disabled={selectedVendors.some(v => v.id === vendor.id)}
+                    disabled={selectedVendors.some(v => v.vendor_id === vendor.vendor_id)}
                   >
                     <FaPlus /> 
-                    {selectedVendors.some(v => v.id === vendor.id) ? "Added" : "Add"}
+                    {selectedVendors.some(v => v.vendor_id === vendor.vendor_id) ? "Added" : "Add"}
                   </button>
                 </div>
               ))}
@@ -278,14 +308,14 @@ export default function AddEventForm() {
               <h3 className="selected-title">Selected Vendors</h3>
               <ul className="selected-vendors-list">
                 {selectedVendors.map(v => (
-                  <li key={v.id} className="selected-vendor-item">
+                  <li key={v.vendor_id} className="selected-vendor-item">
                     <div>
-                      <span className="vendor-name">{v.name_of_business}</span>
-                      <span className="vendor-type">{v.category}</span>
+                      <span className="vendor-name">{v.business_name}</span>
+                      <span className="vendor-type">{v.service_type}</span>
                     </div>
                     <button 
                       type="button" 
-                      onClick={() => handleRemoveVendor(v.id)}
+                      onClick={() => handleRemoveVendor(v.vendor_id)}
                       className="remove-vendor-btn"
                       title="Remove vendor"
                     >
@@ -342,8 +372,7 @@ export default function AddEventForm() {
           )}
         </div>
 
-        <div className="form-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div>
+        <div className="form-actions">
           <button 
             type="button" 
             onClick={() => navigate("/dashboard")}
@@ -351,8 +380,6 @@ export default function AddEventForm() {
           >
             Cancel
           </button>
-          </div>
-          <div>
           <button 
             type="submit" 
             disabled={isSubmitting}
@@ -360,7 +387,6 @@ export default function AddEventForm() {
           >
             {isSubmitting ? "Creating Event..." : "Create Event"}
           </button>
-          </div>
         </div>
       </form>
     </div>
