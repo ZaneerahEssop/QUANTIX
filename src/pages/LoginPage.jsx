@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../client";
 import { useNavigate, Link } from "react-router-dom";
+import { OAUTH_REDIRECT_URL } from "../config";
 import "../App.css";
 import "../AuthPages.css";
 
@@ -44,7 +45,7 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/loading`,
+        redirectTo: OAUTH_REDIRECT_URL,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
