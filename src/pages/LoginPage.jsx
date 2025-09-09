@@ -42,18 +42,31 @@ function LoginPage() {
   }, [session, navigate]);
 
   const handleGoogleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: OAUTH_REDIRECT_URL,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
+    console.log('Initiating Google OAuth with redirect URL:', OAUTH_REDIRECT_URL);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: OAUTH_REDIRECT_URL,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          skipBrowserRedirect: false // Ensure the browser handles the redirect
+        }
+      });
+      
+      if (error) {
+        console.error('Error with Google sign-in:', error);
+        // Handle error (show to user)
+        return;
       }
-    });
-    if (error) {
-      console.error("Error with Google sign-in:", error.message);
+      
+      console.log('OAuth response:', data);
+      
+    } catch (err) {
+      console.error('Unexpected error during sign in:', err);
     }
   };
 
