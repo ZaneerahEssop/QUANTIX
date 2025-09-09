@@ -25,15 +25,15 @@ function LoginPage() {
         // Fetch role from Supabase users table
         const { data, error } = await supabase
           .from('users')
-          .select('role')
-          .eq('id', session.user.id)
+          .select('user_role')
+          .eq('user_id', session.user.id)
           .single();
         if (error || !data) {
           navigate('/dashboard');
           return;
         }
-        if (data.role === 'planner') navigate('/dashboard');
-        else if (data.role === 'vendor') navigate('/vendor-dashboard');
+        if (data.user_role === 'planner') navigate('/dashboard');
+        else if (data.user_role === 'vendor') navigate('/vendor-dashboard');
         else navigate('/dashboard');
       }
     }

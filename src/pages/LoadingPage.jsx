@@ -35,7 +35,7 @@ function LoadingPage() {
         } else if (data.user_role === 'vendor') {
           navigate('/vendor-dashboard');
         } else {
-          console.error('Unknown role:', data.role);
+          console.error('Unknown role:', data.user_role);
           navigate('/login');
         }
       } catch (error) {
