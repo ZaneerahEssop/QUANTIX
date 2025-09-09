@@ -22,48 +22,35 @@ export default function PlannerDashboard({ session }) {
   const [date, setDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
 
-  // Fetch user data, tasks, and events
+  // Fetch user data
   useEffect(() => {
-    if (!session?.user) return;
+    if (!session?.user) {
+      setLoading(false);
+      return;
+    }
 
     const fetchUserData = async () => {
       try {
-        console.log('Fetching planner data for user ID:', session.user.id);
+        setLoading(true);
+        const userId = session.user.id;
         
-        // First get the user's role from the users table
-        const { error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('user_id', session.user.id)
-          
-        if (userError) throw userError;
-        
-        // Then get the planner's details from the planners table
+        // Find the planner in the planners table by planner_id
         const { data: plannerData, error: plannerError } = await supabase
           .from('planners')
-          .select('*')
-          .eq('planner_id', session.user.id)
-          
-          if (plannerData?.profile_picture) {
-            setPreview(plannerData.profile_picture);
-          }
-          
-        if (plannerError) {
-          console.log('No planner found for user, using email as name');
-          throw plannerError;
-        }
+          .select('name, profile_picture')
+          .eq('planner_id', userId)
+          .single();
 
-        console.log('Planner data:', plannerData);
-        
-        // Get the name from planner data or fallback to email
-        const name = plannerData?.name || 
-                    session.user.user_metadata?.full_name ||
-                    session.user.user_metadata?.name ||
-                    session.user.email?.split('@')[0] || 
-                    'Planner';
-                    
-        console.log('Setting user name to:', name);
-        setUserName(name);
+        if (plannerError || !plannerData) {
+          console.error("Error fetching planner data:", plannerError?.message || "Planner not found");
+          // Fallback to email username if planner not found in planners table
+          const email = session.user.email || '';
+          setUserName(email.split('@')[0] || "Planner");
+          setPreview(null);
+        } else {
+          setUserName(plannerData.name);
+          setPreview(plannerData.profile_picture);
+        }
       } catch (error) {
         console.error("Error fetching user data:", error);
         setUserName(session.user.email?.split('@')[0] || "Planner");
@@ -202,7 +189,8 @@ export default function PlannerDashboard({ session }) {
     }
   };
 
-  const handleAddEvent = () => {
+  const handleAddEvent = (e) => {
+    e.preventDefault();
     navigate("/add-event");
   };
 
