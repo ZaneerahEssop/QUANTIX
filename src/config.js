@@ -1,16 +1,15 @@
-// Get the base URL from environment variables with fallback to current origin
-const getBaseUrl = () => {
-  // Use REACT_APP_BASE_URL if defined, otherwise fall back to window.location.origin
-  if (process.env.REACT_APP_BASE_URL) {
-    return process.env.REACT_APP_BASE_URL;
-  }
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  return 'http://localhost:3000';
+// Client-side configuration
+export const CONFIG = {
+  supabaseUrl: process.env.REACT_APP_SUPABASE_URL || window.env?.REACT_APP_SUPABASE_URL,
+  supabaseAnonKey: process.env.REACT_APP_SUPABASE_ANON_KEY || window.env?.REACT_APP_SUPABASE_ANON_KEY,
+  baseUrl: process.env.REACT_APP_BASE_URL || 
+           (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
 };
 
-export const BASE_URL = getBaseUrl();
+// Validate configuration
+if (!CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey) {
+  console.error('Missing required Supabase configuration. Please check your environment variables.');
+}
 
-// Ensure the OAuth redirect URL is properly formatted
-export const OAUTH_REDIRECT_URL = `${BASE_URL.replace(/\/+$/, '')}/loading`;
+// OAuth redirect URL
+export const OAUTH_REDIRECT_URL = `${CONFIG.baseUrl.replace(/\/+$/, '')}/loading`;
