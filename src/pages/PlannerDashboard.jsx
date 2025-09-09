@@ -206,7 +206,7 @@ export default function PlannerDashboard({ session }) {
 
   const handleAddEvent = () => {
     // Navigate to add event page or open a modal
-    navigate('/addevent');
+    navigate('/add-event');
   };
 
   // Loading state
