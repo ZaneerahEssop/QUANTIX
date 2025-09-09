@@ -343,22 +343,24 @@ export default function AddEventForm() {
         </div>
 
         <div className="form-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div>
           <button 
             type="button" 
             onClick={() => navigate("/dashboard")}
             className="cancel-btn"
-            style={{ height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             Cancel
           </button>
+          </div>
+          <div>
           <button 
             type="submit" 
             disabled={isSubmitting}
             className="submit-btn"
-            style={{ height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             {isSubmitting ? "Creating Event..." : "Create Event"}
           </button>
+          </div>
         </div>
       </form>
     </div>
