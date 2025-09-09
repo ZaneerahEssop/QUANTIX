@@ -35,7 +35,6 @@ export default function PlannerDashboard({ session }) {
           .from('users')
           .select('*')
           .eq('user_id', session.user.id)
-          .single();
           
         if (userError) throw userError;
         
@@ -44,7 +43,6 @@ export default function PlannerDashboard({ session }) {
           .from('planners')
           .select('*')
           .eq('planner_id', session.user.id)
-          .single();
           
           if (plannerData?.profile_picture) {
             setPreview(plannerData.profile_picture);
