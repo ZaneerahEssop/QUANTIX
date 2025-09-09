@@ -4,28 +4,26 @@ import { supabase } from '../client';
 import '../ProfileForm.css';
 import '../App.css';
 
-const EditVendorProfile = ({ session }) => {
+const EditPlannerProfile = ({ session }) => {
   const [formData, setFormData] = useState({
     name: '',
-    businessName: '',
     phone: '',
-    description: '',
-    categories: [],
-    profilePic: null,
+    bio: '',
+    profilePic: null
   });
   const [preview, setPreview] = useState(null);
-  const [warning, setWarning] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
   const successTimer = useRef(null);
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     const timer = successTimer.current;
     
-    // Clear any pending timeouts when component unmounts
     return () => {
       if (timer) {
         clearTimeout(timer);
@@ -35,191 +33,188 @@ const EditVendorProfile = ({ session }) => {
   }, [successTimer]);
 
   useEffect(() => {
-    const fetchVendorData = async () => {
+    const fetchPlannerData = async () => {
       try {
         const userId = session?.user?.id;
         if (!userId) {
-          setWarning('User not authenticated');
           setIsLoading(false);
           return;
         }
 
-        const { data: vendor, error: vendorError } = await supabase
-          .from('vendors')
+        const { data: planner, error } = await supabase
+          .from('planners')
           .select('*')
-          .eq('vendor_id', userId)
+          .eq('planner_id', userId)
           .single();
         
-        if (vendorError) {
-          console.error('Error fetching vendor data:', vendorError);
-          setWarning('Failed to load vendor profile. Please try again.');
+        if (error) {
+          console.error('Error fetching planner data:', error);
           setIsLoading(false);
           return;
         }
 
-        if (vendor) {
-          const categories = vendor.service_type ? vendor.service_type.split(',').map(s => s.trim()) : [];
-          
+        if (planner) {
           setFormData({
-            name: vendor.name || '',
-            businessName: vendor.business_name || '',
-            phone: vendor.contact_number || '',
-            description: vendor.description || '',
-            categories: categories,
-            profilePic: null,
+            name: planner.name || '',
+            phone: planner.contact_number || '',
+            bio: planner.bio || '',
+            profilePic: planner.profile_picture || null
           });
 
-          if (vendor.profile_picture) {
-            setPreview(vendor.profile_picture);
+          if (planner.profile_picture) {
+            setPreview(planner.profile_picture);
           }
         }
-      } catch (error) {
-        console.error('Error in fetchVendorData:', error);
-        setWarning('An error occurred while loading your profile.');
-      } finally {
+        
         setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching planner data:', error);
       }
     };
 
     if (session) {
-      fetchVendorData();
+      fetchPlannerData();
     }
   }, [session]);
 
   const handlePicChange = (e) => {
     const file = e.target.files[0];
-    setFormData({ ...formData, profilePic: file });
     if (file) {
+      setFormData(prev => ({ ...prev, profilePic: file }));
       const reader = new FileReader();
-      reader.onloadend = () => setPreview(reader.result);
+      reader.onloadend = () => {
+        setPreview(reader.result);
+      };
       reader.readAsDataURL(file);
-    } else {
-      setPreview(null);
     }
   };
 
   const handleChange = (e) => {
-    const { name, value, checked } = e.target;
-    
-    if (name === 'category') {
-      setFormData(prev => {
-        const valueLower = value.toLowerCase();
-        let newCategories = [...prev.categories];
-        
-        const categoryIndex = newCategories.findIndex(cat => 
-          cat.toLowerCase() === valueLower
-        );
-        
-        if (checked && categoryIndex === -1) {
-          newCategories.push(value);
-        } else if (!checked && categoryIndex !== -1) {
-          newCategories.splice(categoryIndex, 1);
-        }
-        
-        return { ...prev, categories: newCategories };
-      });
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-    setWarning('');
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setWarningMessage('');
     setShowWarning(false);
+  };
+
+  const handleCancel = (e) => {
+    e?.preventDefault?.();
+    navigate('/dashboard');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form submitted', formData);
     
     if (formData.phone && !/^\d{10}$/.test(formData.phone)) {
-      setWarning('Please enter 10 digits for the phone number.');
+      setWarningMessage('Please enter a valid 10-digit phone number');
       setShowWarning(true);
       return;
     }
-
+    
+    if (!formData.name) {
+      setWarningMessage('Please enter your name');
+      setShowWarning(true);
+      return;
+    }
+    
     setIsSubmitting(true);
-    setWarning('');
+    setWarningMessage('');
     setShowWarning(false);
 
     try {
       const userId = session?.user?.id;
+      console.log('User ID:', userId);
       if (!userId) {
-        setWarning('User not authenticated');
+        console.error('No user ID found in session');
+        setWarningMessage('No user session found. Please log in again.');
+        setShowWarning(true);
+        navigate('/login');
         return;
       }
-
+      
       let profilePicUrl = preview?.startsWith('data:') ? null : preview;
 
-      if (formData.profilePic) {
-        const fileExt = formData.profilePic.name.split('.').pop();
-        const fileName = `${userId}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      if (formData.profilePic && formData.profilePic.name) {
+        const fileNameParts = formData.profilePic.name.split('.');
+        const fileExt = fileNameParts.length > 1 ? fileNameParts.pop() : 'jpg';
+        const baseName = fileNameParts.join('.');
+        const randomString = Math.random().toString(36).substring(2, 15);
+        const fileName = `planners/${userId}-${randomString}-${baseName}.${fileExt}`;
         
-        const { error: uploadError } = await supabase.storage
-          .from('profile-pictures')
-          .upload(`vendors/${fileName}`, formData.profilePic);
+        try {
+          const { error: uploadError } = await supabase.storage
+            .from('profile-pictures')
+            .upload(fileName, formData.profilePic, {
+              cacheControl: '3600',
+              upsert: false
+            });
 
-        if (uploadError) throw uploadError;
+          if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('profile-pictures')
-          .getPublicUrl(`vendors/${fileName}`);
-        
-        profilePicUrl = publicUrl;
+          const { data: { publicUrl } } = supabase.storage
+            .from('profile-pictures')
+            .getPublicUrl(fileName);
+
+          profilePicUrl = publicUrl;
+          console.log('Profile picture uploaded successfully:', publicUrl);
+        } catch (uploadError) {
+          console.error('Error uploading profile picture:', uploadError);
+          profilePicUrl = null;
+        }
       }
 
-      const { data: vendor, error: vendorError } = await supabase
-        .from('vendors')
+      const plannerData = {
+        planner_id: userId,
+        name: formData.name || '',
+        contact_number: formData.phone || '',
+        bio: formData.bio || '',
+        ...(profilePicUrl && { profile_picture: profilePicUrl })
+      };
+
+      const { data: existingPlanner, error: fetchError } = await supabase
+        .from('planners')
         .select('*')
-        .eq('vendor_id', userId)
+        .eq('planner_id', userId)
         .single();
-        
-      if (vendorError) {
-        throw new Error('Failed to fetch vendor profile');
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
       }
 
-      if (!vendor) {
-        const newVendorData = {
-          vendor_id: userId,
-          name: formData.name || '',
-          business_name: formData.businessName || '',
-          contact_number: formData.phone || '',
-          description: formData.description || '',
-          service_type: formData.categories.map(cat => cat.toLowerCase()).join(','),
-          ...(profilePicUrl && { profile_picture: profilePicUrl })
-        };
-        
+      if (!existingPlanner) {
         const { error: createError } = await supabase
-          .from('vendors')
-          .insert([newVendorData]);
-          
+          .from('planners')
+          .insert([plannerData]);
         if (createError) {
-          throw new Error('Failed to create vendor profile');
+          throw new Error('Failed to create planner profile');
         }
       } else {
-        const updates = {
-          name: formData.name || '',
-          business_name: formData.businessName || '',
-          contact_number: formData.phone || '',
-          description: formData.description || '',
-          service_type: formData.categories.map(cat => cat.toLowerCase()).join(','),
-          ...(profilePicUrl && { profile_picture: profilePicUrl })
-        };
-        
         const { error: updateError } = await supabase
-          .from('vendors')
-          .update(updates)
-          .eq('vendor_id', userId);
-        
+          .from('planners')
+          .update(plannerData)
+          .eq('planner_id', userId);
+          
         if (updateError) {
           throw updateError;
         }
       }
 
-      await supabase.auth.updateUser({
-        data: { name: formData.name }
-      });
+      try {
+        const { error: authError } = await supabase.auth.updateUser({
+          data: { name: formData.name }
+        });
+        if (authError) throw authError;
+        console.log('Auth user updated');
+      } catch (authError) {
+        console.error('Error updating auth user:', authError);
+      }
 
+      console.log('Profile update successful');
       setShowSuccess(true);
+      
     } catch (error) {
-      console.error('Error updating vendor profile:', error);
-      setWarning(error.message || 'Failed to update profile. Please try again.');
+      console.error('Error updating planner profile:', error);
+      setWarningMessage(error.message || 'Failed to update profile. Please try again.');
       setShowWarning(true);
     } finally {
       setIsSubmitting(false);
@@ -233,6 +228,11 @@ const EditVendorProfile = ({ session }) => {
       </div>
     );
   }
+
+  const handleCloseAndRedirect = () => {
+    setShowSuccess(false);
+    navigate('/dashboard');
+  };
 
   return (
     <div style={{ 
@@ -272,10 +272,7 @@ const EditVendorProfile = ({ session }) => {
             zIndex: 10001
           }}>
             <button 
-              onClick={() => {
-                setShowSuccess(false);
-                navigate('/vendor-dashboard');
-              }}
+              onClick={handleCloseAndRedirect}
               style={{
                 position: 'absolute',
                 top: '0.75rem',
@@ -307,6 +304,7 @@ const EditVendorProfile = ({ session }) => {
           </div>
         </div>
       )}
+
       {showWarning && (
         <div style={{
           position: 'fixed',
@@ -363,20 +361,22 @@ const EditVendorProfile = ({ session }) => {
               fontSize: '1.1rem',
               padding: '0 1rem'
             }}>
-              {warning}
+              {warningMessage}
             </p>
           </div>
         </div>
       )}
+      
       <div className="profile-container" style={{ maxWidth: "600px", padding: "3.5rem 2.5rem" }}>
         <h1 style={{ textAlign: "center", fontSize: "2.3rem", fontWeight: 600, marginBottom: "0.5rem" }}>
-          Edit your <span style={{ color: "#E5ACBF" }}>Vendor</span> profile
+          Edit your <span style={{ color: "#E5ACBF" }}>Planner</span> profile
         </h1>
         <p className="accent-text" style={{ textAlign: "center", fontSize: "1.1rem", marginBottom: "2rem" }}>
-          Update your business details to be discovered by event planners.
+          Update your details to connect with vendors
         </p>
         
         <form onSubmit={handleSubmit} className="profile-form">
+          {/* Profile Picture Upload */}
           <div className="profile-pic-group" style={{ marginBottom: '2rem' }}>
             <label htmlFor="profilePic" className="pic-upload-label" style={{
               display: 'block',
@@ -439,6 +439,7 @@ const EditVendorProfile = ({ session }) => {
             </label>
           </div>
 
+          {/* Name Field */}
           <div className="form-group" style={{ position: 'relative', marginBottom: '1.5rem' }}>
             <span className="form-icon" style={{
               position: 'absolute',
@@ -463,7 +464,11 @@ const EditVendorProfile = ({ session }) => {
                 borderRadius: '8px',
                 fontSize: '1rem',
                 transition: 'all 0.3s',
-                backgroundColor: 'rgba(255,255,255,0.9)'
+                backgroundColor: 'rgba(255,255,255,0.9)',
+                ':focus': {
+                  borderColor: '#E5ACBF',
+                  boxShadow: '0 0 0 2px rgba(229, 172, 191, 0.2)'
+                }
               }}
               placeholder=" "
             />
@@ -485,6 +490,7 @@ const EditVendorProfile = ({ session }) => {
             }}>Full Name</label>
           </div>
 
+          {/* Phone Number Field */}
           <div className="form-group" style={{ position: 'relative', marginBottom: '1.5rem' }}>
             <span className="form-icon" style={{
               position: 'absolute',
@@ -494,53 +500,6 @@ const EditVendorProfile = ({ session }) => {
               color: '#E5ACBF',
               fontSize: '1.1rem'
             }}>
-              <i className="fas fa-building"></i>
-            </span>
-            <input
-              type="text"
-              name="businessName"
-              value={formData.businessName}
-              onChange={handleChange}
-              required
-              style={{
-                width: '100%',
-                padding: '12px 15px 12px 45px',
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                transition: 'all 0.3s',
-                backgroundColor: 'rgba(255,255,255,0.9)'
-              }}
-              placeholder=" "
-            />
-            <label style={{
-              position: 'absolute',
-              left: '45px',
-              top: '12px',
-              color: '#999',
-              transition: 'all 0.3s',
-              pointerEvents: 'none',
-              ...(formData.businessName && {
-                top: '-10px',
-                left: '10px',
-                fontSize: '0.8rem',
-                background: 'white',
-                padding: '0 5px',
-                color: '#E5ACBF'
-              })
-            }}>Business Name</label>
-          </div>
-
-          <div className="form-group" style={{ position: 'relative', marginBottom: '1.5rem' }}>
-            <span className="form-icon" style={{
-              position: 'absolute',
-              left: '15px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: '#E5ACBF',
-              fontSize: '1.1rem',
-              pointerEvents: 'none'
-            }}>
               <i className="fas fa-phone"></i>
             </span>
             <input
@@ -548,17 +507,15 @@ const EditVendorProfile = ({ session }) => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="form-control"
               style={{
-                paddingLeft: '45px',
                 width: '100%',
-                height: '45px',
+                padding: '12px 15px 12px 45px',
                 border: '1px solid #ddd',
                 borderRadius: '8px',
                 fontSize: '1rem',
-                outline: 'none',
                 transition: 'all 0.3s',
-                '&:focus': {
+                backgroundColor: 'rgba(255,255,255,0.9)',
+                ':focus': {
                   borderColor: '#E5ACBF',
                   boxShadow: '0 0 0 2px rgba(229, 172, 191, 0.2)'
                 }
@@ -583,141 +540,123 @@ const EditVendorProfile = ({ session }) => {
             }}>Phone Number</label>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '12px',
-              color: '#555',
-              fontSize: '0.9rem'
-            }}>Service Categories <span style={{ color: '#E5ACBF' }}>*</span></label>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '10px',
-              marginBottom: '10px',
-              maxWidth: '500px',
-              margin: '0 auto 10px auto'
+          {/* Bio Field */}
+          <div className="form-group" style={{ position: 'relative', marginBottom: '1.5rem' }}>
+            <span className="form-icon" style={{
+              position: 'absolute',
+              left: '15px',
+              top: '18px',
+              color: '#E5ACBF',
+              fontSize: '1.1rem'
             }}>
-              {['Catering', 'Photography', 'Venue', 'Flowers', 'Decoration', 'Music'].map((category) => {
-                const isSelected = formData.categories.some(cat => 
-                  cat.toLowerCase() === category.toLowerCase()
-                );
-                return (
-                  <label key={category} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '10px 15px',
-                    borderRadius: '8px',
-                    backgroundColor: isSelected ? 'rgba(229, 172, 191, 0.2)' : 'rgba(255,255,255,0.9)',
-                    border: `2px solid ${isSelected ? '#E5ACBF' : '#ddd'}`,
-                    color: isSelected ? '#E5ACBF' : '#555',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    textAlign: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.95rem',
-                    fontWeight: isSelected ? '600' : '400'
-                  }}>
-                    <input
-                      type="checkbox"
-                      name="category"
-                      value={category}
-                      checked={isSelected}
-                      onChange={handleChange}
-                      style={{ display: 'none' }}
-                    />
-                    {category}
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              color: '#555',
-              fontSize: '0.9rem'
-            }}>Business Description</label>
+              <i className="fas fa-edit"></i>
+            </span>
             <textarea
-              name="description"
-              value={formData.description}
+              name="bio"
+              value={formData.bio}
               onChange={handleChange}
-              rows="4"
               style={{
                 width: '100%',
-                padding: '12px 15px',
+                minHeight: '120px',
+                padding: '12px 15px 12px 45px',
                 border: '1px solid #ddd',
                 borderRadius: '8px',
                 fontSize: '1rem',
                 resize: 'vertical',
-                minHeight: '100px',
-                backgroundColor: 'rgba(255,255,255,0.9)'
+                transition: 'all 0.3s',
+                backgroundColor: 'rgba(255,255,255,0.9)',
+                ':focus': {
+                  borderColor: '#E5ACBF',
+                  boxShadow: '0 0 0 2px rgba(229, 172, 191, 0.2)'
+                }
               }}
+              placeholder=" "
             ></textarea>
+            <label style={{
+              position: 'absolute',
+              left: '45px',
+              top: '12px',
+              color: '#999',
+              transition: 'all 0.3s',
+              pointerEvents: 'none',
+              ...(formData.bio && {
+                top: '-10px',
+                left: '10px',
+                fontSize: '0.8rem',
+                background: 'white',
+                padding: '0 5px',
+                color: '#E5ACBF'
+              })
+            }}>Bio</label>
           </div>
 
-        <div className="form-actions" style={{ 
-          display: 'flex', 
-          gap: '1rem', 
-          justifyContent: 'center',
-          marginTop: '2rem'
-        }}>
-          <button 
-            type="button" 
-            style={{
-              padding: '0.8rem 2rem',
-              borderRadius: '50px',
-              border: '2px solid #E5ACBF',
-              backgroundColor: 'transparent',
-              color: '#E5ACBF',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              minWidth: '180px',
-              ':hover': {
-                backgroundColor: 'rgba(229, 172, 191, 0.1)'
-              }
-            }}
-            onClick={() => navigate(-1)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit" 
-            style={{
-              padding: '0.8rem 2rem',
-              borderRadius: '50px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #E5ACBF 0%, #E8B180 100%)',
-              color: 'white',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              minWidth: '180px',
-              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
-              ':hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.15)'
-              },
-              ':disabled': {
-                opacity: 0.7,
-                cursor: 'not-allowed'
-              }
-            }}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Saving...' : 'Update Profile'}
-          </button>
-        </div>
-      </form>
+          {/* Submit Button */}
+          <div className="form-actions" style={{ 
+            display: 'flex', 
+            gap: '1rem', 
+            justifyContent: 'center',
+            marginTop: '2rem'
+          }}>
+            <button 
+              type="button" 
+              style={{
+                padding: '0.8rem 2rem',
+                borderRadius: '50px',
+                border: '2px solid #E5ACBF',
+                backgroundColor: 'transparent',
+                color: '#E5ACBF',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                minWidth: '180px',
+                ':hover': {
+                  backgroundColor: 'rgba(229, 172, 191, 0.1)'
+                },
+                ':disabled': {
+                  opacity: 0.7,
+                  cursor: 'not-allowed'
+                }
+              }}
+              onClick={handleCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              style={{
+                padding: '0.8rem 2rem',
+                borderRadius: '50px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #E5ACBF 0%, #E8B180 100%)',
+                color: 'white',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                minWidth: '180px',
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+                ':hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.15)'
+                },
+                ':disabled': {
+                  opacity: 0.7,
+                  cursor: 'not-allowed',
+                  transform: 'none',
+                  boxShadow: 'none'
+                }
+              }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Updating...' : 'Update Profile'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
   );
 };
 
-export default EditVendorProfile;
+export default EditPlannerProfile;
