@@ -3,7 +3,7 @@ import "../AddEventForm.css";
 import React, { useState, useEffect } from "react";
 import { supabase } from '../client';
 import { useNavigate } from "react-router-dom";
-import { FaCalendarAlt, FaClock, FaUsers, FaTrash, FaUpload, FaSearch, FaTimes, FaFileAlt, FaPlus, FaArrowLeft } from "react-icons/fa";
+import { FaCalendarAlt, FaClock, FaUsers, FaUpload, FaSearch, FaTimes, FaFileAlt, FaPlus, FaArrowLeft } from "react-icons/fa";
 
 export default function AddEventForm() {
   const navigate = useNavigate();
