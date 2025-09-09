@@ -14,6 +14,7 @@ import PostSignupRedirect from './pages/PostSignupRedirect';
 import LoadingPage from './pages/LoadingPage';
 import EditVendorProfile from './pages/EditVendorProfile';
 import EditPlannerProfile from './pages/EditPlannerProfile';
+import AddEventForm from './pages/AddEventForm';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -54,6 +55,9 @@ export default function App() {
         } />
         <Route path="/edit-planner-profile" element={
           session ? <EditPlannerProfile session={session} /> : <Navigate to="/login" />
+        } />
+        <Route path="/add-event" element={
+          session ? <AddEventForm session={session} /> : <Navigate to="/login" />
         } />
       </Routes>
     </BrowserRouter>
