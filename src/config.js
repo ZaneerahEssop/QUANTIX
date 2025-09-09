@@ -1,15 +1,19 @@
 // Client-side configuration
 export const CONFIG = {
-  supabaseUrl: process.env.REACT_APP_SUPABASE_URL || window.env?.REACT_APP_SUPABASE_URL,
-  supabaseAnonKey: process.env.REACT_APP_SUPABASE_ANON_KEY || window.env?.REACT_APP_SUPABASE_ANON_KEY,
-  baseUrl: process.env.REACT_APP_BASE_URL || 
+  // Check window.env first, then process.env
+  supabaseUrl: (typeof window !== 'undefined' && window.env?.REACT_APP_SUPABASE_URL) || 
+               process.env.REACT_APP_SUPABASE_URL,
+  
+  supabaseAnonKey: (typeof window !== 'undefined' && window.env?.REACT_APP_SUPABASE_ANON_KEY) || 
+                   process.env.REACT_APP_SUPABASE_ANON_KEY,
+  
+  baseUrl: (typeof window !== 'undefined' && window.env?.REACT_APP_BASE_URL) || 
+           process.env.REACT_APP_BASE_URL ||
            (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
 };
 
-// Validate configuration
-if (!CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey) {
-  console.error('Missing required Supabase configuration. Please check your environment variables.');
-}
+// For debugging
+console.log('Supabase URL:', CONFIG.supabaseUrl ? 'Configured' : 'Missing');
 
 // OAuth redirect URL
 export const OAUTH_REDIRECT_URL = `${CONFIG.baseUrl.replace(/\/+$/, '')}/loading`;
