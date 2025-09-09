@@ -205,7 +205,7 @@ export default function PlannerDashboard({ session }) {
   };
 
   const handleAddEvent = () => {
-    navigate('/add-event');
+    navigate("/add-event");
   };
 
   // Loading state
