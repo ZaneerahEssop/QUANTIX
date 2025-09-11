@@ -5,6 +5,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import Navbar from '../components/Navbar';
 import { FaTrash, FaUser } from 'react-icons/fa';
+import ChatUI from '../components/ChatUI';
 
 export default function VendorDashboard({ session }) {
   const navigate = useNavigate();
@@ -259,7 +260,7 @@ export default function VendorDashboard({ session }) {
         .event-details-icons { display: flex; align-items: center; gap: 6px; color: #555; font-size: 0.85rem; }
         .view-details-btn { width: 100%; padding: 8px 12px; background-color: var(--blush, #FFC0CB); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: flex; justify-content: center; align-items: center; gap: 6px; transition: background-color 0.2s; }
         .view-details-btn:hover { background-color: var(--coral, #FF7F50); }
-        .pending-requests-card { background: #f8f9fa; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); margin: 2rem 0; }
+        .pending-requests-card { background: #f8f9fa; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
         .pending-list { list-style: none; padding: 0; margin: 0; }
         .pending-list li { background: #FFF0F5; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border: 1px solid #FFD1DC; }
         .request-item { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
@@ -457,7 +458,7 @@ export default function VendorDashboard({ session }) {
           </div>
           
           {/* Pending Requests Section */}
-          <div style={{ gridColumn: '1 / -1', marginTop: '2rem' }}>
+          <div style={{ gridColumn: '1 / -1' }}>
             <div className="pending-requests-card">
               <div className="section-header">
                 <h2 style={{ margin: 0 }}>Pending Requests</h2>
@@ -496,6 +497,27 @@ export default function VendorDashboard({ session }) {
                 No pending requests at the moment.
               </p>
             )}
+            </div>
+          </div>
+
+          {/* Chat Section */}
+          <div style={{
+            backgroundColor: '#f8f9fa',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            gridColumn: '1 / -1',
+            marginTop: '2rem'
+          }}>
+            <ChatUI 
+              listTitle="Planners"
+              vendors={[
+                { id: 1, name: 'Alice Johnson', lastMessage: 'Hi, can you confirm your availability?', unread: 0 },
+              ]}
+              onSendMessage={(message) => {
+                console.log('Message to planner:', message);
+              }}
+            />
           </div>
         </div>
       </div>
@@ -555,6 +577,5 @@ export default function VendorDashboard({ session }) {
         </div>
       )}
     </div>
-  </div>
-);
+  );
 }
