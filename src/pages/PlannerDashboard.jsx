@@ -179,7 +179,7 @@ export default function PlannerDashboard({ session }) {
       const { error } = await supabase
         .from('events')
         .delete()
-        .eq('id', eventId);
+        .eq('event_id', eventId);
       
       if (error) throw error;
       
@@ -225,6 +225,15 @@ export default function PlannerDashboard({ session }) {
       </div>
     );
   }
+
+  const formatTime = (dateString) => {
+  if (!dateString) return 'Time not set';
+  const date = new Date(dateString);
+  return date.toLocaleTimeString(undefined, { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+};
 
   // Format date to display in a readable format
   const formatDate = (dateString) => {
@@ -443,7 +452,7 @@ export default function PlannerDashboard({ session }) {
                               fontSize: '1rem',
                               color: '#333'
                             }}>
-                              {event.title}
+                              {event.name}
                             </h3>
                           </div>
                           
@@ -465,7 +474,7 @@ export default function PlannerDashboard({ session }) {
                             marginBottom: '0.2rem'
                           }}>
                             <span style={{ marginRight: '0.5rem' }}>🕒</span>
-                            {event.time}
+                            {formatTime(event.start_time) || 'TBD'}
                           </div>
                           {event.location && (
                             <div style={{
@@ -476,7 +485,7 @@ export default function PlannerDashboard({ session }) {
                               marginBottom: '0.2rem'
                             }}>
                               <span style={{ marginRight: '0.5rem' }}>📍</span>
-                              {event.location}
+                              {event.venue || 'TBD'}
                             </div>
                           )}
                         </div>
