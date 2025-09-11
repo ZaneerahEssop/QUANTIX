@@ -173,7 +173,8 @@ export default function AddEventForm() {
       };
 
       // 3️⃣ POST to backend API
-      const response = await fetch("http://localhost:5000/events", {
+      const API_URL = process.env.REACT_APP_BASE_URL;
+      const response = await fetch(`${API_URL}/events`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
