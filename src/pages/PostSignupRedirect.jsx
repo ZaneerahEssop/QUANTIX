@@ -42,9 +42,14 @@ export default function PostSignupRedirect() {
         // Clear the role from sessionStorage after use
         sessionStorage.removeItem('signupRole');
         
-        // Redirect to correct form using the configured base URL
-        const redirectPath = role === "planner" ? "/planner-form" : role === "vendor" ? "/vendor-form" : "/";
-        window.location.href = `${CONFIG.baseUrl}${redirectPath}`;
+        // Determine the correct path based on role
+        const redirectPath = role === "planner" ? "/planner-form" : 
+                           role === "vendor" ? "/vendor-form" : "/";
+        
+        // Use the current origin to ensure we stay on the same domain
+        const redirectUrl = `${window.location.origin}${redirectPath}`;
+        console.log('Redirecting to:', redirectUrl); // Debug log
+        window.location.href = redirectUrl;
       } else {
         // If no role, fallback to dashboard
         navigate("/dashboard");
