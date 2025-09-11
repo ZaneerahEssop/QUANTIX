@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../client";
+import { CONFIG } from "../config";
 
 export default function PostSignupRedirect() {
   const navigate = useNavigate();
@@ -41,10 +42,9 @@ export default function PostSignupRedirect() {
         // Clear the role from sessionStorage after use
         sessionStorage.removeItem('signupRole');
         
-        // Redirect to correct form
-        if (role === "planner") navigate("/planner-form");
-        else if (role === "vendor") navigate("/vendor-form");
-        else navigate("/");
+        // Redirect to correct form using the configured base URL
+        const redirectPath = role === "planner" ? "/planner-form" : role === "vendor" ? "/vendor-form" : "/";
+        window.location.href = `${CONFIG.baseUrl}${redirectPath}`;
       } else {
         // If no role, fallback to dashboard
         navigate("/dashboard");
