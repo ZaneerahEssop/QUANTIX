@@ -1,41 +1,54 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../client';
 import '../App.css';
 
 function LoadingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const checkUserAndRedirect = async () => {
+    const handleOAuthCallback = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Handle OAuth callback if this is a redirect from OAuth
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
         
         if (!session) {
           navigate('/login');
           return;
         }
 
-        // Fetch user role
-        const { data, error } = await supabase
+        // Check if this is a new signup by looking for the role in sessionStorage
+        const signupRole = sessionStorage.getItem('signupRole');
+        
+        if (signupRole) {
+          // If this is a new signup, redirect to post-signup flow
+          navigate('/post-signup');
+          return;
+        }
+
+        // For existing users, fetch their role and redirect accordingly
+        const { data: userData, error: roleError } = await supabase
           .from('users')
           .select('user_role')
           .eq('user_id', session.user.id)
           .single();
 
-        if (error || !data) {
-          console.error('Error fetching user role:', error?.message || 'No role found');
+        if (roleError || !userData) {
+          console.error('Error fetching user role:', roleError?.message || 'No role found');
           navigate('/login');
           return;
         }
 
-        // Redirect based on role
-        if (data.user_role === 'planner') {
+        // Redirect based on role for existing users
+        if (userData.user_role === 'planner') {
           navigate('/dashboard');
-        } else if (data.user_role === 'vendor') {
+        } else if (userData.user_role === 'vendor') {
           navigate('/vendor-dashboard');
         } else {
-          console.error('Unknown role:', data.user_role);
+          console.error('Unknown role:', userData.user_role);
           navigate('/login');
         }
       } catch (error) {
@@ -44,8 +57,8 @@ function LoadingPage() {
       }
     };
 
-    checkUserAndRedirect();
-  }, [navigate]);
+    handleOAuthCallback();
+  }, [navigate, location]);
 
   return (
     <div className="loading-container">
