@@ -17,7 +17,14 @@ import {
 export default function AddEventForm() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ name: "", date: "", time: "" });
+  const [formData, setFormData] = useState({ 
+    name: "", 
+    date: "", 
+    time: "", 
+    theme: "",
+    venue: "",
+    end_time: ""
+  });
   const vendorCategories = [
     "Catering",
     "Flowers",
@@ -151,42 +158,61 @@ export default function AddEventForm() {
             data: { publicUrl },
           } = supabase.storage.from("event-documents").getPublicUrl(filePath);
 
-          return { name: docFile.name, url: publicUrl };
+          return { 
+            name: docFile.name, 
+            url: publicUrl,
+            file_type: docFile.type || 'application/octet-stream'
+          };
         })
       );
 
-      // 2️⃣ Create payload for backend
-      const payload = {
-        name: formData.name,
-        theme: formData.theme || null,
-        start_time: formData.time
-          ? `${formData.date}T${formData.time}`
-          : `${formData.date}T00:00:00`,
-        end_time: formData.end_time || null,
-        venue: formData.venue || null,
-        selectedVendors, // array of vendor objects with vendor_id
-        documents: uploadedDocuments.map((doc) => ({
-          ...doc,
+      // 2️⃣ Create the event in the events table
+      const { data: eventData, error: eventError } = await supabase
+        .from('events')
+        .insert({
+          name: formData.name,
+          theme: formData.theme || null,
+          start_time: formData.time
+            ? `${formData.date}T${formData.time}`
+            : `${formData.date}T00:00:00`,
+          end_time: formData.end_time || null,
+          venue: formData.venue || null,
+          planner_id: user.id
+        })
+        .select()
+        .single();
+
+      if (eventError) throw eventError;
+
+      // 3️⃣ Add vendors to event_vendors table if any are selected
+      if (selectedVendors.length > 0) {
+        const vendorRelationships = selectedVendors.map(vendor => ({
+          event_id: eventData.event_id,
+          vendor_id: vendor.vendor_id
+        }));
+
+        const { error: vendorError } = await supabase
+          .from('event_vendors')
+          .insert(vendorRelationships);
+
+        if (vendorError) throw vendorError;
+      }
+
+      // 4️⃣ Add documents to files table if any are uploaded
+      if (uploadedDocuments.length > 0) {
+        const fileRecords = uploadedDocuments.map(doc => ({
+          event_id: eventData.event_id,
           uploaded_by: user.id,
-        })),
-        planner_id: user.id,
-      };
+          file_name: doc.name,
+          file_type: doc.file_type,
+          file_url: doc.url
+        }));
 
-      // 3️⃣ POST to backend API
-      const API_URL = process.env.REACT_APP_BASE_URL;
-      const response = await fetch(`${API_URL}/events`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+        const { error: fileError } = await supabase
+          .from('files')
+          .insert(fileRecords);
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error(result);
-        throw new Error(result.error || "Failed to create event");
+        if (fileError) throw fileError;
       }
 
       alert("Event created successfully!");
@@ -251,6 +277,44 @@ export default function AddEventForm() {
             />
             <label className="form-label">Time (Optional)</label>
           </div>
+        </div>
+
+        {/* Theme and Venue */}
+        <div style={{ display: "flex", gap: "1rem" }}>
+          <div className="form-group" style={{ flex: 1 }}>
+            <input
+              type="text"
+              name="theme"
+              value={formData.theme}
+              onChange={handleChange}
+              className="form-input"
+            />
+            <label className="form-label">Theme (Optional)</label>
+          </div>
+
+          <div className="form-group" style={{ flex: 1 }}>
+            <input
+              type="text"
+              name="venue"
+              value={formData.venue}
+              onChange={handleChange}
+              className="form-input"
+            />
+            <label className="form-label">Venue (Optional)</label>
+          </div>
+        </div>
+
+        {/* End Time */}
+        <div className="form-group">
+          <FaClock className="form-icon" />
+          <input
+            type="time"
+            name="end_time"
+            value={formData.end_time}
+            onChange={handleChange}
+            className="form-input"
+          />
+          <label className="form-label">End Time (Optional)</label>
         </div>
 
         {/* Vendors Section */}
