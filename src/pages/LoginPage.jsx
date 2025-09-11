@@ -20,26 +20,27 @@ function LoginPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    async function redirectByRole() {
-      if (session && session.user) {
-        // Fetch role from Supabase users table
-        const { data, error } = await supabase
-          .from('users')
-          .select('user_role')
-          .eq('user_id', session.user.id)
-          .single();
-        if (error || !data) {
-          navigate('/dashboard');
-          return;
-        }
-        if (data.user_role === 'planner') navigate('/dashboard');
-        else if (data.user_role === 'vendor') navigate('/vendor-dashboard');
-        else navigate('/dashboard');
+const [loginError, setLoginError] = useState("");
+
+useEffect(() => {
+  async function redirectByRole() {
+    if (session && session.user) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('user_role')
+        .eq('user_id', session.user.id)
+        .single();
+      if (error || !data) {
+        setLoginError("Account not found. Please sign up first.");
+        return;
       }
+      if (data.user_role === 'planner') navigate('/dashboard');
+      else if (data.user_role === 'vendor') navigate('/vendor-dashboard');
+      else navigate('/dashboard');
     }
-    redirectByRole();
-  }, [session, navigate]);
+  }
+  redirectByRole();
+}, [session, navigate]);
 
   const handleGoogleSignIn = async () => {
     // Always use localhost for development
@@ -85,6 +86,11 @@ function LoginPage() {
         <button onClick={handleGoogleSignIn} className="auth-btn">
           <i className="fab fa-google"></i> Login with Google
         </button>
+         {loginError && (
+        <div style={{ color: "pink", marginBottom: "1rem" }}>
+          {loginError}
+        </div>
+      )}
         <p className="auth-prompt">
           First time?{' '}
           <Link to="/signup" className="auth-link">
