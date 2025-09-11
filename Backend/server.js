@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const { createClient } = require("@supabase/supabase-js");
 const newEventRoutes = require("./src/Routes/newEvent.routes");
+const getEventsRoutes = require("./src/Routes/getEvent.routes");
 
 dotenv.config();
 
@@ -11,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 //Routes go here
+app.use("/events", getEventsRoutes);
 app.use("/events", newEventRoutes);
 
 // Supabase client
