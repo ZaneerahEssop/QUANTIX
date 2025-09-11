@@ -33,10 +33,17 @@ function SignUpPage() {
     }
     // Save role in sessionStorage for use after OAuth redirect
     sessionStorage.setItem('signupRole', role);
+    
+    // Get the current origin (handles both local and deployed environments)
+    const currentOrigin = window.location.origin;
+    const redirectUrl = `${currentOrigin}/post-signup`;
+    
+    console.log('Redirecting to:', redirectUrl); // Debug log
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/post-signup`,
+        redirectTo: redirectUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
