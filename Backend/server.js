@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const { createClient } = require("@supabase/supabase-js");
+const path = require("path");
+
 const newEventRoutes = require("./src/Routes/newEvent.routes");
 const getEventsRoutes = require("./src/Routes/getEvent.routes");
 const plannerRoutes = require("./src/Routes/planner.routes");
@@ -12,16 +14,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-//Routes go here
-app.use("/api/events", getEventsRoutes);
-app.use("/api/events", newEventRoutes);
-app.use("/api/planners", plannerRoutes);
-
 // Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // backend only
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ---------- API Routes ----------
+app.use("/api/events", getEventsRoutes);
+app.use("/api/events", newEventRoutes);
+app.use("/api/planners", plannerRoutes);
 
 app.get("/users", async (req, res) => {
   try {
@@ -33,11 +35,15 @@ app.get("/users", async (req, res) => {
   }
 });
 
+// ---------- Serve React build for production ----------
+const buildPath = path.join(__dirname, "build");
+app.use(express.static(buildPath));
+
+// Catch-all only for GET requests that do NOT start with /api
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(buildPath, "index.html"));
+});
+
+// ---------- Start server ----------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-const path = require("path");
-app.use(express.static(path.join(__dirname, "build")));
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
-});
