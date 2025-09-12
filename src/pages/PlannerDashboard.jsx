@@ -57,7 +57,8 @@ export default function PlannerDashboard({ session }) {
     const fetchEventsFromAPI = async () => {
       try {
         const response = await fetch(
-          `${API_URL}/api/events?planner_id=${session.user.id}`
+          `${API_URL}/api/events?planner_id=${session.user.id}`,
+          { cache: "no-store" }
         );
         if (!response.ok) throw new Error("Failed to fetch events");
 
