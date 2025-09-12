@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../client";
-import { FaPlus, FaTrash, FaCheck, FaUser } from 'react-icons/fa';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
-import Navbar from '../components/Navbar';
-import ChatUI from '../components/ChatUI';
+import { FaPlus, FaTrash, FaCheck, FaUser } from "react-icons/fa";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import Navbar from "../components/Navbar";
+import ChatUI from "../components/ChatUI";
 
 export default function PlannerDashboard({ session }) {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ export default function PlannerDashboard({ session }) {
       try {
         setLoading(true);
         const response = await fetch(
-          `${process.env.REACT_APP_API_URL}/planners/${session.user.id}`
+          `${process.env.REACT_APP_API_URL}/api/planners/${session.user.id}`
         );
         if (!response.ok) throw new Error("Failed to fetch planner data");
 
@@ -50,7 +50,7 @@ export default function PlannerDashboard({ session }) {
     const fetchEventsFromAPI = async () => {
       try {
         const response = await fetch(
-          `${process.env.REACT_APP_API_URL}/events?planner_id=${session.user.id}`
+          `${process.env.REACT_APP_API_URL}/api/events?planner_id=${session.user.id}`
         );
         if (!response.ok) throw new Error("Failed to fetch events");
 
@@ -161,11 +161,11 @@ export default function PlannerDashboard({ session }) {
   }
 
   const formatTime = (dateString) => {
-    if (!dateString) return 'Time not set';
+    if (!dateString) return "Time not set";
     const date = new Date(dateString);
-    return date.toLocaleTimeString(undefined, { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -893,20 +893,27 @@ export default function PlannerDashboard({ session }) {
           </div>
 
           {/* Chat Section */}
-          <div style={{
-            backgroundColor: '#f8f9fa',
-            borderRadius: '12px',
-            padding: '1.5rem',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            marginTop: '2rem'
-          }}>
-            <ChatUI 
+          <div
+            style={{
+              backgroundColor: "#f8f9fa",
+              borderRadius: "12px",
+              padding: "1.5rem",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              marginTop: "2rem",
+            }}
+          >
+            <ChatUI
               listTitle="Vendors"
               vendors={[
-                { id: 1, name: 'Blossom Events', lastMessage: 'Looking forward to our meeting!', unread: 0 },
+                {
+                  id: 1,
+                  name: "Blossom Events",
+                  lastMessage: "Looking forward to our meeting!",
+                  unread: 0,
+                },
               ]}
               onSendMessage={(message) => {
-                console.log('Message to vendor:', message);
+                console.log("Message to vendor:", message);
               }}
             />
           </div>
@@ -951,15 +958,15 @@ export default function PlannerDashboard({ session }) {
             <button
               onClick={() => setShowImageModal(false)}
               style={{
-                position: 'absolute',
-                top: '-40px',
-                right: '0',
-                background: 'none',
-                border: 'none',
-                color: 'white',
-                fontSize: '24px',
-                cursor: 'pointer',
-                padding: '8px'
+                position: "absolute",
+                top: "-40px",
+                right: "0",
+                background: "none",
+                border: "none",
+                color: "white",
+                fontSize: "24px",
+                cursor: "pointer",
+                padding: "8px",
               }}
             >
               ✕
