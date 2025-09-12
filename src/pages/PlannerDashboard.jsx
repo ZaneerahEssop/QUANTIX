@@ -57,7 +57,7 @@ export default function PlannerDashboard({ session }) {
     const fetchEventsFromAPI = async () => {
       try {
         const response = await fetch(
-          `${process.env.REACT_APP_API_URL}/api/events?planner_id=${session.user.id}`
+          `${API_URL}/api/events?planner_id=${session.user.id}`
         );
         if (!response.ok) throw new Error("Failed to fetch events");
 
