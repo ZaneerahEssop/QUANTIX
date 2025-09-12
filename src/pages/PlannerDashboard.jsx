@@ -26,14 +26,6 @@ export default function PlannerDashboard({ session }) {
   console.log("API URL:", process.env.REACT_APP_API_URL);
 
   useEffect(() => {
-    // Add this at the top of your useEffect
-    console.log("Window location:", window.location.hostname);
-    console.log("API_URL calculated:", API_URL);
-    console.log("Full user URL:", `${API_URL}/api/planners/${session.user.id}`);
-    console.log(
-      "Full events URL:",
-      `${API_URL}/api/events?planner_id=${session.user.id}`
-    );
     if (!session?.user) {
       setLoading(false);
       return;
