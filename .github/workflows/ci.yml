@@ -25,12 +25,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd backend
+          cd Backend
           npm install
 
       - name: npm test
         run: |
-          cd backend
+          cd Backend
           chmod +x ./node_modules/.bin/jest
           npx jest --coverage --passWithNoTests
         env:
