@@ -12,7 +12,7 @@ const getEvents = async (req, res) => {
       .from("events")
       .select("*")
       .eq("planner_id", planner_id)
-      .order("date", { ascending: true });
+      .order("start_time", { ascending: true });
 
     if (error) throw error;
 
