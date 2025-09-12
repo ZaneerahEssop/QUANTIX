@@ -8,6 +8,7 @@ import Navbar from "../components/Navbar";
 import ChatUI from "../components/ChatUI";
 
 export default function PlannerDashboard({ session }) {
+  console.log("API URL:", process.env.REACT_APP_API_URL);
   const navigate = useNavigate();
   const [userName, setUserName] = useState("Planner");
   const [preview, setPreview] = useState(null);
