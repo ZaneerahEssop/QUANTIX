@@ -32,9 +32,9 @@ export default function PlannerDashboard({ session }) {
     }
 
     const API_URL =
-      window.location.hostname === "production"
-        ? "https://quantix-production.up.railway.app"
-        : "http://localhost:5000";
+      window.location.hostname === "development"
+        ? "http://localhost:5000"
+        : "https://quantix-production.up.railway.app";
 
     const fetchUserData = async () => {
       try {
