@@ -8,7 +8,6 @@ import Navbar from "../components/Navbar";
 import ChatUI from "../components/ChatUI";
 
 export default function PlannerDashboard({ session }) {
-  console.log("API URL:", process.env.REACT_APP_API_URL);
   const navigate = useNavigate();
   const [userName, setUserName] = useState("Planner");
   const [preview, setPreview] = useState(null);
@@ -24,17 +23,24 @@ export default function PlannerDashboard({ session }) {
   const [date, setDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
 
+  console.log("API URL:", process.env.REACT_APP_API_URL);
+
   useEffect(() => {
     if (!session?.user) {
       setLoading(false);
       return;
     }
 
+    const API_URL =
+      window.location.hostname === "localhost"
+        ? "http://localhost:5000"
+        : "https://quantix-production.up.railway.app";
+
     const fetchUserData = async () => {
       try {
         setLoading(true);
         const response = await fetch(
-          `${process.env.REACT_APP_API_URL}/api/planners/${session.user.id}`
+          `${API_URL}/api/planners/${session.user.id}`
         );
         if (!response.ok) throw new Error("Failed to fetch planner data");
 
