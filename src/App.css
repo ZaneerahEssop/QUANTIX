@@ -1,3 +1,32 @@
+/* Scrollbar Styles */
+.events-scroll-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.events-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.events-scroll-container::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.events-scroll-container:hover::-webkit-scrollbar-thumb {
+  background-color: #E8B180;
+}
+
+/* For Firefox */
+.events-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.events-scroll-container:hover {
+  scrollbar-color: #E8B180 transparent;
+}
+
 /* Loading Page Styles */
 .loading-container {
   display: flex;
