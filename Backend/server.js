@@ -16,16 +16,14 @@ const app = express();
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
 
       const allowedOrigins = [
-        "http://localhost:3000", // Local development
-        process.env.FRONTEND_BASE_URL, // From backend env vars
-        process.env.REACT_APP_BASE_URL, // From frontend (if passed)
-      ].filter(Boolean); // Remove any undefined values
+        "http://localhost:3000",
+        process.env.FRONTEND_URL, // Changed from FRONTEND_BASE_URL
+        process.env.REACT_APP_BASE_URL,
+      ].filter(Boolean);
 
-      // Also allow any Railway domains as fallback
       if (
         origin.includes(".railway.app") ||
         allowedOrigins.includes(origin) ||
@@ -91,13 +89,13 @@ app.get("/users", async (req, res) => {
   }
 });
 
-// ---------- Debug Route (Temporary) ----------
+// ---------- Debug Route ----------
 app.get("/api/debug/env", (req, res) => {
   res.json({
     nodeEnv: process.env.NODE_ENV,
-    frontendBaseUrl: process.env.REACT_APP_BASE_URL,
+    frontendUrl: process.env.FRONTEND_URL, // Changed
+    reactAppBaseUrl: process.env.REACT_APP_BASE_URL,
     apiUrl: process.env.REACT_APP_API_URL,
-    backendFrontendUrl: process.env.FRONTEND_BASE_URL,
     supabaseUrl: process.env.SUPABASE_URL ? "Set" : "Not set",
     port: process.env.PORT,
   });
@@ -124,34 +122,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// ---------- React Catch-all Handler (FIXED) ----------
-// Use a parameterized route instead of wildcard
-app.get("/:path", (req, res) => {
-  // List of routes that should be handled by React
-  const reactRoutes = [
-    "/",
-    "/events",
-    "/planners",
-    "/dashboard",
-    "/add-event",
-    "/edit-event",
-  ];
-
-  if (
-    reactRoutes.includes(req.params.path) ||
-    req.params.path.startsWith("edit-event/") ||
-    !req.path.startsWith("/api")
-  ) {
+// ---------- React Catch-all Handler ----------
+// This serves React app for ALL non-API routes
+app.use((req, res) => {
+  if (!req.path.startsWith("/api")) {
     return res.sendFile(path.join(buildPath, "index.html"));
   }
-
-  // If it's not a React route and not an API route, continue to next middleware
-  next();
-});
-
-// Final catch-all for any other routes
-app.use((req, res) => {
-  res.sendFile(path.join(buildPath, "index.html"));
+  // If it's an API route that wasn't handled, return 404 JSON
+  res.status(404).json({ error: "API endpoint not found" });
 });
 
 // ---------- Error Handling Middleware ----------
@@ -179,5 +157,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`Frontend URL: ${process.env.FRONTEND_BASE_URL || "Not set"}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL || "Not set"}`); // Changed
 });
