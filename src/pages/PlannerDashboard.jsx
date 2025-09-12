@@ -32,9 +32,9 @@ export default function PlannerDashboard({ session }) {
     }
 
     const API_URL =
-      window.location.hostname === "localhost"
-        ? "http://localhost:5000"
-        : "https://quantix-production.up.railway.app";
+      window.location.hostname === "production"
+        ? "https://quantix-production.up.railway.app"
+        : "http://localhost:5000";
 
     const fetchUserData = async () => {
       try {
@@ -58,14 +58,26 @@ export default function PlannerDashboard({ session }) {
       try {
         const response = await fetch(
           `${API_URL}/api/events?planner_id=${session.user.id}`,
-          { cache: "no-store" }
+          {
+            cache: "no-store",
+            headers: {
+              Accept: "application/json",
+            },
+          }
         );
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Server returned non-JSON response");
+        }
+
         if (!response.ok) throw new Error("Failed to fetch events");
 
         const data = await response.json();
         setEvents(data);
       } catch (err) {
         console.error("Error fetching events from API:", err);
+        // You might want to show an error message to the user here
       } finally {
         setLoading(false);
       }
