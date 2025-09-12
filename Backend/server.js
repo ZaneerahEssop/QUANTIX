@@ -11,75 +11,18 @@ const plannerRoutes = require("./src/Routes/planner.routes");
 dotenv.config();
 
 const app = express();
-
-// ---------- CORS Configuration ----------
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl, etc.)
-      if (!origin) return callback(null, true);
-
-      const allowedOrigins = [
-        "http://localhost:3000", // Local development
-        process.env.FRONTEND_BASE_URL, // From backend env vars
-        process.env.REACT_APP_BASE_URL, // From frontend (if passed)
-      ].filter(Boolean); // Remove any undefined values
-
-      // Also allow any Railway domains as fallback
-      if (
-        origin.includes(".railway.app") ||
-        allowedOrigins.includes(origin) ||
-        allowedOrigins.some((allowed) => origin.startsWith(allowed))
-      ) {
-        callback(null, true);
-      } else {
-        console.log(
-          "CORS blocked:",
-          origin,
-          "Allowed origins:",
-          allowedOrigins
-        );
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-  })
-);
-
+app.use(cors());
 app.use(express.json());
 
-// ---------- Request Logging Middleware ----------
-app.use((req, res, next) => {
-  console.log("Incoming request:", {
-    method: req.method,
-    path: req.path,
-    origin: req.headers.origin,
-    host: req.headers.host,
-    query: req.query,
-  });
-  next();
-});
+//Routes go here
+app.use("/events", getEventsRoutes);
+app.use("/events", newEventRoutes);
 
 // Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY // backend only
 );
-
-// ---------- API Logging Middleware ----------
-app.use((req, res, next) => {
-  if (req.path.startsWith("/api")) {
-    console.log(`API Request: ${req.method} ${req.originalUrl}`);
-  }
-  next();
-});
-
-// ---------- API Routes ----------
-app.use("/api/events", getEventsRoutes);
-app.use("/api/events", newEventRoutes);
-app.use("/api/planners", plannerRoutes);
 
 app.get("/users", async (req, res) => {
   try {
@@ -89,6 +32,36 @@ app.get("/users", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Add the missing planner route
+app.get("/planners/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from("planners") // Make sure this table exists
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: "Planner not found" });
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 404 handler - CORRECT VERSION
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found" });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Internal server error" });
 });
 
 // ---------- Debug Route (Temporary) ----------
