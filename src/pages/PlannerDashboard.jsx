@@ -25,16 +25,20 @@ export default function PlannerDashboard({ session }) {
 
   console.log("API URL:", process.env.REACT_APP_API_URL);
 
+  const API_URL =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+      ? "http://localhost:5000"
+      : "https://quantix-production.up.railway.app";
+
+  console.log("Current hostname:", window.location.hostname);
+  console.log("Using API_URL:", API_URL);
+
   useEffect(() => {
     if (!session?.user) {
       setLoading(false);
       return;
     }
-
-    const API_URL =
-      window.location.hostname === "development"
-        ? "http://localhost:5000"
-        : "https://quantix-production.up.railway.app";
 
     const fetchUserData = async () => {
       try {
