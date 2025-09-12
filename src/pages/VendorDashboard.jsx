@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useLayoutEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../client";
 import Calendar from 'react-calendar';
@@ -18,6 +18,35 @@ export default function VendorDashboard({ session }) {
   const [isLoading, setIsLoading] = useState(true);
   const [showAllEvents, setShowAllEvents] = useState(false);
   const [plannerNames, setPlannerNames] = useState({});
+
+  // Prevent scrolling until page is fully loaded
+  useLayoutEffect(() => {
+    // Add a class to the body to prevent scrolling via CSS
+    document.body.classList.add('dashboard-loading');
+    
+    // Lock scroll on mount
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    
+    // Scroll to top immediately
+    window.scrollTo(0, 0);
+    
+    // Re-enable scrolling after a longer delay (1000ms)
+    const timer = setTimeout(() => {
+      document.documentElement.style.overflow = 'auto';
+      document.body.style.overflow = 'auto';
+      document.body.classList.remove('dashboard-loading');
+      window.scrollTo(0, 0);
+    }, 1000);
+    
+    // Cleanup
+    return () => {
+      clearTimeout(timer);
+      document.documentElement.style.overflow = 'auto';
+      document.body.style.overflow = 'auto';
+      document.body.classList.remove('dashboard-loading');
+    };
+  }, []);
 
   const fetchPlannerName = useCallback(async (plannerId) => {
     if (!plannerId) return 'Unknown Planner';
@@ -539,26 +568,12 @@ export default function VendorDashboard({ session }) {
           }}
           onClick={() => setShowImageModal(false)}
         >
-          <div 
-            style={{
-              maxWidth: '90%',
-              maxHeight: '90%',
-              position: 'relative',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img 
-              src={preview} 
-              alt="Profile Preview" 
-              style={{ 
-                maxWidth: '100%', 
-                maxHeight: '80vh', 
-                borderRadius: '8px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
-              }} 
-            />
+          <div style={{ maxWidth: '90%', maxHeight: '90%', position: 'relative' }}>
             <button
-              onClick={() => setShowImageModal(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowImageModal(false);
+              }}
               style={{
                 position: 'absolute',
                 top: '-40px',
