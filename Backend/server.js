@@ -8,17 +8,22 @@ const getEventsRoutes = require("./src/Routes/getEvent.routes");
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(express.json());
 
-//Routes go here
+// Routes go here
 app.use("/events", getEventsRoutes);
 app.use("/events", newEventRoutes);
 
 // Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // backend only
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 app.get("/users", async (req, res) => {
@@ -29,6 +34,36 @@ app.get("/users", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Add the missing planner route
+app.get("/planners/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from("planners") // Make sure this table exists
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: "Planner not found" });
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 404 handler - CORRECT VERSION
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found" });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Internal server error" });
 });
 
 const PORT = process.env.PORT || 5000;
