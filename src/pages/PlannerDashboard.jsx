@@ -40,8 +40,24 @@ export default function PlannerDashboard({ session }) {
       try {
         setLoading(true);
         const response = await fetch(
-          `${API_URL}/api/planners/${session.user.id}`
+          `${API_URL}/api/planners/${session.user.id}`,
+          {
+            headers: {
+              Accept: "application/json",
+            },
+          }
         );
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const textResponse = await response.text();
+          console.error(
+            "Server returned HTML instead of JSON:",
+            textResponse.substring(0, 200)
+          );
+          throw new Error("Server returned non-JSON response");
+        }
+
         if (!response.ok) throw new Error("Failed to fetch planner data");
 
         const data = await response.json();
