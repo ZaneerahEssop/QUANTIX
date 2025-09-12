@@ -17,8 +17,8 @@ app.use(
 app.use(express.json());
 
 // Routes go here
-app.use("/events", getEventsRoutes);
-app.use("/events", newEventRoutes);
+app.use("/api/events", getEventsRoutes);
+app.use("/api/events", newEventRoutes);
 
 // Supabase client
 const supabase = createClient(
