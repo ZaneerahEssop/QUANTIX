@@ -35,13 +35,9 @@ app.get("/users", async (req, res) => {
   }
 });
 
-// ---------- Serve React build for production ----------
-const buildPath = path.join(__dirname, "build");
-app.use(express.static(buildPath));
-
-// Catch-all only for GET requests that do NOT start with /api
+app.use(express.static(path.join(__dirname, "build")));
 app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(buildPath, "index.html"));
+  res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
 // ---------- Start server ----------
