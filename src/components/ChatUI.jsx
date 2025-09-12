@@ -269,15 +269,24 @@ const ChatUI = ({
     setNewMessage('');
   };
 
+  // Only set first vendor as active if none is selected and vendors exist
   useEffect(() => {
-    // Set the first vendor as active by default if none is selected
     if (!activeChat && vendors.length > 0) {
       setActiveChat(vendors[0].id);
     }
   }, [vendors, activeChat]);
 
+  // Only scroll to bottom when new messages are added, not on initial render
+  const isInitialMount = useRef(true);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    
+    if (messages[activeChat]?.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, activeChat]);
 
 
