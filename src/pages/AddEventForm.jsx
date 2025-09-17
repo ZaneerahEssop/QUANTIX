@@ -1,18 +1,18 @@
-import "../AddEventForm.css";
-import React, { useState, useEffect } from "react";
-import { supabase } from "../client";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
+  FaArrowLeft,
   FaCalendarAlt,
   FaClock,
-  FaUsers,
-  FaUpload,
-  FaSearch,
-  FaTimes,
   FaFileAlt,
   FaPlus,
-  FaArrowLeft,
+  FaSearch,
+  FaTimes,
+  FaUpload,
+  FaUsers,
 } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import "../AddEventForm.css";
+import { supabase } from "../client";
 
 export default function AddEventForm() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export default function AddEventForm() {
     time: "",
     theme: "",
     venue: "",
-    end_time: ""
+    end_time: "",
   });
   const vendorCategories = [
     "Catering",
@@ -61,16 +61,14 @@ export default function AddEventForm() {
 
   useEffect(() => {
     const fetchVendors = async () => {
+      setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("vendors")
-          .select(
-            "vendor_id, business_name, service_type, contact_number, description"
-          )
-          .order("business_name", { ascending: true });
+        const response = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/vendors`
+        ); // your backend route
+        if (!response.ok) throw new Error("Failed to fetch vendors");
 
-        if (error) throw error;
-
+        const data = await response.json();
         setAllVendors(data);
         setFilteredVendors(data);
       } catch (error) {
@@ -79,6 +77,7 @@ export default function AddEventForm() {
         setIsLoading(false);
       }
     };
+
     fetchVendors();
   }, []);
 
@@ -112,7 +111,9 @@ export default function AddEventForm() {
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
     const allowedFiles = newFiles.filter((file) => {
       if (file.size > MAX_FILE_SIZE) {
-        setWarningMessage(`File is too large: ${file.name}. Maximum size is 10 MB.`);
+        setWarningMessage(
+          `File is too large: ${file.name}. Maximum size is 10 MB.`
+        );
         setShowWarning(true);
         return false;
       }
@@ -181,14 +182,14 @@ export default function AddEventForm() {
           return {
             name: docFile.name,
             url: publicUrl,
-            file_type: docFile.type || 'application/octet-stream'
+            file_type: docFile.type || "application/octet-stream",
           };
         })
       );
 
       // 2️⃣ Create the event in the events table
       const { data: eventData, error: eventError } = await supabase
-        .from('events')
+        .from("events")
         .insert({
           name: formData.name,
           theme: formData.theme || null,
@@ -197,7 +198,7 @@ export default function AddEventForm() {
             : `${formData.date}T00:00:00`,
           end_time: formData.end_time || null,
           venue: formData.venue || null,
-          planner_id: user.id
+          planner_id: user.id,
         })
         .select()
         .single();
@@ -206,13 +207,13 @@ export default function AddEventForm() {
 
       // 3️⃣ Add vendors to event_vendors table if any are selected
       if (selectedVendors.length > 0) {
-        const vendorRelationships = selectedVendors.map(vendor => ({
+        const vendorRelationships = selectedVendors.map((vendor) => ({
           event_id: eventData.event_id,
-          vendor_id: vendor.vendor_id
+          vendor_id: vendor.vendor_id,
         }));
 
         const { error: vendorError } = await supabase
-          .from('event_vendors')
+          .from("event_vendors")
           .insert(vendorRelationships);
 
         if (vendorError) throw vendorError;
@@ -220,16 +221,16 @@ export default function AddEventForm() {
 
       // 4️⃣ Add documents to files table if any are uploaded
       if (uploadedDocuments.length > 0) {
-        const fileRecords = uploadedDocuments.map(doc => ({
+        const fileRecords = uploadedDocuments.map((doc) => ({
           event_id: eventData.event_id,
           uploaded_by: user.id,
           file_name: doc.name,
           file_type: doc.file_type,
-          file_url: doc.url
+          file_url: doc.url,
         }));
 
         const { error: fileError } = await supabase
-          .from('files')
+          .from("files")
           .insert(fileRecords);
 
         if (fileError) throw fileError;
@@ -248,125 +249,137 @@ export default function AddEventForm() {
   return (
     <>
       {showSuccess && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 10000,
-          animation: 'fadeIn 0.3s ease-out',
-          pointerEvents: 'auto',
-          backdropFilter: 'blur(2px)'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-            padding: '2.5rem 3rem',
-            position: 'relative',
-            minWidth: '350px',
-            maxWidth: '90%',
-            textAlign: 'center',
-            border: '2px solid #E5ACBF',
-            zIndex: 10001
-          }}>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 10000,
+            animation: "fadeIn 0.3s ease-out",
+            pointerEvents: "auto",
+            backdropFilter: "blur(2px)",
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "16px",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+              padding: "2.5rem 3rem",
+              position: "relative",
+              minWidth: "350px",
+              maxWidth: "90%",
+              textAlign: "center",
+              border: "2px solid #E5ACBF",
+              zIndex: 10001,
+            }}
+          >
             <button
               onClick={() => {
                 setShowSuccess(false);
                 navigate("/dashboard");
               }}
               style={{
-                position: 'absolute',
-                top: '0.75rem',
-                right: '1rem',
-                background: 'none',
-                border: 'none',
-                fontSize: '1.5rem',
-                cursor: 'pointer',
-                color: '#666',
-                padding: '0.25rem 0.5rem',
+                position: "absolute",
+                top: "0.75rem",
+                right: "1rem",
+                background: "none",
+                border: "none",
+                fontSize: "1.5rem",
+                cursor: "pointer",
+                color: "#666",
+                padding: "0.25rem 0.5rem",
                 lineHeight: 1,
-                fontWeight: 'bold',
-                transition: 'color 0.2s'
+                fontWeight: "bold",
+                transition: "color 0.2s",
               }}
-              onMouseOver={(e) => e.target.style.color = '#E5ACBF'}
-              onMouseOut={(e) => e.target.style.color = '#666'}
+              onMouseOver={(e) => (e.target.style.color = "#E5ACBF")}
+              onMouseOut={(e) => (e.target.style.color = "#666")}
             >
               &times;
             </button>
-            <p style={{
-              margin: '1rem 0 0',
-              color: '#333',
-              fontWeight: 500,
-              fontSize: '1.1rem',
-              padding: '0 1rem'
-            }}>
+            <p
+              style={{
+                margin: "1rem 0 0",
+                color: "#333",
+                fontWeight: 500,
+                fontSize: "1.1rem",
+                padding: "0 1rem",
+              }}
+            >
               Event created successfully!
             </p>
           </div>
         </div>
       )}
       {showWarning && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 10000,
-          animation: 'fadeIn 0.3s ease-out',
-          pointerEvents: 'auto',
-          backdropFilter: 'blur(2px)'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-            padding: '2.5rem 3rem',
-            position: 'relative',
-            minWidth: '350px',
-            maxWidth: '90%',
-            textAlign: 'center',
-            border: '2px solid #E5ACBF',
-            zIndex: 10001
-          }}>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 10000,
+            animation: "fadeIn 0.3s ease-out",
+            pointerEvents: "auto",
+            backdropFilter: "blur(2px)",
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "16px",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+              padding: "2.5rem 3rem",
+              position: "relative",
+              minWidth: "350px",
+              maxWidth: "90%",
+              textAlign: "center",
+              border: "2px solid #E5ACBF",
+              zIndex: 10001,
+            }}
+          >
             <button
               onClick={() => setShowWarning(false)}
               style={{
-                position: 'absolute',
-                top: '0.75rem',
-                right: '1rem',
-                background: 'none',
-                border: 'none',
-                fontSize: '1.5rem',
-                cursor: 'pointer',
-                color: '#666',
-                padding: '0.25rem 0.5rem',
+                position: "absolute",
+                top: "0.75rem",
+                right: "1rem",
+                background: "none",
+                border: "none",
+                fontSize: "1.5rem",
+                cursor: "pointer",
+                color: "#666",
+                padding: "0.25rem 0.5rem",
                 lineHeight: 1,
-                fontWeight: 'bold',
-                transition: 'color 0.2s'
+                fontWeight: "bold",
+                transition: "color 0.2s",
               }}
-              onMouseOver={(e) => e.target.style.color = '#E5ACBF'}
-              onMouseOut={(e) => e.target.style.color = '#666'}
+              onMouseOver={(e) => (e.target.style.color = "#E5ACBF")}
+              onMouseOut={(e) => (e.target.style.color = "#666")}
             >
               &times;
             </button>
-            <p style={{
-              margin: '1rem 0 0',
-              color: '#333',
-              fontWeight: 500,
-              fontSize: '1.1rem',
-              padding: '0 1rem'
-            }}>
+            <p
+              style={{
+                margin: "1rem 0 0",
+                color: "#333",
+                fontWeight: 500,
+                fontSize: "1.1rem",
+                padding: "0 1rem",
+              }}
+            >
               {warningMessage}
             </p>
           </div>
@@ -470,7 +483,8 @@ export default function AddEventForm() {
               <FaUsers /> Vendors <span className="optional-tag">Optional</span>
             </h3>
             <p className="section-description">
-              Add vendors to your event to keep everything organized in one place
+              Add vendors to your event to keep everything organized in one
+              place
             </p>
 
             <div className="vendor-search-container">
@@ -524,7 +538,9 @@ export default function AddEventForm() {
                         {vendor.service_type}
                       </span>
                       {vendor.contact_number && (
-                        <p className="vendor-contact">{vendor.contact_number}</p>
+                        <p className="vendor-contact">
+                          {vendor.contact_number}
+                        </p>
                       )}
                     </div>
                     <button
@@ -579,8 +595,8 @@ export default function AddEventForm() {
               <span className="optional-tag">Optional</span>
             </h3>
             <p className="section-description">
-              Upload contracts, invoices, or other important files related to your
-              event
+              Upload contracts, invoices, or other important files related to
+              your event
             </p>
 
             <div className="file-upload-area">
@@ -638,7 +654,11 @@ export default function AddEventForm() {
             >
               Cancel
             </button>
-            <button type="submit" disabled={isSubmitting} className="submit-btn">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="submit-btn"
+            >
               {isSubmitting ? "Creating Event..." : "Create Event"}
             </button>
           </div>
