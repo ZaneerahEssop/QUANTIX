@@ -97,6 +97,51 @@ export default function AddEventForm() {
     setFilteredVendors(result);
   }, [searchTerm, selectedCategory, allVendors]);
 
+  const handleSendVendorRequest = async (vendor) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setWarningMessage("You must be logged in to request a vendor.");
+        setShowWarning(true);
+        return;
+      }
+
+      if (!formData.event_id) {
+        setWarningMessage(
+          "You need to save the event first before adding vendors."
+        );
+        setShowWarning(true);
+        return;
+      }
+
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/vendor-requests`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event_id: formData.event_id, // make sure you save event_id when creating the event
+            vendor_id: vendor.vendor_id,
+            message: `Request to join event ${formData.name}`,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error || "Failed to send request");
+
+      setShowSuccess(true);
+    } catch (err) {
+      console.error("Error sending vendor request:", err);
+      setWarningMessage(err.message);
+      setShowWarning(true);
+    }
+  };
+
   const handleAddVendor = (vendor) => {
     if (selectedVendors.some((v) => v.vendor_id === vendor.vendor_id)) return;
     setSelectedVendors([...selectedVendors, vendor]);
@@ -205,20 +250,36 @@ export default function AddEventForm() {
 
       if (eventError) throw eventError;
 
+      setFormData((prev) => ({ ...prev, event_id: eventData.event_id }));
+
       // 3️⃣ Add vendors to event_vendors table if any are selected
       if (selectedVendors.length > 0) {
-        const vendorRelationships = selectedVendors.map((vendor) => ({
-          event_id: eventData.event_id,
-          vendor_id: vendor.vendor_id,
-        }));
+        for (const vendor of selectedVendors) {
+          const response = await fetch(
+            `${process.env.REACT_APP_API_URL}/api/vendor-requests`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                event_id: eventData.event_id,
+                vendor_id: vendor.vendor_id,
+                message: `Request to join event ${formData.name}`,
+                status: "pending",
+              }),
+            }
+          );
 
-        const { error: vendorError } = await supabase
-          .from("event_vendors")
-          .insert(vendorRelationships);
+          const data = await response.json();
 
-        if (vendorError) throw vendorError;
+          if (!response.ok) {
+            console.error("Failed to send vendor request:", data.error);
+            throw new Error(
+              data.error ||
+                `Failed to send request for vendor ${vendor.vendor_id}`
+            );
+          }
+        }
       }
-
       // 4️⃣ Add documents to files table if any are uploaded
       if (uploadedDocuments.length > 0) {
         const fileRecords = uploadedDocuments.map((doc) => ({
