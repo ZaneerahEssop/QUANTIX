@@ -3,6 +3,7 @@ const supabase = require("../Config/supabase");
 const getPlannerById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id) return res.status(400).json({ error: "Planner ID is required" });
 
     const { data, error } = await supabase
       .from("planners")
