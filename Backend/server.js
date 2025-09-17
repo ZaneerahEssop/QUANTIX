@@ -5,6 +5,7 @@ const { createClient } = require("@supabase/supabase-js");
 const newEventRoutes = require("./src/Routes/newEvent.routes");
 const getEventsRoutes = require("./src/Routes/getEvent.routes");
 const plannerRoutes = require("./src/Routes/planner.routes");
+const exportRoutes = require("./src/Routes/export.routes");
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use("/api/events", getEventsRoutes);
 app.use("/api/events", newEventRoutes);
 app.use("/api/planners", plannerRoutes);
+app.use("/api/events", exportRoutes); // Add this line
 
 // Supabase client
 const supabase = createClient(
