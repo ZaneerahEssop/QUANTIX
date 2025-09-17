@@ -24,29 +24,29 @@ export default function PlannerDashboard({ session }) {
   // Prevent scrolling until page is fully loaded
   useLayoutEffect(() => {
     // Add a class to the body to prevent scrolling via CSS
-    document.body.classList.add('dashboard-loading');
-    
+    document.body.classList.add("dashboard-loading");
+
     // Lock scroll on mount
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-    
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+
     // Scroll to top immediately
     window.scrollTo(0, 0);
-    
+
     // Re-enable scrolling after a longer delay (1000ms)
     const timer = setTimeout(() => {
-      document.documentElement.style.overflow = 'auto';
-      document.body.style.overflow = 'auto';
-      document.body.classList.remove('dashboard-loading');
+      document.documentElement.style.overflow = "auto";
+      document.body.style.overflow = "auto";
+      document.body.classList.remove("dashboard-loading");
       window.scrollTo(0, 0);
     }, 1000);
-    
+
     // Cleanup
     return () => {
       clearTimeout(timer);
-      document.documentElement.style.overflow = 'auto';
-      document.body.style.overflow = 'auto';
-      document.body.classList.remove('dashboard-loading');
+      document.documentElement.style.overflow = "auto";
+      document.body.style.overflow = "auto";
+      document.body.classList.remove("dashboard-loading");
     };
   }, []);
 
@@ -124,23 +124,23 @@ export default function PlannerDashboard({ session }) {
     const fetchTasks = async () => {
       try {
         const { data, error } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('planner_id', session.user.id)
-          .order('created_at', { ascending: false });
+          .from("tasks")
+          .select("*")
+          .eq("planner_id", session.user.id)
+          .order("created_at", { ascending: false });
 
         if (error) throw error;
-        
-        const formattedTasks = data.map(task => ({
+
+        const formattedTasks = data.map((task) => ({
           id: task.task_id,
           text: task.item,
           completed: task.completed || false,
-          created_at: task.created_at
+          created_at: task.created_at,
         }));
-        
+
         setTasks(formattedTasks);
       } catch (error) {
-        console.error('Error fetching tasks:', error);
+        console.error("Error fetching tasks:", error);
       } finally {
         setLoading(false);
       }
@@ -154,106 +154,113 @@ export default function PlannerDashboard({ session }) {
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!newTask.trim() || !session?.user?.id) {
-      console.error('Missing required fields:', { hasText: !!newTask.trim(), hasUserId: !!session?.user?.id });
+      console.error("Missing required fields:", {
+        hasText: !!newTask.trim(),
+        hasUserId: !!session?.user?.id,
+      });
       return;
     }
 
     try {
       // Get current auth session to verify user is authenticated
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
       if (authError || !user) {
-        console.error('Authentication error:', authError || 'No user found');
-        throw new Error('Not authenticated');
+        console.error("Authentication error:", authError || "No user found");
+        throw new Error("Not authenticated");
       }
 
-      console.log('Current user:', { id: user.id, email: user.email });
+      console.log("Current user:", { id: user.id, email: user.email });
 
-      const taskData = { 
+      const taskData = {
         planner_id: user.id, // Use the ID from the auth session
         item: newTask.trim(),
-        completed: false 
+        completed: false,
       };
 
-      console.log('Attempting to add task with data:', taskData);
-      
+      console.log("Attempting to add task with data:", taskData);
+
       // Verify table access by making a test query
       const { error: testError } = await supabase
-        .from('tasks')
-        .select('*')
+        .from("tasks")
+        .select("*")
         .limit(1);
 
       if (testError) {
-        console.error('Test query failed:', testError);
+        console.error("Test query failed:", testError);
         throw testError;
       }
-      
+
       // Proceed with insert
       const { data, error } = await supabase
-        .from('tasks')
-        .insert([taskData])  // Note: Changed to array format which is required by Supabase
+        .from("tasks")
+        .insert([taskData]) // Note: Changed to array format which is required by Supabase
         .select();
 
       if (error) {
-        console.error('Supabase insert error details:', {
+        console.error("Supabase insert error details:", {
           message: error.message,
           details: error.details,
           hint: error.hint,
-          code: error.code
+          code: error.code,
         });
         throw error;
       }
-      
-      console.log('Task added successfully:', data);
-      
+
+      console.log("Task added successfully:", data);
+
       if (data && data.length > 0) {
         const newTaskItem = {
-          id: data[0].id || data[0].task_id,  // Try both possible ID fields
+          id: data[0].id || data[0].task_id, // Try both possible ID fields
           text: data[0].item,
           completed: data[0].completed || false,
-          created_at: data[0].created_at || new Date().toISOString()
+          created_at: data[0].created_at || new Date().toISOString(),
         };
-        
-        setTasks(prevTasks => [newTaskItem, ...prevTasks]);
+
+        setTasks((prevTasks) => [newTaskItem, ...prevTasks]);
         setNewTask("");
       }
     } catch (error) {
-      console.error('Error adding task:', error);
+      console.error("Error adding task:", error);
     }
   };
 
   const toggleTaskCompletion = async (taskId, completed) => {
     try {
       const { error } = await supabase
-        .from('tasks')
+        .from("tasks")
         .update({ completed: !completed })
-        .eq('task_id', taskId);
+        .eq("task_id", taskId);
 
       if (error) throw error;
-      
-      setTasks(tasks.map(task => 
-        task.id === taskId ? { ...task, completed: !completed } : task
-      ));
+
+      setTasks(
+        tasks.map((task) =>
+          task.id === taskId ? { ...task, completed: !completed } : task
+        )
+      );
     } catch (error) {
-      console.error('Error updating task:', error);
+      console.error("Error updating task:", error);
     }
   };
 
   const deleteTask = async (taskId) => {
     try {
       const { error } = await supabase
-        .from('tasks')
+        .from("tasks")
         .delete()
-        .eq('task_id', taskId);
+        .eq("task_id", taskId);
 
       if (error) throw error;
-      
-      setTasks(tasks.filter(task => task.id !== taskId));
+
+      setTasks(tasks.filter((task) => task.id !== taskId));
     } catch (error) {
-      console.error('Error deleting task:', error);
+      console.error("Error deleting task:", error);
     }
   };
-
 
   const handleAddEvent = (e) => {
     e.preventDefault();
@@ -264,14 +271,14 @@ export default function PlannerDashboard({ session }) {
   if (loading) {
     return (
       <div
-        className={`dashboard-container ${loading ? 'dashboard-loading' : ''}`}
+        className={`dashboard-container ${loading ? "dashboard-loading" : ""}`}
         style={{
           padding: "1.5rem",
           maxWidth: "1200px",
           margin: "0 auto",
           minHeight: "100vh",
-          position: 'relative',
-          overflow: 'hidden'
+          position: "relative",
+          overflow: "hidden",
         }}
       >
         <div
@@ -507,11 +514,13 @@ export default function PlannerDashboard({ session }) {
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.overflowY = "auto";
-                    e.currentTarget.style.scrollbarColor = "#E8B180 transparent";
+                    e.currentTarget.style.scrollbarColor =
+                      "#E8B180 transparent";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.overflowY = "hidden";
-                    e.currentTarget.style.scrollbarColor = "transparent transparent";
+                    e.currentTarget.style.scrollbarColor =
+                      "transparent transparent";
                   }}
                   className="events-scroll-container"
                 >
@@ -526,7 +535,13 @@ export default function PlannerDashboard({ session }) {
                       No upcoming events. Add one to get started!
                     </div>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "1rem",
+                      }}
+                    >
                       {events.map((event) => (
                         <div
                           key={event.id}
@@ -538,12 +553,15 @@ export default function PlannerDashboard({ session }) {
                             transition: "transform 0.2s, box-shadow 0.2s",
                           }}
                           onMouseOver={(e) => {
-                            e.currentTarget.style.transform = "translateY(-2px)";
-                            e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
+                            e.currentTarget.style.transform =
+                              "translateY(-2px)";
+                            e.currentTarget.style.boxShadow =
+                              "0 4px 6px rgba(0,0,0,0.1)";
                           }}
                           onMouseOut={(e) => {
                             e.currentTarget.style.transform = "translateY(0)";
-                            e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+                            e.currentTarget.style.boxShadow =
+                              "0 1px 3px rgba(0,0,0,0.1)";
                           }}
                         >
                           <div
@@ -554,13 +572,19 @@ export default function PlannerDashboard({ session }) {
                               marginBottom: "0.5rem",
                             }}
                           >
-                            <h3 style={{ margin: 0, fontSize: "1rem", color: "#333" }}>
+                            <h3
+                              style={{
+                                margin: 0,
+                                fontSize: "1rem",
+                                color: "#333",
+                              }}
+                            >
                               {event.name}
                             </h3>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/events/${event.id}`);
+                                navigate(`/viewEvent/${event.event_id}`);
                               }}
                               style={{
                                 backgroundColor: "#FFB6C1",
@@ -577,12 +601,16 @@ export default function PlannerDashboard({ session }) {
                                 gap: "0.25rem",
                               }}
                               onMouseOver={(e) => {
-                                e.currentTarget.style.backgroundColor = "#FF9EAF";
-                                e.currentTarget.style.transform = "translateY(-1px)";
+                                e.currentTarget.style.backgroundColor =
+                                  "#FF9EAF";
+                                e.currentTarget.style.transform =
+                                  "translateY(-1px)";
                               }}
                               onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor = "#FFB6C1";
-                                e.currentTarget.style.transform = "translateY(0)";
+                                e.currentTarget.style.backgroundColor =
+                                  "#FFB6C1";
+                                e.currentTarget.style.transform =
+                                  "translateY(0)";
                               }}
                             >
                               <span>View Details</span>
@@ -766,7 +794,7 @@ export default function PlannerDashboard({ session }) {
                             display: "flex",
                             gap: "2px",
                             opacity: 1,
-                            visibility: "visible"
+                            visibility: "visible",
                           }}
                         >
                           {[...Array(Math.min(3, dateEvents.length))].map(
@@ -846,7 +874,9 @@ export default function PlannerDashboard({ session }) {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               }}
             >
-              <h2 style={{ marginTop: 0, marginBottom: "1.5rem" }}>My To-Do List</h2>
+              <h2 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
+                My To-Do List
+              </h2>
 
               <form onSubmit={handleAddTask} style={{ marginBottom: "1.5rem" }}>
                 <div
