@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const { createClient } = require("@supabase/supabase-js");
 const newEventRoutes = require("./src/Routes/newEvent.routes");
 const getEventsRoutes = require("./src/Routes/getEvent.routes");
+const plannerRoutes = require("./src/Routes/planner.routes");
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 // Routes go here
 app.use("/api/events", getEventsRoutes);
 app.use("/api/events", newEventRoutes);
+app.use("/api/planners", plannerRoutes);
 
 // Supabase client
 const supabase = createClient(
@@ -30,25 +32,6 @@ app.get("/users", async (req, res) => {
   try {
     const { data, error } = await supabase.from("users").select("*");
     if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Add the missing planner route
-app.get("/planners/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { data, error } = await supabase
-      .from("planners") // Make sure this table exists
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) throw error;
-    if (!data) return res.status(404).json({ error: "Planner not found" });
-
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
