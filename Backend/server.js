@@ -8,6 +8,8 @@ const plannerRoutes = require("./src/Routes/planner.routes");
 const exportRoutes = require("./src/Routes/export.routes");
 const vendorRoutes = require("./src/Routes/vendor.routes");
 const vendorRequestRoutes = require("./src/Routes/vendorRequest.routes");
+// Import the new guest routes
+const guestRoutes = require("./src/Routes/guests.routes");
 
 dotenv.config();
 
@@ -27,6 +29,8 @@ app.use("/api/planners", plannerRoutes);
 app.use("/api/events", exportRoutes);
 app.use("/api/vendors", vendorRoutes);
 app.use("/api/vendor-requests", vendorRequestRoutes);
+// Add the new guests route
+app.use("/api/guests", guestRoutes);
 
 // Supabase client
 const supabase = createClient(

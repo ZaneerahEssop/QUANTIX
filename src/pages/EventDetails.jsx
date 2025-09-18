@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../client";
 import {
@@ -18,7 +18,7 @@ import {
 } from "react-icons/fa";
 import "../styling/eventDetails.css";
 
-// --- Your original sub-components (EventSchedule, GuestManagement) are preserved below ---
+// --- Sub-components (EventSchedule, EventTheme, GuestManagement) are unchanged ---
 const EventSchedule = ({ schedule, onUpdate, isEditing }) => {
   const handleAddItem = () =>
     onUpdate([...(schedule || []), { time: "", activity: "" }]);
@@ -83,7 +83,6 @@ const EventSchedule = ({ schedule, onUpdate, isEditing }) => {
   );
 };
 
-// Add EventTheme component here
 const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
   const handleChange = (field, value) => {
     onUpdate({ ...theme, [field]: value });
@@ -195,6 +194,8 @@ const GuestManagement = ({ guests, onUpdate, isEditing }) => {
   });
   const handleAddGuest = () => {
     if (newGuest.name.trim() !== "") {
+      // Use a temporary ID for new guests for React key purposes.
+      // We'll identify new guests by checking if the ID is a number.
       onUpdate([...(guests || []), { ...newGuest, id: Date.now() }]);
       setNewGuest({ name: "", contact: "", dietary: "", isAttending: false });
     }
@@ -226,7 +227,7 @@ const GuestManagement = ({ guests, onUpdate, isEditing }) => {
           />
           <input
             type="email"
-            placeholder="Email or Phone"
+            placeholder="Email"
             value={newGuest.contact}
             onChange={(e) =>
               setNewGuest({ ...newGuest, contact: e.target.value })
@@ -319,7 +320,12 @@ const EventDetails = () => {
   const [selectedVendors, setSelectedVendors] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [schedule, setSchedule] = useState([]);
+
+  // --- GUEST STATE MANAGEMENT ---
   const [guests, setGuests] = useState([]);
+  // Use a ref to store the initial guests to compare against on save
+  const initialGuestsRef = useRef([]);
+
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [theme, setTheme] = useState({ name: "", colors: [], notes: "" });
@@ -329,11 +335,11 @@ const EventDetails = () => {
       ? "https://quantix-production.up.railway.app"
       : "http://localhost:5000";
 
+  // --- MODIFIED: Fetches event data and guest data from separate APIs ---
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // 1. Ensure user logged in
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -342,26 +348,41 @@ const EventDetails = () => {
           return;
         }
 
-        // 2. Fetch event from backend
-        const response = await fetch(`${API_URL}/api/events/id/${eventId}`);
-        if (!response.ok) throw new Error("Failed to fetch event");
-        const eventData = await response.json();
+        // 1. Fetch main event data
+        const eventResponse = await fetch(`${API_URL}/api/events/id/${eventId}`);
+        if (!eventResponse.ok) throw new Error("Failed to fetch event");
+        const eventData = await eventResponse.json();
 
         if (!eventData) {
           console.error("Event not found");
           setEvent(null);
           return;
         }
+        
+        // 2. Fetch guest data from the dedicated guest API
+        const guestsResponse = await fetch(`${API_URL}/api/guests/${eventId}`);
+        if (!guestsResponse.ok) throw new Error("Failed to fetch guests");
+        const guestsData = await guestsResponse.json();
 
-        // 3. Update state from backend response
+        // 3. Format guest data to match the UI component's state shape
+        const formattedGuests = guestsData.map(g => ({
+            id: g.guest_id, // Use the actual database ID
+            name: g.name,
+            contact: g.email || "", // Map 'email' to 'contact'
+            dietary: g.dietary_info || "",
+            isAttending: g.rsvp_status === 'Attending',
+        }));
+
+        setGuests(formattedGuests);
+        initialGuestsRef.current = formattedGuests; // Store initial state for comparison on save
+
+        // 4. Update the rest of the component state
         setEvent(eventData);
         setSchedule(eventData.schedule || []);
-        setGuests(eventData.guests || []);
         setTheme(eventData.theme || { name: "", colors: [], notes: "" });
         setDocuments(eventData.documents || []);
-        setSelectedVendors(eventData.vendors || []); // <-- backend should return vendor_ids
+        setSelectedVendors(eventData.vendors || []);
 
-        // Parse date + time
         const startTime = new Date(eventData.start_time);
         const date = startTime.toISOString().split("T")[0];
         const time = startTime.toTimeString().substring(0, 5);
@@ -381,73 +402,125 @@ const EventDetails = () => {
     };
 
     fetchData();
-  }, [eventId, navigate]);
+  }, [eventId, navigate, API_URL]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+  
+  // --- NEW: Function to handle guest updates through the API ---
+  const handleGuestUpdates = async () => {
+    const initialGuestIds = new Set(initialGuestsRef.current.map(g => g.id));
+    const currentGuestsMap = new Map(guests.map(g => [g.id, g]));
 
+    const promises = [];
+
+    // 1. Identify and handle DELETIONS
+    for (const initialGuest of initialGuestsRef.current) {
+      if (!currentGuestsMap.has(initialGuest.id)) {
+        promises.push(fetch(`${API_URL}/api/guests/${eventId}/${initialGuest.id}`, { method: 'DELETE' }));
+      }
+    }
+    
+    // 2. Identify and handle ADDITIONS and UPDATES
+    for (const currentGuest of guests) {
+      // If ID is a number, it's a temporary ID for a new guest
+      if (typeof currentGuest.id === 'number') {
+        const newGuestPayload = {
+            name: currentGuest.name,
+            email: currentGuest.contact,
+            rsvp_status: currentGuest.isAttending ? 'Attending' : 'Pending',
+            dietary_info: currentGuest.dietary,
+        };
+        promises.push(fetch(`${API_URL}/api/guests/${eventId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newGuestPayload),
+        }));
+      } else { // Existing guest, check for updates
+        const initialGuest = initialGuestsRef.current.find(g => g.id === currentGuest.id);
+        // A simple check to see if anything changed.
+        if (JSON.stringify(initialGuest) !== JSON.stringify(currentGuest)) {
+             const updatedGuestPayload = {
+                name: currentGuest.name,
+                email: currentGuest.contact,
+                rsvp_status: currentGuest.isAttending ? 'Attending' : 'Pending',
+                dietary_info: currentGuest.dietary,
+            };
+            promises.push(fetch(`${API_URL}/api/guests/${eventId}/${currentGuest.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedGuestPayload),
+            }));
+        }
+      }
+    }
+
+    await Promise.all(promises);
+  };
+
+
+  // --- MODIFIED: handleSave now calls handleGuestUpdates ---
   const handleSave = async () => {
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
+      
+      // --- Step 1: Update Guest Data via the Guest API ---
+      await handleGuestUpdates();
 
-      // Combine date and time for start_time
+      // --- Step 2: Update the main event details (excluding guests) ---
       const startTime = formData.time
         ? `${formData.date}T${formData.time}`
         : `${formData.date}T00:00:00`;
+        
+      const mainEventPayload = {
+        ...formData,
+        start_time: `${formData.date}T${formData.time || "00:00"}:00`,
+        schedule,
+        theme,
+        documents,
+        vendors: selectedVendors,
+        // NOTE: We are no longer sending the 'guests' array here
+      };
 
-      // Update event
-      const { error } = await fetch(`${API_URL}/api/events/${eventId}`, {
+      const { error: eventUpdateError } = await fetch(`${API_URL}/api/events/${eventId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          start_time: `${formData.date}T${formData.time || "00:00"}:00`,
-          schedule,
-          guests,
-          theme,
-          documents,
-          vendors: selectedVendors,
-        }),
+        body: JSON.stringify(mainEventPayload),
       });
+      if (eventUpdateError) throw new Error(eventUpdateError.message);
 
-      if (error) throw error;
 
-      // Update vendor relationships
-      // First remove all existing vendor relationships
-      await supabase.from("event_vendors").delete().eq("event_id", eventId);
-
-      // Then add the selected vendors
-      if (selectedVendors.length > 0) {
-        const vendorRelationships = selectedVendors.map((vendorId) => ({
-          event_id: eventId,
-          vendor_id: vendorId,
-        }));
-
-        const { error: vendorError } = await supabase
-          .from("event_vendors")
-          .insert(vendorRelationships);
-
-        if (vendorError)
-          console.error("Error saving vendor relationships:", vendorError);
-      }
-
+      // --- Step 3: Update local state and UI ---
       setIsEditing(false);
+
+      // Refetch guests to get new IDs and ensure sync with the DB
+      const guestsResponse = await fetch(`${API_URL}/api/guests/${eventId}`);
+      const guestsData = await guestsResponse.json();
+      const formattedGuests = guestsData.map(g => ({
+          id: g.guest_id,
+          name: g.name,
+          contact: g.email || "",
+          dietary: g.dietary_info || "",
+          isAttending: g.rsvp_status === 'Attending',
+      }));
+      setGuests(formattedGuests);
+      initialGuestsRef.current = formattedGuests; // Reset the initial state
+      
       setEvent((prev) => ({
         ...prev,
         ...formData,
         start_time: startTime,
         schedule,
-        guests,
         theme,
         documents,
       }));
 
-      alert("Event updated successfully!");
+      alert("Event and guests updated successfully!");
     } catch (error) {
       console.error("Error updating event:", error);
       alert("Failed to update event. Please try again.");
@@ -475,14 +548,12 @@ const EventDetails = () => {
     );
     if (!response.ok) throw new Error("Failed to export event data");
 
-    // Get filename from Content-Disposition header
     const disposition = response.headers.get("Content-Disposition");
     let filename = `event_export_${eventId}.zip`;
     if (disposition && disposition.includes("filename=")) {
       filename = disposition.split("filename=")[1].replace(/"/g, "");
     }
 
-    // Download the file
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -519,14 +590,12 @@ const EventDetails = () => {
           .replace(/[^\w-]/g, "");
         const filePath = `events/${eventId}/${safeEventName}/${file.name}`;
 
-        // Upload to Supabase Storage
         const { error: uploadError } = await supabase.storage
           .from("event-documents")
           .upload(filePath, file);
 
         if (uploadError) throw uploadError;
 
-        // Get public URL
         const {
           data: { publicUrl },
         } = supabase.storage.from("event-documents").getPublicUrl(filePath);
@@ -540,7 +609,6 @@ const EventDetails = () => {
       }
 
       if (newDocs.length > 0) {
-        // Update event with new documents
         const { error } = await supabase
           .from("events")
           .update({
@@ -571,7 +639,6 @@ const EventDetails = () => {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Remove document reference from event
       const { error } = await supabase
         .from("events")
         .update({
@@ -662,7 +729,7 @@ const EventDetails = () => {
 
           <button onClick={handleExport} className="export-button">
               <FaUpload /> Export Event Data
-            </button>
+          </button>
         </div>
       </div>
       <div className="event-info-boxes">
@@ -736,7 +803,7 @@ const EventDetails = () => {
               />
             </section>
             <section>
-              <EventTheme theme={theme} onUpdate={setTheme} />
+              <EventTheme theme={theme} onUpdate={setTheme} isEditing={isEditing}/>
             </section>
           </>
         )}
