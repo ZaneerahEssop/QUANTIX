@@ -10,6 +10,7 @@ const VendorForm = () => {
     phone: "",
     description: "",
     category: "",
+    venueNames: [""], // Array to store multiple venue names
     profilePic: null,
   });
   const [preview, setPreview] = useState(null);
@@ -17,7 +18,35 @@ const VendorForm = () => {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleVenueNameChange = (index, value) => {
+    const newVenueNames = [...formData.venueNames];
+    newVenueNames[index] = value;
+    setFormData(prev => ({
+      ...prev,
+      venueNames: newVenueNames
+    }));
+  };
+
+  const addVenueName = () => {
+    setFormData(prev => ({
+      ...prev,
+      venueNames: [...prev.venueNames, '']
+    }));
+  };
+
+  const removeVenueName = (index) => {
+    const newVenueNames = formData.venueNames.filter((_, i) => i !== index);
+    setFormData(prev => ({
+      ...prev,
+      venueNames: newVenueNames
+    }));
   };
 
   const handlePicChange = (e) => {
@@ -39,6 +68,22 @@ const VendorForm = () => {
     if (!phoneRegex.test(formData.phone)) {
       setWarning("Phone number must be exactly 10 digits.");
       return;
+    }
+
+    // If category is venue, require at least one venue name
+    if (formData.category.toLowerCase() === 'venue') {
+      const hasEmptyVenue = formData.venueNames.some(name => !name.trim());
+      const hasValidVenue = formData.venueNames.some(name => name.trim());
+      
+      if (hasEmptyVenue) {
+        setWarning("Please fill in all venue name fields or remove empty ones.");
+        return;
+      }
+      
+      if (!hasValidVenue) {
+        setWarning("Please provide at least one venue name.");
+        return;
+      }
     }
 
     // Get user
@@ -80,6 +125,7 @@ const VendorForm = () => {
           contact_number: formData.phone,
           description: formData.description,
           business_name: formData.businessName,
+          venue_names: formData.category.toLowerCase() === 'venue' ? formData.venueNames.filter(name => name.trim()) : [],
           profile_picture: profilePicUrl,
         },
       ]);
@@ -227,6 +273,63 @@ const VendorForm = () => {
             </select>
             <label className="form-label">Service Category</label>
           </div>
+          {formData.category.toLowerCase() === 'venue' && (
+            <div className="venue-names-container" style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '10px', color: '#666', fontWeight: '500' }}>Venue Names</div>
+              {formData.venueNames.map((venueName, index) => (
+                <div key={index} className="form-group" style={{ position: 'relative', marginBottom: '15px' }}>
+                  <span className="form-icon"><i className="fas fa-map-marker-alt"></i></span>
+                  <input
+                    type="text"
+                    className={"form-input" + (venueName ? " has-value" : "")}
+                    placeholder=" "
+                    value={venueName}
+                    onChange={(e) => handleVenueNameChange(index, e.target.value)}
+                    required
+                  />
+                  <label className="form-label">Venue Name {index + 1}</label>
+                  {formData.venueNames.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeVenueName(index)}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#ff6b6b',
+                        cursor: 'pointer',
+                        fontSize: '1.2rem',
+                      }}
+                      title="Remove venue"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addVenueName}
+                style={{
+                  background: 'transparent',
+                  border: '1px dashed #999',
+                  color: '#666',
+                  padding: '8px 15px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  marginTop: '5px',
+                }}
+              >
+                <i className="fas fa-plus"></i> Add Another Venue
+              </button>
+            </div>
+          )}
           <div className="form-group">
             <span className="form-icon"><i className="fas fa-align-left"></i></span>
             <textarea
