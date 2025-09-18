@@ -303,10 +303,18 @@ const GuestManagement = ({ guests, onUpdate, isEditing }) => {
 // Main EventDetails component
 const EventDetails = () => {
   const { id } = useParams();
+  const searchParams = new URLSearchParams(window.location.search);
+  const isReadOnly = searchParams.get('readonly') === 'true';
   const eventId = id;
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  // Disable editing if in read-only mode
+  useEffect(() => {
+    if (isReadOnly) {
+      setIsEditing(false);
+    }
+  }, [isReadOnly]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState("overview");
   const [formData, setFormData] = useState({
@@ -316,7 +324,7 @@ const EventDetails = () => {
     venue: "",
     notes: "",
   });
-  const [vendors, setVendors] = useState([]);
+  const [vendors] = useState([]);
   const [selectedVendors, setSelectedVendors] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [schedule, setSchedule] = useState([]);
@@ -411,7 +419,7 @@ const EventDetails = () => {
   
   // --- NEW: Function to handle guest updates through the API ---
   const handleGuestUpdates = async () => {
-    const initialGuestIds = new Set(initialGuestsRef.current.map(g => g.id));
+    // Create a set of initial guest IDs for comparison
     const currentGuestsMap = new Map(guests.map(g => [g.id, g]));
 
     const promises = [];
@@ -463,6 +471,7 @@ const EventDetails = () => {
 
   // --- MODIFIED: handleSave now calls handleGuestUpdates ---
   const handleSave = async () => {
+    if (isReadOnly) return; // Prevent saving in read-only mode
     try {
       const {
         data: { user },
@@ -528,6 +537,7 @@ const EventDetails = () => {
   };
 
   const handleVendorToggle = (vendorId) => {
+    if (isReadOnly) return; // Prevent adding vendors in read-only mode
     setSelectedVendors((prev) =>
       prev.includes(vendorId)
         ? prev.filter((id) => id !== vendorId)
@@ -569,6 +579,7 @@ const EventDetails = () => {
 };
 
   const handleFileUpload = async (e) => {
+    if (isReadOnly) return; // Prevent file uploads in read-only mode
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
@@ -680,6 +691,12 @@ const EventDetails = () => {
     });
   };
 
+  const toggleEdit = () => {
+    if (!isReadOnly) {
+      setIsEditing(!isEditing);
+    }
+  };
+
   return (
     <div className="event-details">
       <div className="event-header">
@@ -721,14 +738,13 @@ const EventDetails = () => {
             <button onClick={handleSave} className="save-button">
               <FaSave /> Save Changes
             </button>
-          ) : (
-            <button onClick={() => setIsEditing(true)} className="edit-button">
+          ) : !isReadOnly && (
+            <button onClick={toggleEdit} className="edit-button">
               <FaEdit /> Edit Event
             </button>
           )}
-
           <button onClick={handleExport} className="export-button">
-              <FaUpload /> Export Event Data
+            <FaUpload /> Export Event Data
           </button>
         </div>
       </div>
