@@ -462,6 +462,41 @@ const EventDetails = () => {
     );
   };
 
+  const handleExport = async () => {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/events/${eventId}/export`,
+      {
+        method: "GET",
+        headers: {
+          // No need for Content-Type for downloads
+        },
+      }
+    );
+    if (!response.ok) throw new Error("Failed to export event data");
+
+    // Get filename from Content-Disposition header
+    const disposition = response.headers.get("Content-Disposition");
+    let filename = `event_export_${eventId}.zip`;
+    if (disposition && disposition.includes("filename=")) {
+      filename = disposition.split("filename=")[1].replace(/"/g, "");
+    }
+
+    // Download the file
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    alert("Export failed: " + error.message);
+  }
+};
+
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -624,6 +659,10 @@ const EventDetails = () => {
               <FaEdit /> Edit Event
             </button>
           )}
+
+          <button onClick={handleExport} className="export-button">
+              <FaUpload /> Export Event Data
+            </button>
         </div>
       </div>
       <div className="event-info-boxes">
