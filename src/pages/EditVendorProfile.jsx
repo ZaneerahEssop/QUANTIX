@@ -11,6 +11,7 @@ const EditVendorProfile = ({ session }) => {
     phone: '',
     description: '',
     categories: [],
+    venueNames: [''],
     profilePic: null,
   });
   const [preview, setPreview] = useState(null);
@@ -59,6 +60,9 @@ const EditVendorProfile = ({ session }) => {
 
         if (vendor) {
           const categories = vendor.service_type ? vendor.service_type.split(',').map(s => s.trim()) : [];
+          const venueNames = vendor.venue_names && Array.isArray(vendor.venue_names) && vendor.venue_names.length > 0 
+            ? [...vendor.venue_names] 
+            : [''];
           
           setFormData({
             name: vendor.name || '',
@@ -66,6 +70,7 @@ const EditVendorProfile = ({ session }) => {
             phone: vendor.contact_number || '',
             description: vendor.description || '',
             categories: categories,
+            venueNames: venueNames,
             profilePic: null,
           });
 
@@ -98,8 +103,32 @@ const EditVendorProfile = ({ session }) => {
     }
   };
 
+  const handleVenueNameChange = (index, value) => {
+    const newVenueNames = [...formData.venueNames];
+    newVenueNames[index] = value;
+    setFormData(prev => ({
+      ...prev,
+      venueNames: newVenueNames
+    }));
+  };
+
+  const addVenueName = () => {
+    setFormData(prev => ({
+      ...prev,
+      venueNames: [...prev.venueNames, '']
+    }));
+  };
+
+  const removeVenueName = (index) => {
+    const newVenueNames = formData.venueNames.filter((_, i) => i !== index);
+    setFormData(prev => ({
+      ...prev,
+      venueNames: newVenueNames
+    }));
+  };
+
   const handleChange = (e) => {
-    const { name, value, checked } = e.target;
+    const { name, value, checked, type } = e.target;
     
     if (name === 'category') {
       setFormData(prev => {
@@ -118,7 +147,7 @@ const EditVendorProfile = ({ session }) => {
         
         return { ...prev, categories: newCategories };
       });
-    } else {
+    } else if (type !== 'file') {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
     setWarning('');
@@ -182,6 +211,8 @@ const EditVendorProfile = ({ session }) => {
           contact_number: formData.phone || '',
           description: formData.description || '',
           service_type: formData.categories.map(cat => cat.toLowerCase()).join(','),
+          venue_names: formData.categories.map(cat => cat.toLowerCase()).includes('venue') ? 
+            formData.venueNames.filter(name => name.trim()) : [],
           ...(profilePicUrl && { profile_picture: profilePicUrl })
         };
         
@@ -199,6 +230,8 @@ const EditVendorProfile = ({ session }) => {
           contact_number: formData.phone || '',
           description: formData.description || '',
           service_type: formData.categories.map(cat => cat.toLowerCase()).join(','),
+          venue_names: formData.categories.map(cat => cat.toLowerCase()).includes('venue') ? 
+            formData.venueNames.filter(name => name.trim()) : [],
           ...(profilePicUrl && { profile_picture: profilePicUrl })
         };
         
@@ -590,6 +623,164 @@ const EditVendorProfile = ({ session }) => {
               color: '#555',
               fontSize: '0.9rem'
             }}>Service Categories <span style={{ color: '#E5ACBF' }}>*</span></label>
+            
+            {/* Venue Names Section */}
+            {formData.categories.map(cat => cat.toLowerCase()).includes('venue') && (
+              <div style={{ 
+                margin: '25px 0 35px',
+                padding: '25px',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                borderRadius: '12px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(229, 172, 191, 0.3)'
+              }}>
+                <div style={{ 
+                  marginBottom: '20px', 
+                  color: '#555', 
+                  fontWeight: '600',
+                  fontSize: '1.1rem'
+                }}>Venue Names</div>
+                {formData.venueNames.map((venueName, index) => (
+                  <div key={index} className="form-group" style={{ 
+                    position: 'relative', 
+                    marginBottom: '18px',
+                    padding: '18px 20px',
+                    backgroundColor: 'white',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                    border: '1px solid rgba(0,0,0,0.05)'
+                  }}>
+                    <div style={{
+                      position: 'relative',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        left: '15px',
+                        color: '#E5ACBF',
+                        zIndex: 1
+                      }}>
+                        <i className="fas fa-map-marker-alt"></i>
+                      </div>
+                      <input
+                        type="text"
+                        className={"form-input" + (venueName ? " has-value" : "")}
+                        placeholder=" "
+                        value={venueName}
+                        onChange={(e) => handleVenueNameChange(index, e.target.value)}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '12px 15px 12px 40px',
+                          border: '1px solid #ddd',
+                          borderRadius: '8px',
+                          fontSize: '1rem',
+                          transition: 'all 0.3s',
+                          backgroundColor: 'rgba(255,255,255,0.9)',
+                          paddingRight: formData.venueNames.length > 1 ? '35px' : '15px'
+                        }}
+                      />
+                      <label style={{
+                        position: 'absolute',
+                        left: '45px',
+                        top: '12px',
+                        color: '#999',
+                        transition: 'all 0.3s',
+                        pointerEvents: 'none',
+                        ...(venueName && {
+                          top: '-10px',
+                          left: '25px',
+                          fontSize: '0.8rem',
+                          background: 'white',
+                          padding: '0 5px',
+                          color: '#E5ACBF'
+                        })
+                      }}>Venue Name {index + 1}</label>
+                    {formData.venueNames.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeVenueName(index)}
+                        style={{
+                          position: 'absolute',
+                          right: '15px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#ff6b6b',
+                          cursor: 'pointer',
+                          fontSize: '1.5rem',
+                          width: '24px',
+                          height: '24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '50%',
+                          transition: 'all 0.2s',
+                          ':hover': {
+                            backgroundColor: 'rgba(255, 107, 107, 0.1)'
+                          }
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(255, 107, 107, 0.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
+                        title="Remove venue"
+                      >
+                        ×
+                      </button>
+                    )}
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addVenueName}
+                  style={{
+                    background: 'transparent',
+                    border: '1px dashed #E5ACBF',
+                    color: '#E5ACBF',
+                    padding: '12px 18px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    marginTop: '20px',
+                    width: '100%',
+                    fontSize: '0.95rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(229, 172, 191, 0.1)';
+                    e.currentTarget.style.borderStyle = 'solid';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.borderStyle = 'dashed';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                  onMouseDown={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.backgroundColor = 'rgba(229, 172, 191, 0.15)';
+                  }}
+                  onMouseUp={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.backgroundColor = 'rgba(229, 172, 191, 0.1)';
+                  }}
+                >
+                  <i className="fas fa-plus"></i> Add Another Venue
+                </button>
+              </div>
+            )}
+            
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(3, 1fr)',
