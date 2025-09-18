@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../client";
-import { FaPlus, FaTrash, FaCheck, FaUser } from "react-icons/fa";
+import { FaPlus, FaTrash, FaCheck, FaUser, FaClock } from "react-icons/fa";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Navbar from "../components/Navbar";
@@ -323,6 +323,18 @@ export default function PlannerDashboard({ session }) {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  // Add this function to check if an event is in the future
+  const isFutureEvent = (eventDate) => {
+    const now = new Date();
+    const eventDateTime = new Date(eventDate);
+    return eventDateTime > now;
+  };
+
+  // Get only future events
+  const getUpcomingEvents = () => {
+    return events.filter(event => event.start_time && isFutureEvent(event.start_time));
+  };
+
   // Get events for the selected date
   const getEventsForDate = (date) => {
     return events.filter((event) => {
@@ -504,27 +516,26 @@ export default function PlannerDashboard({ session }) {
 
                 <div
                   style={{
-                    maxHeight: "400px",
+                    maxHeight: "500px",
+                    minHeight: "400px",
                     overflowY: "hidden",
                     paddingRight: "0.5rem",
                     transition: "all 0.3s ease",
                     scrollbarWidth: "thin",
                     scrollbarColor: "transparent transparent",
-                    msOverflowStyle: "none",
+                    msOverflowStyle: "none"
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.overflowY = "auto";
-                    e.currentTarget.style.scrollbarColor =
-                      "#E8B180 transparent";
+                    e.currentTarget.style.scrollbarColor = "#E8B180 transparent";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.overflowY = "hidden";
-                    e.currentTarget.style.scrollbarColor =
-                      "transparent transparent";
+                    e.currentTarget.style.scrollbarColor = "transparent transparent";
                   }}
                   className="events-scroll-container"
                 >
-                  {events.length === 0 ? (
+                  {getUpcomingEvents().length === 0 ? (
                     <div
                       style={{
                         textAlign: "center",
@@ -539,10 +550,10 @@ export default function PlannerDashboard({ session }) {
                       style={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: "1rem",
+                        gap: "1rem"
                       }}
                     >
-                      {events.map((event) => (
+                      {getUpcomingEvents().map((event) => (
                         <div
                           key={event.id}
                           style={{
@@ -581,41 +592,57 @@ export default function PlannerDashboard({ session }) {
                             >
                               {event.name}
                             </h3>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/viewEvent/${event.event_id}`);
-                              }}
-                              style={{
-                                backgroundColor: "#FFB6C1",
-                                border: "none",
-                                color: "white",
-                                padding: "0.25rem 0.75rem",
-                                borderRadius: "4px",
-                                cursor: "pointer",
-                                fontSize: "0.8rem",
-                                fontWeight: "500",
-                                transition: "all 0.2s",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.25rem",
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "#FF9EAF";
-                                e.currentTarget.style.transform =
-                                  "translateY(-1px)";
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "#FFB6C1";
-                                e.currentTarget.style.transform =
-                                  "translateY(0)";
-                              }}
-                            >
-                              <span>View Details</span>
-                              <span>→</span>
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/viewEvent/${event.event_id}`);
+                                }}
+                                style={{
+                                  backgroundColor: "#FFB6C1",
+                                  border: "none",
+                                  color: "white",
+                                  padding: "0.25rem 0.75rem",
+                                  borderRadius: "4px",
+                                  cursor: "pointer",
+                                  fontSize: "0.8rem",
+                                  fontWeight: "500",
+                                  transition: "all 0.2s",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.25rem",
+                                }}
+                                onMouseOver={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#FF9EAF";
+                                  e.currentTarget.style.transform =
+                                    "translateY(-1px)";
+                                }}
+                                onMouseOut={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#FFB6C1";
+                                  e.currentTarget.style.transform =
+                                    "translateY(0)";
+                                }}
+                              >
+                                <span>View Details</span>
+                                <span>→</span>
+                              </button>
+                              <button
+                                style={{
+                                  backgroundColor: "transparent",
+                                  border: "none",
+                                  padding: "0.25rem",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center"
+                                }}
+                                title="Delete Event"
+                              >
+                                <FaTrash size={16} color="#ff6b6b" />
+                              </button>
+                            </div>
                           </div>
                           <div
                             style={{
@@ -805,7 +832,7 @@ export default function PlannerDashboard({ session }) {
                                   width: "6px",
                                   height: "6px",
                                   borderRadius: "50%",
-                                  backgroundColor: "#FFB6C1",
+                                  backgroundColor: isFutureEvent(dateEvents[i]?.start_time) ? "#4caf50" : "#ff6b6b",
                                 }}
                               />
                             )
@@ -833,32 +860,109 @@ export default function PlannerDashboard({ session }) {
                     </p>
                   ) : (
                     <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {getEventsForDate(date).map((event) => (
-                        <li
-                          key={event.id}
-                          style={{
-                            backgroundColor: "white",
-                            padding: "0.75rem 1rem",
-                            borderRadius: "6px",
-                            marginBottom: "0.5rem",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <div style={{ width: "100%" }}>
-                            <div style={{ fontWeight: "600" }}>
-                              {event.name || event.title}
+                      {getEventsForDate(date).map((event) => {
+                        const isPast = !isFutureEvent(event.start_time);
+                        return (
+                          <li
+                            key={event.id}
+                            style={{
+                              backgroundColor: isPast ? "#f8f9fa" : "white",
+                              padding: "0.75rem 1rem",
+                              borderRadius: "6px",
+                              marginBottom: "0.5rem",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                              borderLeft: isPast ? "3px solid #ff6b6b" : "3px solid #4caf50",
+                              opacity: isPast ? 0.8 : 1,
+                            }}
+                          >
+                            <div style={{ width: "100%" }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                {isPast && (
+                                  <span style={{
+                                    fontSize: '0.65rem',
+                                    backgroundColor: '#ffebee',
+                                    color: '#d32f2f',
+                                    padding: '0.15rem 0.5rem',
+                                    borderRadius: '10px',
+                                    fontWeight: '500',
+                                    flexShrink: 0,
+                                  }}>
+                                    Past Event
+                                  </span>
+                                )}
+                                <div style={{ 
+                                  fontWeight: "600", 
+                                  color: isPast ? "#6c757d" : "#333",
+                                  flex: 1,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  {event.name || event.title}
+                                </div>
+                              </div>
+                              
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
+                                <div style={{ 
+                                  fontSize: '0.8rem', 
+                                  color: isPast ? "#adb5bd" : "#6c757d",
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  flex: 1,
+                                }}>
+                                  <FaClock size={12} />
+                                  {formatTime(event.start_time) || 'Time not set'}
+                                </div>
+                                
+                                {isPast && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/viewEvent/${event.event_id || event.id}?readonly=true`);
+                                    }}
+                                    style={{
+                                      fontSize: '0.7rem',
+                                      backgroundColor: 'transparent',
+                                      color: '#e91e63',
+                                      border: '1px solid #e91e63',
+                                      padding: '0.15rem 0.5rem',
+                                      borderRadius: '4px',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.25rem',
+                                      transition: 'all 0.2s',
+                                    }}
+                                    onMouseOver={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#fce4ec';
+                                    }}
+                                    onMouseOut={(e) => {
+                                      e.currentTarget.style.backgroundColor = 'transparent';
+                                    }}
+                                  >
+                                    View Details
+                                  </button>
+                                )}
+                              </div>
+                              
+                              {event.venue && (
+                                <div style={{ 
+                                  fontSize: "0.8rem", 
+                                  color: isPast ? "#adb5bd" : "#6c757d",
+                                  marginTop: "0.25rem",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.5rem"
+                                }}>
+                                  <span>📍</span>
+                                  {event.venue}
+                                </div>
+                              )}
                             </div>
-                            <div
-                              style={{ fontSize: "0.875rem", color: "#6c757d" }}
-                            >
-                              {formatTime(event.start_time) || event.time}
-                            </div>
-                          </div>
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
