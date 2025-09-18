@@ -41,6 +41,10 @@ export default function AddEventForm() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isLoading, setIsLoading] = useState(true);
   const [documents, setDocuments] = useState([]);
+  const [usingVenueVendor, setUsingVenueVendor] = useState(false);
+  const [selectedVenueVendor, setSelectedVenueVendor] = useState(null);
+  const [selectedVenueIndex, setSelectedVenueIndex] = useState(0);
+  const [showVenueDropdown, setShowVenueDropdown] = useState(false);
 
   // New state for pop-up messages
   const [showSuccess, setShowSuccess] = useState(false);
@@ -49,7 +53,17 @@ export default function AddEventForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // If manually changing the venue field, disable the venue vendor selection
+    if (name === 'venue' && usingVenueVendor) {
+      setUsingVenueVendor(false);
+      setSelectedVenueVendor(null);
+    }
+    
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
     // Add/remove has-value class for floating labels
     if (value) {
@@ -144,10 +158,49 @@ export default function AddEventForm() {
 
   const handleAddVendor = (vendor) => {
     if (selectedVendors.some((v) => v.vendor_id === vendor.vendor_id)) return;
-    setSelectedVendors([...selectedVendors, vendor]);
+    
+    // Check if this is a venue vendor
+    const isVenueVendor = vendor.service_type.toLowerCase().includes('venue');
+    
+    if (isVenueVendor) {
+      // If we're already using a venue vendor, remove the old one first
+      const otherVendors = selectedVendors.filter(v => !v.service_type.toLowerCase().includes('venue'));
+      setSelectedVendors([...otherVendors, vendor]);
+      
+      // Set the venue field to the first venue name if available
+      const venueNames = vendor.venue_names || [];
+      const venueName = venueNames.length > 0 ? venueNames[0] : vendor.business_name;
+      
+      setFormData(prev => ({
+        ...prev,
+        venue: venueName
+      }));
+      
+      setUsingVenueVendor(true);
+      setSelectedVenueVendor(vendor);
+      setSelectedVenueIndex(0);
+      setShowVenueDropdown(false);
+    } else {
+      setSelectedVendors([...selectedVendors, vendor]);
+    }
   };
 
   const handleRemoveVendor = (vendorId) => {
+    const vendorToRemove = selectedVendors.find(v => v.vendor_id === vendorId);
+    const isVenueVendor = vendorToRemove?.service_type?.toLowerCase().includes('venue');
+    
+    if (isVenueVendor && usingVenueVendor) {
+      setUsingVenueVendor(false);
+      setSelectedVenueVendor(null);
+      // Clear the venue field if it matches the vendor's venue name
+      if (formData.venue === (vendorToRemove.venue_names?.[0] || vendorToRemove.business_name)) {
+        setFormData(prev => ({
+          ...prev,
+          venue: ''
+        }));
+      }
+    }
+    
     setSelectedVendors(selectedVendors.filter((v) => v.vendor_id !== vendorId));
   };
 
@@ -306,6 +359,19 @@ export default function AddEventForm() {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showVenueDropdown && !event.target.closest('.form-group')) {
+        setShowVenueDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showVenueDropdown]);
 
   return (
     <>
@@ -513,15 +579,122 @@ export default function AddEventForm() {
               <label className="form-label">Theme (Optional)</label>
             </div>
 
-            <div className="form-group" style={{ flex: 1 }}>
-              <input
-                type="text"
-                name="venue"
-                value={formData.venue}
-                onChange={handleChange}
-                className="form-input"
-              />
-              <label className="form-label">Venue (Optional)</label>
+            <div className="form-group" style={{ flex: 1, position: 'relative' }}>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  name="venue"
+                  value={formData.venue}
+                  onChange={handleChange}
+                  className="form-input"
+                  disabled={usingVenueVendor}
+                  onFocus={() => usingVenueVendor && setShowVenueDropdown(true)}
+                  style={usingVenueVendor ? { 
+                    backgroundColor: '#f5f5f5',
+                    cursor: 'pointer',
+                    paddingRight: '35px'
+                  } : {}}
+                />
+                <label className="form-label">
+                  {usingVenueVendor ? 'Venue (Selected from Vendor)' : 'Venue (Optional)'}
+                </label>
+                {usingVenueVendor && selectedVenueVendor?.venue_names?.length > 1 && (
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowVenueDropdown(!showVenueDropdown)}
+                      style={{
+                        position: 'absolute',
+                        right: '30px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        color: '#666',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        padding: '2px 5px',
+                        borderRadius: '4px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={(e) => (e.target.style.background = 'rgba(0,0,0,0.05)')}
+                      onMouseOut={(e) => (e.target.style.background = 'transparent')}
+                      title="Select a different venue"
+                    >
+                      ▼
+                    </button>
+                    {showVenueDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                        zIndex: 1000,
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        marginTop: '4px'
+                      }}>
+                        {selectedVenueVendor.venue_names.map((venue, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, venue }));
+                              setSelectedVenueIndex(idx);
+                              setShowVenueDropdown(false);
+                            }}
+                            style={{
+                              padding: '8px 12px',
+                              cursor: 'pointer',
+                              backgroundColor: idx === selectedVenueIndex ? '#f0f0f0' : 'transparent',
+                              ':hover': {
+                                backgroundColor: '#f5f5f5'
+                              }
+                            }}
+                          >
+                            {venue}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {usingVenueVendor && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUsingVenueVendor(false);
+                      setFormData(prev => ({ ...prev, venue: '' }));
+                      setShowVenueDropdown(false);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: '#666',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      padding: '5px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => (e.target.style.background = 'rgba(0,0,0,0.05)')}
+                    onMouseOut={(e) => (e.target.style.background = 'transparent')}
+                    title="Use custom venue name instead"
+                  >
+                    <FaTimes />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
