@@ -15,6 +15,8 @@ import {
   FaPlus,
   FaTrash,
   FaEnvelope,
+  FaSearch,
+  FaCheck
 } from "react-icons/fa";
 import "../styling/eventDetails.css";
 
@@ -324,7 +326,9 @@ const EventDetails = () => {
     venue: "",
     notes: "",
   });
-  const [vendors] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedVendors, setSelectedVendors] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [schedule, setSchedule] = useState([]);
@@ -343,7 +347,40 @@ const EventDetails = () => {
       ? "https://quantix-production.up.railway.app"
       : "http://localhost:5000";
 
-  // --- MODIFIED: Fetches event data and guest data from separate APIs ---
+  const fetchVendors = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const API_URL = process.env.NODE_ENV === 'production'
+        ? 'https://quantix-production.up.railway.app'
+        : 'http://localhost:5000';
+
+      const response = await fetch(`${API_URL}/api/vendors`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch vendors');
+      }
+
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setVendors(data);
+      }
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchVendors();
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -836,17 +873,106 @@ const EventDetails = () => {
               <h2>Vendors</h2>
             </div>
             {isEditing ? (
-              <div className="vendor-selection">
-                {vendors.map((vendor) => (
-                  <label key={vendor.vendor_id} className="vendor-checkbox">
+              <div>
+                <div className="vendor-search-container">
+                  <div className="search-box">
+                    <FaSearch className="search-icon" />
                     <input
-                      type="checkbox"
-                      checked={selectedVendors.includes(vendor.vendor_id)}
-                      onChange={() => handleVendorToggle(vendor.vendor_id)}
+                      type="text"
+                      placeholder="Search for vendors by name or category"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="search-input"
                     />
-                    {vendor.business_name} ({vendor.service_type})
-                  </label>
-                ))}
+                    {searchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchTerm("")}
+                        className="clear-search"
+                        aria-label="Clear search"
+                      >
+                        <FaTimes />
+                      </button>
+                    )}
+                  </div>
+                  <select
+                    className="category-filter"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
+                    <option value="All">All Categories</option>
+                    {Array.from(new Set([
+                      ...vendors.map(v => v.service_type),
+                      'Catering' // Ensure Catering is always an option
+                    ]))
+                    .filter(type => type) // Remove any empty/null types
+                    .map(type => {
+                      // Capitalize 'venue' if it exists
+                      const displayType = type.toLowerCase() === 'venue' ? 'Venue' : type;
+                      return (
+                        <option key={type} value={type}>
+                          {displayType}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+                <div className="vendor-selection">
+                  {vendors
+                    .filter(vendor => {
+                      const matchesSearch = !searchTerm || 
+                        vendor.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        vendor.service_type.toLowerCase().includes(searchTerm.toLowerCase());
+                      const matchesCategory = selectedCategory === "All" || 
+                        vendor.service_type === selectedCategory;
+                      return matchesSearch && matchesCategory;
+                    })
+                    .map((vendor) => (
+                      <div key={vendor.vendor_id} className="vendor-card">
+                        <div className="vendor-info">
+                          <h4>{vendor.business_name}</h4>
+                          <span className="vendor-category">
+                            {vendor.service_type.toLowerCase() === 'venue' ? 'Venue' : vendor.service_type}
+                          </span>
+                          <div className="vendor-description">
+                            {vendor.description || 'No description available.'}
+                          </div>
+                        </div>
+                        <div className="vendor-actions">
+                          <div className="vendor-actions">
+                            <button
+                              type="button"
+                              className={`add-vendor-btn ${
+                                selectedVendors.includes(vendor.vendor_id) ? 'added' : ''
+                              }`}
+                              onClick={() => handleVendorToggle(vendor.vendor_id)}
+                              disabled={!isEditing}
+                            >
+                              {selectedVendors.includes(vendor.vendor_id) ? (
+                                <>
+                                  <FaCheck /> Requested
+                                </>
+                              ) : (
+                                <>
+                                  <FaPlus /> Request Vendor
+                                </>
+                              )}
+                            </button>
+                            {selectedVendors.includes(vendor.vendor_id) && (
+                              <button
+                                type="button"
+                                className="undo-request-btn"
+                                onClick={() => handleVendorToggle(vendor.vendor_id)}
+                                disabled={!isEditing}
+                              >
+                                <FaTimes /> Undo
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
               </div>
             ) : (
               <div className="vendors-list">
