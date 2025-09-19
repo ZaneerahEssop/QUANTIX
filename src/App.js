@@ -18,6 +18,7 @@ import AddEventForm from './pages/AddEventForm';
 import EventDetails from './pages/EventDetails';
 import React from 'react';
 
+import VendorServices from './pages/VendorServices';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -70,6 +71,9 @@ export default function App() {
         } />
         <Route path="/viewEvent/:id" element={
           session ? <EventDetails session={session} /> : <Navigate to="/login" />
+        } />
+        <Route path="/vendor/services" element={
+          session ? <VendorServices session={session} /> : <Navigate to="/login" />
         } />
       </Routes>
 
