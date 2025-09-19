@@ -5,6 +5,7 @@ import '../ProfileForm.css';
 import '../App.css';
 import '../styling/VendorServices.css';
 import PhotographyService from '../components/services/PhotographyService';
+import CateringService from '../components/services/CateringService';
 
 const VendorServices = ({ session }) => {
   const [vendorData, setVendorData] = useState({
@@ -203,10 +204,21 @@ const VendorServices = ({ session }) => {
       <div className="services-section">
         <h2>My Services</h2>
         <div className="services-content">
-          {vendorData.categories.some(cat => cat.toLowerCase().includes('photography')) && (
-            <PhotographyService vendorId={session?.user?.id} />
-          )}
-          {!vendorData.categories.some(cat => cat.toLowerCase().includes('photography')) && (
+          {vendorData.categories.length > 0 ? (
+            <>
+              {console.log('Vendor categories array:', JSON.stringify(vendorData.categories, null, 2))}
+              {console.log('Should render CateringService:', vendorData.categories.some(cat => cat.trim().toLowerCase() === 'catering'))}
+              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'photography') && (
+                <PhotographyService vendorId={session?.user?.id} />
+              )}
+              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'catering') && (
+                <div data-testid="catering-service-container">
+                  <CateringService vendorId={session?.user?.id} />
+                </div>
+              )}
+              {/* Add more service components here as needed */}
+            </>
+          ) : (
             <div className="no-services">
               <p>You haven't added any services yet.</p>
               <button 
