@@ -11,6 +11,12 @@ function SignUpPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (process.env.NODE_ENV === 'test') {
+      // Skip Supabase calls in tests
+      setSession(null);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
