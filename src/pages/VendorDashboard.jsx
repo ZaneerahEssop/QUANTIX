@@ -584,10 +584,23 @@ export default function VendorDashboard({ session }) {
                 fontSize: '24px',
                 cursor: 'pointer',
                 padding: '8px',
+                zIndex: 1001
               }}
             >
               ✕
             </button>
+            {preview && (
+              <img 
+                src={preview} 
+                alt="Profile Preview" 
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '80vh',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+                }} 
+              />
+            )}
           </div>
         </div>
       )}
