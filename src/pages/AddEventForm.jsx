@@ -110,7 +110,8 @@ export default function AddEventForm() {
         contact_number: "(555) 123-4567",
         email: "info@elegantevents.com",
         address: "123 Event St, New York, NY",
-        description: "A beautiful venue for all types of events with modern amenities and professional staff."
+        description:
+          "A beautiful venue for all types of events with modern amenities and professional staff.",
       },
       {
         vendor_id: 2,
@@ -119,7 +120,8 @@ export default function AddEventForm() {
         contact_number: "(555) 234-5678",
         email: "hello@perfectclicks.com",
         address: "456 Photo Ave, New York, NY",
-        description: "Professional photography services capturing your special moments with creativity and style."
+        description:
+          "Professional photography services capturing your special moments with creativity and style.",
       },
       {
         vendor_id: 3,
@@ -128,7 +130,8 @@ export default function AddEventForm() {
         contact_number: "(555) 345-6789",
         email: "bookings@melodymakers.com",
         address: "789 Music Ln, New York, NY",
-        description: "Live music band providing entertainment for all types of events and celebrations."
+        description:
+          "Live music band providing entertainment for all types of events and celebrations.",
       },
       {
         vendor_id: 4,
@@ -137,7 +140,8 @@ export default function AddEventForm() {
         contact_number: "(555) 456-7890",
         email: "info@bloomsandpetals.com",
         address: "321 Flower Rd, New York, NY",
-        description: "Floral arrangements and decorations to make your event beautiful and memorable."
+        description:
+          "Floral arrangements and decorations to make your event beautiful and memorable.",
       },
       {
         vendor_id: 5,
@@ -146,7 +150,8 @@ export default function AddEventForm() {
         contact_number: "(555) 567-8901",
         email: "catering@gourmetdelights.com",
         address: "654 Food Blvd, New York, NY",
-        description: "Delicious catering services with a variety of menu options for any occasion."
+        description:
+          "Delicious catering services with a variety of menu options for any occasion.",
       },
     ];
 
@@ -273,9 +278,7 @@ export default function AddEventForm() {
         setSearchError(null);
       } catch (error) {
         console.error("Error filtering vendors:", error);
-        setSearchError(
-          "An error occurred while searching. Please try again."
-        );
+        setSearchError("An error occurred while searching. Please try again.");
       }
     };
 
@@ -283,7 +286,7 @@ export default function AddEventForm() {
   }, [searchTerm, selectedCategory, allVendors]);
 
   const handleAddVendor = async (vendor) => {
-    // Don't add if already selected or request already sent
+    // Don’t add if already selected or request already sent
     if (
       selectedVendors.some((v) => v.vendor_id === vendor.vendor_id) ||
       vendorRequests[vendor.vendor_id]
@@ -292,7 +295,7 @@ export default function AddEventForm() {
     }
 
     try {
-      // Set request as pending
+      // Set request as pending in local state
       setVendorRequests((prev) => ({
         ...prev,
         [vendor.vendor_id]: { status: "pending" },
@@ -306,26 +309,24 @@ export default function AddEventForm() {
         throw new Error("No active session. Please log in.");
       }
 
-      // Get the current event ID (or use a temporary one if not created yet)
+      // Get the current event ID (or temporary one if not saved yet)
       const eventId = formData.event_id || `temp-${Date.now()}`;
 
-      // Send vendor request
+      // API base URL
       const API_URL =
         process.env.REACT_APP_API_URL ||
         (process.env.NODE_ENV === "production"
           ? "https://quantix-production.up.railway.app"
           : "http://localhost:5000");
 
-      // In development, we'll use a mock response if the API is not available
       const isDevelopment = process.env.NODE_ENV === "development";
 
+      // Request body – only fields that exist in vendor_requests
       const requestBody = {
         event_id: eventId,
         vendor_id: vendor.vendor_id,
-        status: "pending",
-        event_name: formData.name,
-        event_date: formData.date,
         requester_id: session.user.id,
+        status: "pending",
       };
 
       console.log("Sending vendor request:", {
@@ -333,38 +334,30 @@ export default function AddEventForm() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token?.substring(
-            0,
-            10
-          )}...`, // Log partial token
+          Authorization: `Bearer ${session.access_token?.substring(0, 10)}...`,
         },
         body: requestBody,
       });
 
-      let response, responseData;
+      let responseData;
 
-      try {
-        // In development, we'll use a mock response if the API is not available
-        if (isDevelopment) {
-          console.log("Development mode: Using mock vendor request response");
-          // Simulate API delay
-          await new Promise((resolve) => setTimeout(resolve, 500));
+      if (isDevelopment) {
+        console.log("Development mode: Using mock vendor request response");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
-          // Mock successful response
-          responseData = {
-            request_id: `mock-${Date.now()}`,
-            status: "pending",
-            vendor_id: requestBody.vendor_id,
+        responseData = {
+          success: true,
+          request: {
+            id: `mock-${Date.now()}`,
             event_id: requestBody.event_id,
+            vendor_id: requestBody.vendor_id,
+            requester_id: requestBody.requester_id,
+            status: "pending",
             created_at: new Date().toISOString(),
-          };
-
-          // Return mock data without making actual API call
-          return responseData;
-        }
-
-        // Make the actual API call in production
-        response = await fetch(`${API_URL}/api/vendor-requests`, {
+          },
+        };
+      } else {
+        const response = await fetch(`${API_URL}/api/vendor-requests`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -375,102 +368,53 @@ export default function AddEventForm() {
 
         try {
           responseData = await response.json();
-        } catch (error) {
+        } catch (err) {
           const errorText = await response.text();
-          console.error("Failed to parse response:", {
-            error,
-            status: response.status,
-            statusText: response.statusText,
-            responseText: errorText,
-          });
-          throw new Error(`Server returned invalid JSON: ${errorText}`);
+          throw new Error(`Invalid JSON response: ${errorText}`);
         }
 
         if (!response.ok) {
-          console.error("Vendor request failed:", {
-            status: response.status,
-            statusText: response.statusText,
-            url: response.url,
-            response: responseData,
-          });
-
           const errorMessage =
-            responseData?.message ||
+            responseData?.error ||
             `Failed to send vendor request: ${response.status} ${response.statusText}`;
-
-          if (response.status === 401) {
-            throw new Error("Authentication failed. Please log in again.");
-          } else if (response.status === 500) {
-            throw new Error(
-              "Server error. Please try again later or contact support."
-            );
-          } else {
-            throw new Error(errorMessage);
-          }
+          throw new Error(errorMessage);
         }
-      } catch (error) {
-        console.error("Error in vendor request:", {
-          error,
-          request: {
-            url: `${API_URL}/api/vendor-requests`,
-            method: "POST",
-            body: requestBody,
-          },
-          response: response
-            ? {
-                status: response.status,
-                statusText: response.statusText,
-                data: responseData,
-              }
-            : "No response received",
-        });
-        throw error; // Re-throw to be caught by the outer catch block
       }
 
-      const requestData = await response.json();
-
-      // Update the request status
+      // Update local state with actual request data
       setVendorRequests((prev) => ({
         ...prev,
         [vendor.vendor_id]: {
-          status: "pending",
-          request_id: requestData.request_id,
+          status: responseData.request.status,
+          request_id: responseData.request.request_id,
         },
       }));
 
-      // Add to selected vendors with pending status
       setSelectedVendors((prev) => [
         ...prev,
         {
           ...vendor,
-          request_status: "pending",
-          request_id: requestData.request_id,
+          request_status: responseData.request.status,
+          request_id: responseData.request.request_id,
         },
       ]);
 
-      // Show success message
       setSuccessMessage(`Request sent to ${vendor.business_name}`);
       setShowSuccess(true);
     } catch (error) {
-      console.error("Error sending vendor request:", {
-        error,
-        vendorId: vendor.vendor_id,
-        vendorName: vendor.business_name,
-        time: new Date().toISOString(),
-      });
+      console.error("Error sending vendor request:", error);
 
-      // Remove the pending status on error
+      // Remove pending status on error
       const { [vendor.vendor_id]: _, ...remainingRequests } = vendorRequests;
       setVendorRequests(remainingRequests);
 
       setShowWarning(true);
       setWarningMessage(
-        `Failed to send request to ${vendor.business_name}. ` +
-          `Error: ${error.message || "Unknown error occurred"}. ` +
-          "Please try again or contact support if the problem persists."
+        `Failed to send request to ${vendor.business_name}. ${
+          error.message || "Unknown error occurred"
+        }. Please try again or contact support if the problem persists.`
       );
 
-      // If it's a 401 Unauthorized error, suggest re-login
       if (error.message.includes("401")) {
         setWarningMessage((prev) => prev + " You may need to log in again.");
       }
@@ -595,33 +539,7 @@ export default function AddEventForm() {
     }
 
     try {
-      // 1️⃣ Upload documents to Supabase Storage
-      const uploadedDocuments = await Promise.all(
-        documents.map(async (docFile) => {
-          const safeEventName = formData.name
-            .replace(/\s+/g, "_")
-            .replace(/[^\w-]/g, "");
-          const filePath = `planners/${user.id}/${safeEventName}/${docFile.name}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from("event-documents")
-            .upload(filePath, docFile);
-
-          if (uploadError) throw uploadError;
-
-          const {
-            data: { publicUrl },
-          } = supabase.storage.from("event-documents").getPublicUrl(filePath);
-
-          return {
-            name: docFile.name,
-            url: publicUrl,
-            file_type: docFile.type || "application/octet-stream",
-          };
-        })
-      );
-
-      // 2️⃣ Create the event in the events table
+      // 1️⃣ Create event in Supabase
       const { data: eventData, error: eventError } = await supabase
         .from("events")
         .insert({
@@ -641,38 +559,65 @@ export default function AddEventForm() {
 
       setFormData((prev) => ({ ...prev, event_id: eventData.event_id }));
 
-      // 3️⃣ Add vendors to event_vendors table if any are selected
-      if (selectedVendors.length > 0) {
-        for (const vendor of selectedVendors) {
-          const response = await fetch(
-            `${process.env.REACT_APP_API_URL}/api/vendor-requests/${vendor.request_id}`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${user.id}`,
-              },
-              body: JSON.stringify({
-                event_id: eventData.event_id,
-                vendor_id: vendor.vendor_id,
-                status: "accepted",
-              }),
-            }
+      // 2️⃣ Send vendor requests via backend API
+      const API_URL =
+        process.env.REACT_APP_API_URL ||
+        (process.env.NODE_ENV === "production"
+          ? "https://quantix-production.up.railway.app"
+          : "http://localhost:5000");
+
+      for (const vendor of selectedVendors) {
+        const response = await fetch(`${API_URL}/api/vendor-requests`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${user.id}`,
+          },
+          body: JSON.stringify({
+            event_id: eventData.event_id,
+            vendor_id: vendor.vendor_id,
+            requester_id: user.id,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          console.error("Failed to send vendor request:", data.error);
+          throw new Error(
+            data.error ||
+              `Failed to send request for vendor ${vendor.vendor_id}`
           );
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            console.error("Failed to send vendor request:", data.error);
-            throw new Error(
-              data.error ||
-                `Failed to send request for vendor ${vendor.vendor_id}`
-            );
-          }
         }
       }
-      // 4️⃣ Add documents to files table if any are uploaded
-      if (uploadedDocuments.length > 0) {
+
+      // 3️⃣ Upload documents to Supabase Storage
+      if (documents.length > 0) {
+        const uploadedDocuments = await Promise.all(
+          documents.map(async (docFile) => {
+            const safeEventName = formData.name
+              .replace(/\s+/g, "_")
+              .replace(/[^\w-]/g, "");
+            const filePath = `planners/${user.id}/${safeEventName}/${docFile.name}`;
+
+            const { error: uploadError } = await supabase.storage
+              .from("event-documents")
+              .upload(filePath, docFile);
+
+            if (uploadError) throw uploadError;
+
+            const {
+              data: { publicUrl },
+            } = supabase.storage.from("event-documents").getPublicUrl(filePath);
+
+            return {
+              name: docFile.name,
+              url: publicUrl,
+              file_type: docFile.type || "application/octet-stream",
+            };
+          })
+        );
+
+        // Insert file records into files table
         const fileRecords = uploadedDocuments.map((doc) => ({
           event_id: eventData.event_id,
           uploaded_by: user.id,
@@ -687,14 +632,14 @@ export default function AddEventForm() {
 
         if (fileError) throw fileError;
       }
-      
-      // ===== FIX #1: Set the correct success message before showing the modal =====
+
       setSuccessMessage("Event created successfully!");
       setShowSuccess(true);
-
     } catch (error) {
       console.error("Error creating event:", error);
-      setWarningMessage("Failed to create event. Please try again.");
+      setWarningMessage(
+        error.message || "Failed to create event. Please try again."
+      );
       setShowWarning(true);
     } finally {
       setIsSubmitting(false);
@@ -753,7 +698,7 @@ export default function AddEventForm() {
                 setShowSuccess(false);
                 // ===== FIX #2: Only navigate if it's the event creation message =====
                 if (successMessage === "Event created successfully!") {
-                    navigate("/dashboard");
+                  navigate("/dashboard");
                 }
               }}
               style={{
@@ -960,7 +905,9 @@ export default function AddEventForm() {
                       <div style={{ position: "relative" }}>
                         <button
                           type="button"
-                          onClick={() => setShowVenueDropdown(!showVenueDropdown)}
+                          onClick={() =>
+                            setShowVenueDropdown(!showVenueDropdown)
+                          }
                           style={{
                             position: "absolute",
                             right: "30px",
@@ -1190,7 +1137,7 @@ export default function AddEventForm() {
                           {vendor.service_type}
                         </span>
                         <div className="vendor-description">
-                          {vendor.description || 'No description available.'}
+                          {vendor.description || "No description available."}
                         </div>
                       </div>
                       <div className="vendor-actions">
