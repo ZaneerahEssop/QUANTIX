@@ -86,6 +86,31 @@ const Navbar = ({ session }) => {
             >
               Edit Profile
             </button>
+            {session?.user?.user_metadata?.role === 'vendor' && (
+              <button 
+                onClick={() => navigate('/vendor/services')}
+                style={{
+                  backgroundColor: 'var(--peach)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '50px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '1rem',
+                  transition: 'all 0.2s',
+                  ':hover': {
+                    backgroundColor: 'var(--coral)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                My Services
+              </button>
+            )}
             <button 
               onClick={handleLogout}
               style={{
