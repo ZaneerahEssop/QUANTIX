@@ -51,9 +51,15 @@ const createEvent = async (req, res) => {
     // Insert vendors
     for (const vendor of selectedVendors) {
       const { error: vendorError } = await supabase
-        .from("event_vendors")
-        .insert({ event_id: eventId, vendor_id: vendor.vendor_id });
-      if (vendorError) console.error("Vendor insert error:", vendorError);
+        .from("vendor_requests")
+        .insert({
+          event_id: eventId,
+          vendor_id: vendor.vendor_id,
+          requester_id: planner_id,
+          status: "pending",
+        });
+      if (vendorError)
+        console.error("Vendor request insert error:", vendorError);
     }
 
     // Insert files
