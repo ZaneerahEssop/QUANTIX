@@ -16,24 +16,32 @@ import EditVendorProfile from './pages/EditVendorProfile';
 import EditPlannerProfile from './pages/EditPlannerProfile';
 import AddEventForm from './pages/AddEventForm';
 import EventDetails from './pages/EventDetails';
+import React from 'react';
+
 
 export default function App() {
   const [session, setSession] = useState(null);
-
   useEffect(() => {
-    // Check for an existing session on app load
+
+    if (process.env.NODE_ENV === 'test') {
+      // Skip Supabase calls in tests
+      setSession(null);
+      return;
+    }
+
+    // Real Supabase logic
+  
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
 
-    // Listen for authentication state changes (e.g., login, logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
 
-    // Unsubscribe from the listener when the component unmounts
     return () => subscription.unsubscribe();
   }, []);
+
 
   return (
     <BrowserRouter>
