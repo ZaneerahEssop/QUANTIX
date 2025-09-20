@@ -21,7 +21,6 @@ export default function PlannerDashboard({ session }) {
 
   console.log("API URL:", process.env.REACT_APP_API_URL);
 
-<<<<<<< HEAD
   const API_URL =
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1"
@@ -30,7 +29,6 @@ export default function PlannerDashboard({ session }) {
 
   console.log("Current hostname:", window.location.hostname);
   console.log("Using API_URL:", API_URL);
-=======
   // Prevent scrolling until page is fully loaded
   useLayoutEffect(() => {
     // Add a class to the body to prevent scrolling via CSS
@@ -59,7 +57,6 @@ export default function PlannerDashboard({ session }) {
       document.body.classList.remove("dashboard-loading");
     };
   }, []);
->>>>>>> 0e7d74c3a3fd43701a8897ea7f0a5da2e1acfd72
 
   useEffect(() => {
     if (!session?.user) {
@@ -155,7 +152,7 @@ export default function PlannerDashboard({ session }) {
     fetchUserData();
     fetchEventsFromAPI();
     fetchTasks();
-  }, [session]);
+  }, [session, API_URL]); // Added API_URL to dependency array
 
   const handleAddTask = async (e) => {
     e.preventDefault();
