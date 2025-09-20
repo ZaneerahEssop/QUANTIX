@@ -165,13 +165,20 @@ const Navbar = ({ session }) => {
     }
   };
 
-  // Determine the correct edit profile path based on user role
+  // Determine the correct edit profile path based on the current dashboard
   const getEditProfilePath = () => {
     if (!session?.user) return '/login';
     
-    // Check user role from session or user_metadata
-    const userRole = session.user.user_metadata?.role || 'planner';
+    // Check if we're on the vendor dashboard or planner dashboard
+    const isVendorDashboard = location.pathname.startsWith('/vendor-dashboard');
+    const isPlannerDashboard = location.pathname.startsWith('/dashboard');
     
+    // If we're on a specific dashboard, use that to determine the profile type
+    if (isVendorDashboard) return '/edit-vendor-profile';
+    if (isPlannerDashboard) return '/edit-planner-profile';
+    
+    // Fallback to user role if not on a specific dashboard
+    const userRole = session.user.user_metadata?.role || 'planner';
     return userRole === 'vendor' 
       ? '/edit-vendor-profile' 
       : '/edit-planner-profile';
@@ -394,7 +401,7 @@ const Navbar = ({ session }) => {
             >
               Edit Profile
             </button>
-            {session?.user?.user_metadata?.role === 'vendor' && (
+            {location.pathname.startsWith('/vendor-dashboard') && session?.user?.user_metadata?.role === 'vendor' && (
               <button 
                 onClick={() => navigate('/vendor/services')}
                 style={{
