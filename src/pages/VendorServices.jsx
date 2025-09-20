@@ -6,6 +6,10 @@ import '../App.css';
 import '../styling/VendorServices.css';
 import PhotographyService from '../components/services/PhotographyService';
 import CateringService from '../components/services/CateringService';
+import FlowerService from '../components/services/FlowerService';
+import DecorService from '../components/services/DecorService';
+import MusicService from '../components/services/MusicService';
+import VenueService from '../components/services/VenueService';
 
 const VendorServices = ({ session }) => {
   const [vendorData, setVendorData] = useState({
@@ -14,7 +18,8 @@ const VendorServices = ({ session }) => {
     phone: '',
     description: '',
     categories: [],
-    profilePicture: null
+    profilePicture: null,
+    venue_names: []
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -54,7 +59,8 @@ const VendorServices = ({ session }) => {
             phone: vendor.contact_number || '',
             description: vendor.description || '',
             categories: categories,
-            profilePicture: vendor.profile_picture || null
+            profilePicture: vendor.profile_picture || null,
+            venue_names: vendor.venue_names || []
           });
         }
       } catch (error) {
@@ -95,7 +101,6 @@ const VendorServices = ({ session }) => {
     );
   }
 
-  // Helper function to capitalize the first letter of each word
   const capitalizeFirstLetter = (str) => {
     if (!str) return '';
     return str
@@ -105,7 +110,6 @@ const VendorServices = ({ session }) => {
       .join(' ');
   };
 
-  // Get the vendor's services with proper capitalization
   const vendorServices = vendorData.categories.map(service => ({
     original: service,
     display: capitalizeFirstLetter(service)
@@ -121,7 +125,7 @@ const VendorServices = ({ session }) => {
             display: 'inline-flex',
             alignItems: 'center',
             padding: '10px 20px',
-            backgroundColor: '#FFB6C1', /* Peach color */
+            backgroundColor: '#FFB6C1',
             color: 'white',
             border: 'none',
             borderRadius: '25px',
@@ -206,17 +210,27 @@ const VendorServices = ({ session }) => {
         <div className="services-content">
           {vendorData.categories.length > 0 ? (
             <>
-              {console.log('Vendor categories array:', JSON.stringify(vendorData.categories, null, 2))}
-              {console.log('Should render CateringService:', vendorData.categories.some(cat => cat.trim().toLowerCase() === 'catering'))}
               {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'photography') && (
                 <PhotographyService vendorId={session?.user?.id} />
               )}
               {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'catering') && (
-                <div data-testid="catering-service-container">
-                  <CateringService vendorId={session?.user?.id} />
-                </div>
+                <CateringService vendorId={session?.user?.id} />
               )}
-              {/* Add more service components here as needed */}
+              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'flowers') && (
+                <FlowerService vendorId={session?.user?.id} />
+              )}
+              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'decor') && (
+                <DecorService vendorId={session?.user?.id} />
+              )}
+              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'music') && (
+                <MusicService vendorId={session?.user?.id} />
+              )}
+              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'venue') && (
+                <VenueService 
+                  vendorId={session?.user?.id} 
+                  venueNames={vendorData.venue_names} 
+                />
+              )}
             </>
           ) : (
             <div className="no-services">
@@ -256,7 +270,6 @@ const VendorServices = ({ session }) => {
         </div>
       </div>
 
-      {/* Profile Picture Modal */}
       {showImageModal && (
         <div 
           style={{
