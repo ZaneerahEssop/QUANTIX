@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-// REMOVED: import { supabase } from '../client';
+import { supabase } from '../client';
 import '../ProfileForm.css';
 import '../App.css';
 import '../styling/VendorServices.css';
@@ -10,21 +10,6 @@ import FlowerService from '../components/services/FlowerService';
 import DecorService from '../components/services/DecorService';
 import MusicService from '../components/services/MusicService';
 import VenueService from '../components/services/VenueService';
-
-// --- API Fetch Function ---
-// This function can be in this file or moved to a separate `api.js` file for better organization.
-const fetchVendorProfileAPI = async (userId) => {
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    const response = await fetch(`${API_URL}/api/profile/vendor/${userId}`);
-    
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-    
-    return await response.json();
-};
-
 
 const VendorServices = ({ session }) => {
   const [vendorData, setVendorData] = useState({
@@ -52,9 +37,19 @@ const VendorServices = ({ session }) => {
           return;
         }
 
-        // *** UPDATED LOGIC: Call the API instead of Supabase directly ***
-        const vendor = await fetchVendorProfileAPI(userId);
+        const { data: vendor, error: vendorError } = await supabase
+          .from('vendors')
+          .select('*')
+          .eq('vendor_id', userId)
+          .single();
         
+        if (vendorError) {
+          console.error('Error fetching vendor data:', vendorError);
+          setError('Failed to load vendor profile. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+
         if (vendor) {
           const categories = vendor.service_type ? vendor.service_type.split(',').map(s => s.trim()) : [];
           
@@ -69,8 +64,8 @@ const VendorServices = ({ session }) => {
           });
         }
       } catch (error) {
-        console.error('Error fetching vendor data via API:', error);
-        setError(`Failed to load vendor profile. ${error.message}`);
+        console.error('Error in fetchVendorData:', error);
+        setError('An error occurred while loading your profile.');
       } finally {
         setIsLoading(false);
       }
@@ -119,8 +114,6 @@ const VendorServices = ({ session }) => {
     original: service,
     display: capitalizeFirstLetter(service)
   }));
-
-  // --- THE REST OF THE COMPONENT (UI/JSX) REMAINS EXACTLY THE SAME ---
 
   return (
     <div className="vendor-services-container">
