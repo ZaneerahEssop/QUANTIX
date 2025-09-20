@@ -16,11 +16,11 @@ import {
   FaTrash,
   FaEnvelope,
   FaSearch,
-  FaCheck
+  FaCheck,
 } from "react-icons/fa";
 import "../styling/eventDetails.css";
 
-// --- Sub-components (EventSchedule, EventTheme, GuestManagement) are unchanged ---
+// --- Sub-components (EventSchedule, EventTheme) are unchanged ---
 const EventSchedule = ({ schedule, onUpdate, isEditing }) => {
   const handleAddItem = () =>
     onUpdate([...(schedule || []), { time: "", activity: "" }]);
@@ -187,38 +187,48 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
   );
 };
 
+// --- MODIFIED GuestManagement Component ---
 const GuestManagement = ({ guests, onUpdate, isEditing }) => {
   const [newGuest, setNewGuest] = useState({
     name: "",
     contact: "",
     dietary: "",
-    isAttending: false,
+    rsvpStatus: "pending", // Changed from isAttending
   });
+
   const handleAddGuest = () => {
     if (newGuest.name.trim() !== "") {
-      // Use a temporary ID for new guests for React key purposes.
-      // We'll identify new guests by checking if the ID is a number.
       onUpdate([...(guests || []), { ...newGuest, id: Date.now() }]);
-      setNewGuest({ name: "", contact: "", dietary: "", isAttending: false });
+      setNewGuest({
+        name: "",
+        contact: "",
+        dietary: "",
+        rsvpStatus: "pending",
+      }); // Reset with new state
     }
   };
+
   const handleUpdateGuest = (guestId, field, value) =>
     onUpdate(
       (guests || []).map((g) =>
         g.id === guestId ? { ...g, [field]: value } : g
       )
     );
+
   const handleRemoveGuest = (guestId) =>
     onUpdate((guests || []).filter((g) => g.id !== guestId));
+
   const handleSendInvite = (guest) =>
     alert(
       `Simulating sending an email invite to ${guest.name} at ${guest.contact}`
     );
+
   return (
     <div className="guests-section">
       <div className="section-header">
         <h2>Guest Management</h2>
       </div>
+
       {isEditing && (
         <div className="add-guest-form">
           <input
@@ -248,40 +258,69 @@ const GuestManagement = ({ guests, onUpdate, isEditing }) => {
           </button>
         </div>
       )}
+
       <div className="guest-list">
         {guests && guests.length > 0 ? (
           <ul>
             {guests.map((guest) => (
               <li key={guest.id} className="guest-item">
                 <div className="guest-info">
-                  <input
-                    type="checkbox"
-                    checked={guest.isAttending}
-                    onChange={(e) =>
-                      handleUpdateGuest(
-                        guest.id,
-                        "isAttending",
-                        e.target.checked
-                      )
-                    }
-                    disabled={!isEditing}
-                  />
                   <div>
                     <strong>{guest.name}</strong>
                     <br />
                     <small>{guest.contact}</small>
                     <br />
-                    <small>{guest.dietary}</small>
+                    {guest.dietary && <small>Dietary: {guest.dietary}</small>}
                   </div>
                 </div>
-                {isEditing && (
-                  <div className="guest-actions">
+
+                {/* --- VIEW MODE ACTIONS --- */}
+                {!isEditing && (
+                  <div className="guest-actions view-mode">
                     <button
                       onClick={() => handleSendInvite(guest)}
                       title="Send invite"
+                      className="send-invite-btn"
                     >
-                      <FaEnvelope />
+                      <FaEnvelope /> Send Invite
                     </button>
+                    <div className="rsvp-controls">
+                      <span>RSVP:</span>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={guest.rsvpStatus === "attending"}
+                          onChange={() => {
+                            const newStatus =
+                              guest.rsvpStatus === "attending"
+                                ? "pending"
+                                : "attending";
+                            handleUpdateGuest(guest.id, "rsvpStatus", newStatus);
+                          }}
+                        />{" "}
+                        Yes
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={guest.rsvpStatus === "declined"}
+                          onChange={() => {
+                            const newStatus =
+                              guest.rsvpStatus === "declined"
+                                ? "pending"
+                                : "declined";
+                            handleUpdateGuest(guest.id, "rsvpStatus", newStatus);
+                          }}
+                        />{" "}
+                        No
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* --- EDIT MODE ACTIONS --- */}
+                {isEditing && (
+                  <div className="guest-actions">
                     <button
                       onClick={() => handleRemoveGuest(guest.id)}
                       className="delete-guest"
@@ -306,12 +345,11 @@ const GuestManagement = ({ guests, onUpdate, isEditing }) => {
 const EventDetails = () => {
   const { id } = useParams();
   const searchParams = new URLSearchParams(window.location.search);
-  const isReadOnly = searchParams.get('readonly') === 'true';
+  const isReadOnly = searchParams.get("readonly") === "true";
   const eventId = id;
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  // Disable editing if in read-only mode
   useEffect(() => {
     if (isReadOnly) {
       setIsEditing(false);
@@ -332,12 +370,8 @@ const EventDetails = () => {
   const [selectedVendors, setSelectedVendors] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [schedule, setSchedule] = useState([]);
-
-  // --- GUEST STATE MANAGEMENT ---
   const [guests, setGuests] = useState([]);
-  // Use a ref to store the initial guests to compare against on save
   const initialGuestsRef = useRef([]);
-
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [theme, setTheme] = useState({ name: "", colors: [], notes: "" });
@@ -347,25 +381,42 @@ const EventDetails = () => {
       ? "https://quantix-production.up.railway.app"
       : "http://localhost:5000";
 
+  // Helper to format database guest status for the UI
+  const formatGuestStatusForUI = (dbStatus) => {
+    if (dbStatus === "Attending") return "attending";
+    if (dbStatus === "Declined") return "declined";
+    return "pending";
+  };
+
+  // Helper to format UI guest status for the database
+  const formatGuestStatusForDB = (uiStatus) => {
+    if (uiStatus === "attending") return "Attending";
+    if (uiStatus === "declined") return "Declined";
+    return "Pending";
+  };
+  
   const fetchVendors = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
-      const API_URL = process.env.NODE_ENV === 'production'
-        ? 'https://quantix-production.up.railway.app'
-        : 'http://localhost:5000';
+      const API_URL =
+        process.env.NODE_ENV === "production"
+          ? "https://quantix-production.up.railway.app"
+          : "http://localhost:5000";
 
       const response = await fetch(`${API_URL}/api/vendors`, {
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch vendors');
+        throw new Error("Failed to fetch vendors");
       }
 
       const data = await response.json();
@@ -373,7 +424,7 @@ const EventDetails = () => {
         setVendors(data);
       }
     } catch (error) {
-      console.error('Error fetching vendors:', error);
+      console.error("Error fetching vendors:", error);
     }
   };
 
@@ -393,7 +444,6 @@ const EventDetails = () => {
           return;
         }
 
-        // 1. Fetch main event data
         const eventResponse = await fetch(`${API_URL}/api/events/id/${eventId}`);
         if (!eventResponse.ok) throw new Error("Failed to fetch event");
         const eventData = await eventResponse.json();
@@ -403,25 +453,23 @@ const EventDetails = () => {
           setEvent(null);
           return;
         }
-        
-        // 2. Fetch guest data from the dedicated guest API
+
         const guestsResponse = await fetch(`${API_URL}/api/guests/${eventId}`);
         if (!guestsResponse.ok) throw new Error("Failed to fetch guests");
         const guestsData = await guestsResponse.json();
 
-        // 3. Format guest data to match the UI component's state shape
-        const formattedGuests = guestsData.map(g => ({
-            id: g.guest_id, // Use the actual database ID
-            name: g.name,
-            contact: g.email || "", // Map 'email' to 'contact'
-            dietary: g.dietary_info || "",
-            isAttending: g.rsvp_status === 'Attending',
+        // Format guest data with the new rsvpStatus property
+        const formattedGuests = guestsData.map((g) => ({
+          id: g.guest_id,
+          name: g.name,
+          contact: g.email || "",
+          dietary: g.dietary_info || "",
+          rsvpStatus: formatGuestStatusForUI(g.rsvp_status),
         }));
 
         setGuests(formattedGuests);
-        initialGuestsRef.current = formattedGuests; // Store initial state for comparison on save
+        initialGuestsRef.current = formattedGuests;
 
-        // 4. Update the rest of the component state
         setEvent(eventData);
         setSchedule(eventData.schedule || []);
         setTheme(eventData.theme || { name: "", colors: [], notes: "" });
@@ -453,51 +501,51 @@ const EventDetails = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  
-  // --- NEW: Function to handle guest updates through the API ---
-  const handleGuestUpdates = async () => {
-    // Create a set of initial guest IDs for comparison
-    const currentGuestsMap = new Map(guests.map(g => [g.id, g]));
 
+  const handleGuestUpdates = async () => {
+    const currentGuestsMap = new Map(guests.map((g) => [g.id, g]));
     const promises = [];
 
-    // 1. Identify and handle DELETIONS
+    // Deletions
     for (const initialGuest of initialGuestsRef.current) {
       if (!currentGuestsMap.has(initialGuest.id)) {
-        promises.push(fetch(`${API_URL}/api/guests/${eventId}/${initialGuest.id}`, { method: 'DELETE' }));
+        promises.push(
+          fetch(`${API_URL}/api/guests/${eventId}/${initialGuest.id}`, {
+            method: "DELETE",
+          })
+        );
       }
     }
-    
-    // 2. Identify and handle ADDITIONS and UPDATES
+
+    // Additions and Updates
     for (const currentGuest of guests) {
-      // If ID is a number, it's a temporary ID for a new guest
-      if (typeof currentGuest.id === 'number') {
-        const newGuestPayload = {
-            name: currentGuest.name,
-            email: currentGuest.contact,
-            rsvp_status: currentGuest.isAttending ? 'Attending' : 'Pending',
-            dietary_info: currentGuest.dietary,
-        };
-        promises.push(fetch(`${API_URL}/api/guests/${eventId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newGuestPayload),
-        }));
-      } else { // Existing guest, check for updates
-        const initialGuest = initialGuestsRef.current.find(g => g.id === currentGuest.id);
-        // A simple check to see if anything changed.
+      const payload = {
+        name: currentGuest.name,
+        email: currentGuest.contact,
+        rsvp_status: formatGuestStatusForDB(currentGuest.rsvpStatus), // Use helper
+        dietary_info: currentGuest.dietary,
+      };
+
+      if (typeof currentGuest.id === "number") { // New guest
+        promises.push(
+          fetch(`${API_URL}/api/guests/${eventId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        );
+      } else { // Existing guest
+        const initialGuest = initialGuestsRef.current.find(
+          (g) => g.id === currentGuest.id
+        );
         if (JSON.stringify(initialGuest) !== JSON.stringify(currentGuest)) {
-             const updatedGuestPayload = {
-                name: currentGuest.name,
-                email: currentGuest.contact,
-                rsvp_status: currentGuest.isAttending ? 'Attending' : 'Pending',
-                dietary_info: currentGuest.dietary,
-            };
-            promises.push(fetch(`${API_URL}/api/guests/${eventId}/${currentGuest.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedGuestPayload),
-            }));
+          promises.push(
+            fetch(`${API_URL}/api/guests/${eventId}/${currentGuest.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            })
+          );
         }
       }
     }
@@ -505,24 +553,20 @@ const EventDetails = () => {
     await Promise.all(promises);
   };
 
-
-  // --- MODIFIED: handleSave now calls handleGuestUpdates ---
   const handleSave = async () => {
-    if (isReadOnly) return; // Prevent saving in read-only mode
+    if (isReadOnly) return;
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
-      
-      // --- Step 1: Update Guest Data via the Guest API ---
+
       await handleGuestUpdates();
 
-      // --- Step 2: Update the main event details (excluding guests) ---
       const startTime = formData.time
         ? `${formData.date}T${formData.time}`
         : `${formData.date}T00:00:00`;
-        
+
       const mainEventPayload = {
         ...formData,
         start_time: `${formData.date}T${formData.time || "00:00"}:00`,
@@ -530,33 +574,32 @@ const EventDetails = () => {
         theme,
         documents,
         vendors: selectedVendors,
-        // NOTE: We are no longer sending the 'guests' array here
       };
 
-      const { error: eventUpdateError } = await fetch(`${API_URL}/api/events/${eventId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(mainEventPayload),
-      });
+      const { error: eventUpdateError } = await fetch(
+        `${API_URL}/api/events/${eventId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(mainEventPayload),
+        }
+      );
       if (eventUpdateError) throw new Error(eventUpdateError.message);
 
-
-      // --- Step 3: Update local state and UI ---
       setIsEditing(false);
 
-      // Refetch guests to get new IDs and ensure sync with the DB
       const guestsResponse = await fetch(`${API_URL}/api/guests/${eventId}`);
       const guestsData = await guestsResponse.json();
-      const formattedGuests = guestsData.map(g => ({
-          id: g.guest_id,
-          name: g.name,
-          contact: g.email || "",
-          dietary: g.dietary_info || "",
-          isAttending: g.rsvp_status === 'Attending',
+      const formattedGuests = guestsData.map((g) => ({
+        id: g.guest_id,
+        name: g.name,
+        contact: g.email || "",
+        dietary: g.dietary_info || "",
+        rsvpStatus: formatGuestStatusForUI(g.rsvp_status), // Use helper
       }));
       setGuests(formattedGuests);
-      initialGuestsRef.current = formattedGuests; // Reset the initial state
-      
+      initialGuestsRef.current = formattedGuests;
+
       setEvent((prev) => ({
         ...prev,
         ...formData,
@@ -574,7 +617,7 @@ const EventDetails = () => {
   };
 
   const handleVendorToggle = (vendorId) => {
-    if (isReadOnly) return; // Prevent adding vendors in read-only mode
+    if (isReadOnly) return;
     setSelectedVendors((prev) =>
       prev.includes(vendorId)
         ? prev.filter((id) => id !== vendorId)
@@ -583,40 +626,37 @@ const EventDetails = () => {
   };
 
   const handleExport = async () => {
-  try {
-    const response = await fetch(
-      `${API_URL}/api/events/${eventId}/export`,
-      {
-        method: "GET",
-        headers: {
-          // No need for Content-Type for downloads
-        },
+    try {
+      const response = await fetch(
+        `${API_URL}/api/events/${eventId}/export`,
+        {
+          method: "GET",
+        }
+      );
+      if (!response.ok) throw new Error("Failed to export event data");
+
+      const disposition = response.headers.get("Content-Disposition");
+      let filename = `event_export_${eventId}.zip`;
+      if (disposition && disposition.includes("filename=")) {
+        filename = disposition.split("filename=")[1].replace(/"/g, "");
       }
-    );
-    if (!response.ok) throw new Error("Failed to export event data");
 
-    const disposition = response.headers.get("Content-Disposition");
-    let filename = `event_export_${eventId}.zip`;
-    if (disposition && disposition.includes("filename=")) {
-      filename = disposition.split("filename=")[1].replace(/"/g, "");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert("Export failed: " + error.message);
     }
-
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    alert("Export failed: " + error.message);
-  }
-};
+  };
 
   const handleFileUpload = async (e) => {
-    if (isReadOnly) return; // Prevent file uploads in read-only mode
+    if (isReadOnly) return;
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
@@ -775,10 +815,12 @@ const EventDetails = () => {
             <button onClick={handleSave} className="save-button">
               <FaSave /> Save Changes
             </button>
-          ) : !isReadOnly && (
-            <button onClick={toggleEdit} className="edit-button">
-              <FaEdit /> Edit Event
-            </button>
+          ) : (
+            !isReadOnly && (
+              <button onClick={toggleEdit} className="edit-button">
+                <FaEdit /> Edit Event
+              </button>
+            )
           )}
           <button onClick={handleExport} className="export-button">
             <FaUpload /> Export Event Data
@@ -856,7 +898,11 @@ const EventDetails = () => {
               />
             </section>
             <section>
-              <EventTheme theme={theme} onUpdate={setTheme} isEditing={isEditing}/>
+              <EventTheme
+                theme={theme}
+                onUpdate={setTheme}
+                isEditing={isEditing}
+              />
             </section>
           </>
         )}
@@ -901,29 +947,37 @@ const EventDetails = () => {
                     onChange={(e) => setSelectedCategory(e.target.value)}
                   >
                     <option value="All">All Categories</option>
-                    {Array.from(new Set([
-                      ...vendors.map(v => v.service_type),
-                      'Catering' // Ensure Catering is always an option
-                    ]))
-                    .filter(type => type) // Remove any empty/null types
-                    .map(type => {
-                      // Capitalize 'venue' if it exists
-                      const displayType = type.toLowerCase() === 'venue' ? 'Venue' : type;
-                      return (
-                        <option key={type} value={type}>
-                          {displayType}
-                        </option>
-                      );
-                    })}
+                    {Array.from(
+                      new Set([
+                        ...vendors.map((v) => v.service_type),
+                        "Catering",
+                      ])
+                    )
+                      .filter((type) => type)
+                      .map((type) => {
+                        const displayType =
+                          type.toLowerCase() === "venue" ? "Venue" : type;
+                        return (
+                          <option key={type} value={type}>
+                            {displayType}
+                          </option>
+                        );
+                      })}
                   </select>
                 </div>
                 <div className="vendor-selection">
                   {vendors
-                    .filter(vendor => {
-                      const matchesSearch = !searchTerm || 
-                        vendor.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        vendor.service_type.toLowerCase().includes(searchTerm.toLowerCase());
-                      const matchesCategory = selectedCategory === "All" || 
+                    .filter((vendor) => {
+                      const matchesSearch =
+                        !searchTerm ||
+                        vendor.business_name
+                          .toLowerCase()
+                          .includes(searchTerm.toLowerCase()) ||
+                        vendor.service_type
+                          .toLowerCase()
+                          .includes(searchTerm.toLowerCase());
+                      const matchesCategory =
+                        selectedCategory === "All" ||
                         vendor.service_type === selectedCategory;
                       return matchesSearch && matchesCategory;
                     })
@@ -932,10 +986,12 @@ const EventDetails = () => {
                         <div className="vendor-info">
                           <h4>{vendor.business_name}</h4>
                           <span className="vendor-category">
-                            {vendor.service_type.toLowerCase() === 'venue' ? 'Venue' : vendor.service_type}
+                            {vendor.service_type.toLowerCase() === "venue"
+                              ? "Venue"
+                              : vendor.service_type}
                           </span>
                           <div className="vendor-description">
-                            {vendor.description || 'No description available.'}
+                            {vendor.description || "No description available."}
                           </div>
                         </div>
                         <div className="vendor-actions">
@@ -943,9 +999,13 @@ const EventDetails = () => {
                             <button
                               type="button"
                               className={`add-vendor-btn ${
-                                selectedVendors.includes(vendor.vendor_id) ? 'added' : ''
+                                selectedVendors.includes(vendor.vendor_id)
+                                  ? "added"
+                                  : ""
                               }`}
-                              onClick={() => handleVendorToggle(vendor.vendor_id)}
+                              onClick={() =>
+                                handleVendorToggle(vendor.vendor_id)
+                              }
                               disabled={!isEditing}
                             >
                               {selectedVendors.includes(vendor.vendor_id) ? (
@@ -962,7 +1022,9 @@ const EventDetails = () => {
                               <button
                                 type="button"
                                 className="undo-request-btn"
-                                onClick={() => handleVendorToggle(vendor.vendor_id)}
+                                onClick={() =>
+                                  handleVendorToggle(vendor.vendor_id)
+                                }
                                 disabled={!isEditing}
                               >
                                 <FaTimes /> Undo
