@@ -8,7 +8,7 @@ const plannerRoutes = require("./src/Routes/planner.routes");
 const exportRoutes = require("./src/Routes/export.routes");
 const vendorRoutes = require("./src/Routes/vendor.routes");
 const vendorRequestRoutes = require("./src/Routes/vendorRequest.routes");
-// Import the new guest routes
+const vendorProfileRoutes = require("./src/Routes/vendorProfile.routes");
 const guestRoutes = require("./src/Routes/guests.routes");
 
 dotenv.config();
