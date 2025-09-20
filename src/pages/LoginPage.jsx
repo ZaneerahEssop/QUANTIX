@@ -11,6 +11,7 @@ function LoginPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
