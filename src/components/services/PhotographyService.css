@@ -1,0 +1,539 @@
+/* Photography Service Component Styles */
+/* Custom Text Editor with Formatting */
+.text-editor-wrapper {
+  width: 100%;
+  margin-top: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.editor-toolbar {
+  background: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+  padding: 5px 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.format-button {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  width: 30px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.format-button:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.format-button:active {
+  background: #dee2e6;
+  transform: translateY(1px);
+}
+
+.format-button strong {
+  font-weight: bold;
+}
+
+.simple-textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 12px;
+  border: none;
+  border-radius: 0 0 4px 4px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  direction: ltr;
+  text-align: left;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background: white;
+}
+
+.simple-textarea:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.simple-textarea::placeholder {
+  color: #999;
+  opacity: 1; /* Firefox */
+}
+
+/* Style for the markdown preview */
+.markdown-preview {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.6;
+}
+
+.markdown-preview p:first-child { margin-top: 0; }
+.markdown-preview p:last-child { margin-bottom: 0; }
+
+.markdown-preview ul,
+.markdown-preview ol {
+  padding-left: 1.5em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+/* Main component layout */
+.photography-service {
+  background: white;
+  border-radius: 12px;
+  padding: 30px 40px;
+  margin: 20px 0 0;
+  width: 100%;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+  display: flex;
+  gap: 30px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.service-content {
+  flex: 2;
+  min-width: 0; /* Prevents flexbox overflow issues */
+}
+
+.service-images {
+  flex: 1;
+  min-width: 320px;
+  position: sticky;
+  top: 20px;
+  height: fit-content;
+  align-self: flex-start;
+  /* Distinguishing line added */
+  border-left: 1px solid #e0e0e0;
+  padding-left: 30px;
+}
+
+.service-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.service-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.4rem;
+}
+
+.edit-button {
+  background: #FFB6C1; /* Peach color */
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-button:hover {
+  background: #FFA07A; /* Darker peach on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.edit-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Form Styles */
+.service-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rich-text-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+/* View Mode Styles */
+.service-details {
+  line-height: 1.8;
+}
+
+.service-section {
+  margin-bottom: 30px;
+}
+
+.service-section h4 {
+  color: #2c3e50;
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+}
+
+/* --- NEW PORTFOLIO GRID STYLES --- */
+.portfolio-grid {
+  display: grid;
+  /* Creates a responsive grid that fills the space */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 15px;
+}
+
+.portfolio-photo {
+  position: relative;
+  /* Enforces a square shape */
+  aspect-ratio: 1 / 1; 
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: #f0f0f0;
+}
+
+.portfolio-photo:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.portfolio-photo img {
+  width: 100%;
+  height: 100%;
+  /* Ensures the image covers the square area without distortion */
+  object-fit: cover; 
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.portfolio-photo:hover img {
+  transform: scale(1.05);
+}
+
+.delete-photo {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0;
+  z-index: 5;
+}
+
+.portfolio-photo:hover .delete-photo {
+  opacity: 1;
+}
+
+.delete-photo:hover {
+  background: #ff0000;
+}
+/* --- END NEW PORTFOLIO STYLES --- */
+
+
+/* Photo Upload */
+.photo-upload {
+  margin-top: 20px;
+}
+
+.upload-button {
+  display: inline-block;
+  background: #f8f9fa;
+  border: 2px dashed #ddd;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #555;
+  font-weight: 500;
+  transition: all 0.3s;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.upload-button:hover {
+  border-color: #f6d365;
+  background: #fffaf0;
+  color: #e6a700;
+}
+
+.upload-hint {
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: 5px;
+}
+
+/* No photos message */
+.no-photos-container {
+  width: 100%;
+  padding: 20px;
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.no-photos {
+  color: #666;
+  font-style: italic;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.cancel-button,
+.save-button {
+  padding: 10px 25px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cancel-button {
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  color: #555;
+}
+
+.cancel-button:hover {
+  background: #e9ecef;
+}
+
+.save-button {
+  background: #FFB6C1; /* Peach color */
+  border: none;
+  color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.save-button:hover {
+  background: #FFA07A; /* Darker peach on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.save-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Loading State */
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+  .photography-service {
+    flex-direction: column;
+    padding: 20px;
+  }
+  
+  .service-content,
+  .service-images {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .service-images {
+    margin-top: 30px;
+    position: relative; /* Un-stick the gallery */
+    height: auto;
+    /* Move the distinguishing line to the top */
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-actions {
+    flex-direction: column;
+    margin-top: 10px;
+    padding-top: 10px;
+    gap: 10px;
+  }
+  
+  .cancel-button,
+  .save-button {
+    width: 100%;
+  }
+
+  /* Adjust grid for smaller screens */
+  .portfolio-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+}
+
+/* Toast Notifications */
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #FFB6C1 0%, #FF7F50 100%);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.3s ease-out forwards;
+  max-width: 350px;
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to { 
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.toast-notification.success {
+  background: linear-gradient(135deg, #4CAF50 0%, #81C784 100%);
+}
+
+.toast-notification.error {
+  background: linear-gradient(135deg, #F44336 0%, #E57373 100%);
+}
+
+.toast-notification .toast-icon {
+  font-size: 20px;
+}
+
+.toast-notification .toast-message {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 0 0 10px;
+  margin-left: auto;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+/* Toast Notifications */
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #FFB6C1 0%, #FF7F50 100%);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.3s ease-out forwards;
+  max-width: 350px;
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to { 
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.toast-notification.success {
+  background: linear-gradient(135deg, #4CAF50 0%, #81C784 100%);
+}
+
+.toast-notification.error {
+  background: linear-gradient(135deg, #F44336 0%, #E57373 100%);
+}
+
+.toast-notification .toast-icon {
+  font-size: 20px;
+}
+
+.toast-notification .toast-message {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Animation for photo upload */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.portfolio-photo {
+  animation: fadeIn 0.4s ease-out forwards;
+}

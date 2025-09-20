@@ -204,6 +204,7 @@ const PlannerForm = () => {
           <div className="form-group">
             <span className="form-icon"><i className="fas fa-user"></i></span>
             <input
+              id="name"
               type="text"
               name="name"
               className={"form-input" + (formData.name ? " has-value" : "")}
@@ -212,11 +213,12 @@ const PlannerForm = () => {
               onChange={handleChange}
               required
             />
-            <label className="form-label">Name</label>
+            <label className="form-label" htmlFor="name">Name</label>
           </div>
           <div className="form-group">
             <span className="form-icon"><i className="fas fa-phone"></i></span>
             <input
+              id="phone"
               type="tel"
               name="phone"
               className={"form-input" + (formData.phone ? " has-value" : "")}
@@ -225,11 +227,12 @@ const PlannerForm = () => {
               onChange={handleChange}
               required
             />
-            <label className="form-label">Phone Number</label>
+            <label className="form-label" htmlFor="phone">Phone Number</label>
           </div>
           <div className="form-group">
             <span className="form-icon"><i className="fas fa-align-left"></i></span>
             <textarea
+              id="bio"
               name="bio"
               className={"form-input" + (formData.bio ? " has-value" : "")}
               placeholder=" "
@@ -238,7 +241,7 @@ const PlannerForm = () => {
               required
               style={{ minHeight: "80px", resize: "vertical", paddingLeft: "45px" }}
             />
-            <label className="form-label">Bio</label>
+            <label className="form-label" htmlFor="bio">Bio</label>
           </div>
           <div className="form-actions">
             <button
