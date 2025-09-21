@@ -7,6 +7,7 @@ import '../App.css';
 const EditPlannerProfile = ({ session }) => {
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     phone: '',
     bio: '',
     profilePic: null
@@ -56,6 +57,7 @@ const EditPlannerProfile = ({ session }) => {
         if (planner) {
           setFormData({
             name: planner.name || '',
+            email: planner.email || '',
             phone: planner.contact_number || '',
             bio: planner.bio || '',
             profilePic: planner.profile_picture || null
@@ -117,6 +119,14 @@ const EditPlannerProfile = ({ session }) => {
       return;
     }
     
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setWarningMessage('Please enter a valid email address (e.g., example@email.com)');
+      setShowWarning(true);
+      return;
+    }
+    
     setIsSubmitting(true);
     setWarningMessage('');
     setShowWarning(false);
@@ -166,6 +176,7 @@ const EditPlannerProfile = ({ session }) => {
       const plannerData = {
         planner_id: userId,
         name: formData.name || '',
+        email: formData.email || '',
         contact_number: formData.phone || '',
         bio: formData.bio || '',
         ...(profilePicUrl && { profile_picture: profilePicUrl })
@@ -490,13 +501,62 @@ const EditPlannerProfile = ({ session }) => {
             }}>Full Name</label>
           </div>
 
+          {/* Email Field */}
+          <div className="form-group" style={{ position: 'relative', marginBottom: '1.5rem' }}>
+            <span className="form-icon" style={{
+              position: 'absolute',
+              left: '15px',
+              top: '18px',
+              color: '#E5ACBF',
+              fontSize: '1.1rem'
+            }}>
+              <i className="fas fa-envelope"></i>
+            </span>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              style={{
+                width: '100%',
+                padding: '12px 15px 12px 45px',
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                transition: 'all 0.3s',
+                backgroundColor: 'rgba(255,255,255,0.9)',
+                ':focus': {
+                  borderColor: '#E5ACBF',
+                  boxShadow: '0 0 0 2px rgba(229, 172, 191, 0.2)'
+                }
+              }}
+              placeholder=" "
+              required
+            />
+            <label style={{
+              position: 'absolute',
+              left: '45px',
+              top: '12px',
+              color: '#999',
+              transition: 'all 0.3s',
+              pointerEvents: 'none',
+              ...(formData.email && {
+                top: '-10px',
+                left: '10px',
+                fontSize: '0.8rem',
+                background: 'white',
+                padding: '0 5px',
+                color: '#E5ACBF'
+              })
+            }}>Email Address</label>
+          </div>
+
           {/* Phone Number Field */}
           <div className="form-group" style={{ position: 'relative', marginBottom: '1.5rem' }}>
             <span className="form-icon" style={{
               position: 'absolute',
               left: '15px',
-              top: '50%',
-              transform: 'translateY(-50%)',
+              top: '18px',
               color: '#E5ACBF',
               fontSize: '1.1rem'
             }}>
