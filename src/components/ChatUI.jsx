@@ -236,7 +236,9 @@ const ChatUI = ({
   onSendMessage,
   onSelectVendor,
   selectedVendor = null,
-  messages = []
+  messages = [],
+  showSearch = true,
+  vendors = []
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -282,23 +284,47 @@ const ChatUI = ({
       </ComponentHeader>
       <ChatContainer>
         <Sidebar>
-          <VendorSearch 
-            onSelectVendor={onSelectVendor}
-            selectedVendorId={selectedVendor?.id}
-          />
-          <ChatList>
-            {selectedVendor && (
-              <div 
-                className="chat-item active"
-                onClick={() => onSelectVendor(selectedVendor)}
-              >
-                <div className="info">
-                  <div className="name">{selectedVendor.name}</div>
-                  <div className="last-message">Click to chat</div>
+          {showSearch ? (
+            <>
+              <VendorSearch 
+                onSelectVendor={onSelectVendor}
+                selectedVendorId={selectedVendor?.id}
+              />
+              <ChatList>
+                {selectedVendor && (
+                  <div 
+                    className="chat-item active"
+                    onClick={() => onSelectVendor(selectedVendor)}
+                  >
+                    <div className="info">
+                      <div className="name">{selectedVendor.name}</div>
+                      <div className="last-message">Click to chat</div>
+                    </div>
+                  </div>
+                )}
+              </ChatList>
+            </>
+          ) : (
+            <ChatList>
+              {vendors.map(vendor => (
+                <div 
+                  key={vendor.id}
+                  className={`chat-item ${selectedVendor?.id === vendor.id ? 'active' : ''}`}
+                  onClick={() => onSelectVendor(vendor)}
+                >
+                  <div className="info">
+                    <div className="name">{vendor.name}</div>
+                    <div className="last-message">{vendor.lastMessage || 'Click to chat'}</div>
+                  </div>
+                  {vendor.unread > 0 && (
+                    <div className="unread-badge">
+                      {vendor.unread}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-          </ChatList>
+              ))}
+            </ChatList>
+          )}
         </Sidebar>
         
         <ChatArea>
