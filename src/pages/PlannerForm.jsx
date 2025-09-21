@@ -6,6 +6,7 @@ import "../ProfileForm.css";
 const PlannerForm = () => {
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     phone: "",
     bio: "",
     profilePic: null,
@@ -36,6 +37,13 @@ const PlannerForm = () => {
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(formData.phone)) {
       setWarning("Phone number must be exactly 10 digits.");
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setWarning("Please enter a valid email address (e.g., example@email.com)");
       return;
     }
 
@@ -109,6 +117,7 @@ const PlannerForm = () => {
           {
             planner_id: userId,
             name: formData.name,
+            email: formData.email,
             contact_number: formData.phone,
             bio: formData.bio,
             profile_picture: profilePicUrl,
@@ -214,6 +223,20 @@ const PlannerForm = () => {
               required
             />
             <label className="form-label" htmlFor="name">Name</label>
+          </div>
+          <div className="form-group">
+            <span className="form-icon"><i className="fas fa-envelope"></i></span>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              className={"form-input" + (formData.email ? " has-value" : "")}
+              placeholder=" "
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+            <label className="form-label" htmlFor="email">Email</label>
           </div>
           <div className="form-group">
             <span className="form-icon"><i className="fas fa-phone"></i></span>
