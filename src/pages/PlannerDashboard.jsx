@@ -18,8 +18,28 @@ export default function PlannerDashboard({ session }) {
   const [newTask, setNewTask] = useState("");
   const [date, setDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [chatMessages, setChatMessages] = useState({});
 
   console.log("API URL:", process.env.REACT_APP_API_URL);
+
+  // Handle sending a message
+  const handleSendMessage = (message) => {
+    console.log("Message to vendor:", message);
+    // Add the message to the chat history
+    setChatMessages(prev => ({
+      ...prev,
+      [message.vendorId]: [
+        ...(prev[message.vendorId] || []),
+        message
+      ]
+    }));
+  };
+
+  // Handle vendor selection
+  const handleSelectVendor = (vendor) => {
+    setSelectedVendor(vendor);
+  };
 
   const API_URL =
     window.location.hostname === "localhost" ||
@@ -1144,17 +1164,10 @@ export default function PlannerDashboard({ session }) {
           >
             <ChatUI
               listTitle="Vendors"
-              vendors={[
-                {
-                  id: 1,
-                  name: "Blossom Events",
-                  lastMessage: "Looking forward to our meeting!",
-                  unread: 0,
-                },
-              ]}
-              onSendMessage={(message) => {
-                console.log("Message to vendor:", message);
-              }}
+              onSendMessage={handleSendMessage}
+              onSelectVendor={handleSelectVendor}
+              selectedVendor={selectedVendor}
+              messages={selectedVendor ? chatMessages[selectedVendor.id] || [] : []}
             />
           </div>
         </div>
