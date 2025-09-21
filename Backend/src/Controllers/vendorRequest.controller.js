@@ -44,22 +44,32 @@ const getVendorRequestByVendorId = async (req, res) => {
       .from("vendor_requests")
       .select(
         `
-        *,
-        events (
+        request_id,
+        status,
+        requester_id,
+        event_id,
+        events:event_id (
+          event_id,
           name,
           start_time,
           end_time,
-          venue
+          venue,
+          planner_id
         )
       `
       )
       .eq("vendor_id", vendor_id);
 
-    if (error || !data) {
-      return res.status(404).json({ error: "Vendor Request not found" });
+    if (error) {
+      console.error("Supabase error:", error);
+      return res.status(500).json({ error: error.message });
     }
 
-    res.status(200).json(data);
+    if (!data || data.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    res.status(200).json(data || []);
   } catch (err) {
     console.error("Error fetching request by vendor id:", err.message);
     res.status(500).json({ error: "Failed to fetch Vendor Request" });
