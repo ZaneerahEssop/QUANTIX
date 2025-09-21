@@ -862,6 +862,10 @@ export default function VendorDashboard({ session }) {
               onSendMessage={(message) => {
                 console.log("Message to planner:", message);
               }}
+              onSelectVendor={(vendor) => {
+                // Handle vendor selection if needed
+              }}
+              showSearch={false}
             />
           </div>
         </div>
