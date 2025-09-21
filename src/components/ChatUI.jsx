@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { BsEmojiSmile, BsPaperclip, BsSend } from 'react-icons/bs';
 import { FaComments } from 'react-icons/fa';
 import styled from 'styled-components';
+import VendorSearch from './VendorSearch';
 
 // Styled Components
 const ComponentWrapper = styled.div`
@@ -231,20 +232,20 @@ const SendButton = styled(IconButton)`
 `;
 
 const ChatUI = ({ 
-  listTitle = 'Contacts',
-  vendors = [],
-  onSendMessage
+  listTitle = 'Vendors',
+  onSendMessage,
+  onSelectVendor,
+  selectedVendor = null,
+  messages = []
 }) => {
-  const [activeChat, setActiveChat] = useState(null);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
-  const [messages, setMessages] = useState({});
   
-  const activeVendor = activeChat ? vendors.find(v => v.id === activeChat) : null;
+  // No need for localMessages state since we're using props for messages
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (newMessage.trim() === '') return;
+    if (newMessage.trim() === '' || !selectedVendor) return;
     
     const newMsg = {
       id: Date.now(),
@@ -254,40 +255,23 @@ const ChatUI = ({
       sender: 'You'
     };
     
-    setMessages(prev => ({
-      ...prev,
-      [activeChat]: [...(prev[activeChat] || []), newMsg]
-    }));
-    
+    // Notify parent component
     if (onSendMessage) {
       onSendMessage({
         ...newMsg,
-        vendorId: activeChat
+        vendorId: selectedVendor.id
       });
     }
     
     setNewMessage('');
   };
 
-  // Only set first vendor as active if none is selected and vendors exist
+  // Scroll to bottom when messages change
   useEffect(() => {
-    if (!activeChat && vendors.length > 0) {
-      setActiveChat(vendors[0].id);
-    }
-  }, [vendors, activeChat]);
-
-  // Only scroll to bottom when new messages are added, not on initial render
-  const isInitialMount = useRef(true);
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    
-    if (messages[activeChat]?.length > 0) {
+    if (messages.length > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, activeChat]);
+  }, [messages]);
 
 
   return (
@@ -298,37 +282,34 @@ const ChatUI = ({
       </ComponentHeader>
       <ChatContainer>
         <Sidebar>
-          <h3>{listTitle}</h3>
+          <VendorSearch 
+            onSelectVendor={onSelectVendor}
+            selectedVendorId={selectedVendor?.id}
+          />
           <ChatList>
-            {vendors.map(vendor => (
+            {selectedVendor && (
               <div 
-                key={vendor.id}
-                className={`chat-item ${activeChat === vendor.id ? 'active' : ''}`}
-                onClick={() => setActiveChat(vendor.id)}
+                className="chat-item active"
+                onClick={() => onSelectVendor(selectedVendor)}
               >
                 <div className="info">
-                  <div className="name">{vendor.name}</div>
-                  <div className="last-message">{vendor.lastMessage}</div>
+                  <div className="name">{selectedVendor.name}</div>
+                  <div className="last-message">Click to chat</div>
                 </div>
-                {vendor.unread > 0 && (
-                  <div className="unread-badge">
-                    {vendor.unread}
-                  </div>
-                )}
               </div>
-            ))}
+            )}
           </ChatList>
         </Sidebar>
         
         <ChatArea>
-          {activeVendor ? (
+          {selectedVendor ? (
             <>
               <ChatHeader>
-                <h3>{activeVendor.name}</h3>
+                <h3>{selectedVendor.name}</h3>
               </ChatHeader>
               <MessagesContainer>
       
-              {(messages[activeChat] || []).length === 0 ? (
+              {messages.length === 0 ? (
                 <div style={{ 
                   display: 'flex', 
                   flexDirection: 'column', 
@@ -340,10 +321,10 @@ const ChatUI = ({
                   padding: '2rem'
                 }}>
                   <h3 style={{ marginBottom: '0.5rem', color: '#5c3c2e' }}>No messages yet</h3>
-                  <p style={{ fontSize: '0.9rem' }}>Send a message to start the conversation with {activeVendor.name}.</p>
+                  <p style={{ fontSize: '0.9rem' }}>Send a message to start the conversation with {selectedVendor.name}.</p>
                 </div>
               ) : (
-                messages[activeChat]?.map((message, index) => (
+                messages.map((message, index) => (
                   <MessageBubble 
                     key={index} 
                     $isCurrentUser={message.isCurrentUser}
@@ -373,7 +354,8 @@ const ChatUI = ({
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder={`Message ${activeVendor.name}...`}
+                    placeholder={`Message ${selectedVendor.name}...`}
+                    disabled={!selectedVendor}
                   />
                   <SendButton type="submit">
                     <BsSend size={16} />
