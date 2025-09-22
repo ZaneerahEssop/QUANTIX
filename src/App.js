@@ -16,6 +16,8 @@ import EditVendorProfile from './pages/EditVendorProfile';
 import EditPlannerProfile from './pages/EditPlannerProfile';
 import AddEventForm from './pages/AddEventForm';
 import EventDetails from './pages/EventDetails';
+import AdminDashboard from './pages/AdminDashboard';
+import PendingApproval from './pages/PendingApproval';
 import React from 'react';
 
 import VendorServices from './pages/VendorServices';
@@ -74,6 +76,12 @@ export default function App() {
         } />
         <Route path="/vendor/services" element={
           session ? <VendorServices session={session} /> : <Navigate to="/login" />
+        } />
+        <Route path="/admin-dashboard" element={
+          session? <AdminDashboard session={session} /> : <Navigate to="/login" />
+        } />
+        <Route path="/pending-approval" element={
+          session? <PendingApproval session={session} /> : <Navigate to="/login" />
         } />
       </Routes>
 
