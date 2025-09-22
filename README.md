@@ -21,7 +21,7 @@ A web application that helps users prepare and manage all aspects of an upcoming
 - Export structured data as JSON or CSV (schedule, guest list, and layout)  
 
 ## 🔗 Visit our site
-Click here(hyperlink)
+Click [here](https://quantix-production.up.railway.app)
 
 ## 👥 Our Team
 Karabo Bopape   
