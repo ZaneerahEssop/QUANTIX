@@ -19,6 +19,42 @@
     --background-gradient: radial-gradient(circle at 100% 0%, #E2C5AE, #E5ACBF);
 }
 
+/* Read-only Mode */
+.read-only-mode {
+  position: relative;
+  padding-top: 0;
+  margin-top: 2.5rem;
+}
+
+.read-only-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #f8d7da;
+  color: #842029;
+  text-align: center;
+  padding: 0.5rem 0;
+  font-weight: 500;
+  z-index: 1000;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+/* Disabled state for form elements in read-only mode */
+.read-only-mode input:disabled,
+.read-only-mode select:disabled,
+.read-only-mode textarea:disabled,
+.read-only-mode button:disabled {
+  background-color: #f8f9fa !important;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
 /* General Page Layout */
 .event-details {
     padding: 2rem;
@@ -32,9 +68,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
+    margin: 1rem 0 2rem 0;
+    padding: 1rem 0;
     border-bottom: 1px solid #eee;
+    position: relative;
+    z-index: 1;
 }
 
 .back-button {
