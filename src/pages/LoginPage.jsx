@@ -36,7 +36,31 @@ useEffect(() => {
         return;
       }
       if (data.user_role === 'planner') navigate('/dashboard');
-      else if (data.user_role === 'vendor') navigate('/vendor-dashboard');
+      else if (data.user_role === 'vendor') {
+        // fetch vendor status
+        const { data: vendor, error: vendorError } = await supabase
+          .from("vendors")
+          .select("status")
+          .eq("vendor_id", session.user.id)
+          .single();
+
+        if (vendorError || !vendor) {
+            console.error("Error fetching vendor status:", vendorError?.message);
+            navigate("/pending-approval", { state: { status: "pending" } }); // fallback
+            return;
+        }else if (vendor.status === "accepted") {
+            navigate("/vendor-dashboard");
+        } else if (vendor.status === "pending") {
+            navigate("/pending-approval", { state: { status: "pending" } });
+        } else if (vendor.status === "rejected") {
+            navigate("/pending-approval", { state: { status: "rejected" } });
+        } else {
+            // unknown status fallback
+            navigate("/pending-approval", { state: { status: "pending" } });
+          }
+      }
+
+      else if (data.user_role === 'admin') navigate('/admin-dashboard');
       else navigate('/dashboard');
     }
   }
