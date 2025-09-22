@@ -4,7 +4,7 @@ import { supabase } from '../client';
 import { FaSearch, FaTimes } from 'react-icons/fa';
 import '../LandingPage.css';
 
-const Navbar = ({ session }) => {
+const Navbar = ({ session, showOnlyLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -159,7 +159,7 @@ const Navbar = ({ session }) => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      navigate('/login');
+      window.location.href = "/login";
     } catch (error) {
       console.error('Error signing out:', error.message);
     }
@@ -376,7 +376,7 @@ const Navbar = ({ session }) => {
           )}
         </div>
         )}
-        {session?.user && (
+        {!showOnlyLogout && session?.user && (
           <>
             <button 
               onClick={() => navigate(getEditProfilePath())}
@@ -426,6 +426,10 @@ const Navbar = ({ session }) => {
                 My Services
               </button>
             )}
+            </>
+            )}
+
+            {session?.user && (
             <button 
               onClick={handleLogout}
               style={{
@@ -449,11 +453,12 @@ const Navbar = ({ session }) => {
             >
               Logout
             </button>
-          </>
-        )}
+            )}  
+        
       </div>
     </nav>
   );
 };
 
 export default Navbar;
+    
