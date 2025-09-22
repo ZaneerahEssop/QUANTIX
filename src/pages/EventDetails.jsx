@@ -769,13 +769,19 @@ const EventDetails = () => {
   };
 
   const toggleEdit = () => {
-    if (!isReadOnly) {
-      setIsEditing(!isEditing);
-    }
+    if (isReadOnly) return;
+    setIsEditing(!isEditing);
   };
 
+  // Add read-only class to the main container when in read-only mode
   return (
-    <div className="event-details">
+    <div className={`event-details ${isReadOnly ? 'read-only-mode' : ''}`}>
+      {/* Add a banner to indicate read-only mode */}
+      {isReadOnly && (
+        <div className="read-only-banner">
+          <span>Viewing in read-only mode</span>
+        </div>
+      )}
       <div className="event-header">
         <button onClick={() => navigate(-1)} className="back-button">
           <FaArrowLeft /> Back to Dashboard
@@ -822,7 +828,11 @@ const EventDetails = () => {
               </button>
             )
           )}
-          <button onClick={handleExport} className="export-button">
+          <button 
+            onClick={handleExport} 
+            className="export-button"
+            disabled={isLoading}
+          >
             <FaUpload /> Export Event Data
           </button>
         </div>
@@ -839,6 +849,7 @@ const EventDetails = () => {
                 name="date"
                 value={formData.date}
                 onChange={handleInputChange}
+                disabled={isReadOnly}
               />
             ) : (
               formatDisplayDate(formData.date)
@@ -856,6 +867,7 @@ const EventDetails = () => {
                 name="time"
                 value={formData.time}
                 onChange={handleInputChange}
+                disabled={isReadOnly}
               />
             ) : (
               formData.time || "Not specified"
@@ -868,12 +880,13 @@ const EventDetails = () => {
           </h4>
           <p>
             {isEditing ? (
-              <input
-                type="text"
-                name="venue"
-                value={formData.venue}
+              <textarea
+                name="notes"
+                value={formData.notes}
                 onChange={handleInputChange}
-                placeholder="Venue"
+                placeholder="Add notes..."
+                className="event-notes"
+                disabled={isReadOnly}
               />
             ) : (
               event.venue || "Not specified"
