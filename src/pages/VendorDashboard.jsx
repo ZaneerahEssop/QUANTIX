@@ -17,7 +17,7 @@ export default function VendorDashboard({ session }) {
   const [date, setDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [showAllEvents, setShowAllEvents] = useState(false);
-  const [plannerNames, setPlannerNames] = useState({});
+  //const [plannerNames, setPlannerNames] = useState({});
 
   // Prevent scrolling until page is fully loaded
   useLayoutEffect(() => {
@@ -48,144 +48,7 @@ export default function VendorDashboard({ session }) {
     };
   }, []);
 
-  const fetchPlannerName = async (plannerId) => {
-    try {
-      const { data, error } = await supabase
-        .from("planners")
-        .select("name")
-        .eq("planner_id", plannerId);
-
-      if (error) {
-        console.error("Error fetching planner name:", error);
-        return null;
-      }
-
-      if (!data || data.length === 0) {
-        return null;
-      }
-
-      return data[0].name;
-    } catch (err) {
-      console.error("Error fetching planner name:", err);
-      return null;
-    }
-  };
-
   const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
-  const fetchInitialData = async () => {
-    if (!session?.user) return;
-
-    try {
-      setIsLoading(true);
-      const userId = session.user.id;
-
-      // Vendor info
-      const { data: vendorData, error: vendorError } = await supabase
-        .from("vendors")
-        .select("name, profile_picture")
-        .eq("vendor_id", userId)
-        .single();
-
-      if (vendorError || !vendorData) {
-        console.error("Error fetching vendor data:", vendorError?.message);
-        const email = session.user.email || "";
-        setVendorName(email.split("@")[0] || "Vendor");
-        setPreview(null);
-      } else {
-        setVendorName(vendorData.name);
-        setPreview(vendorData.profile_picture);
-      }
-
-      console.log("Fetching from:", `/api/vendor-requests/${userId}`);
-
-      // Fetch vendor requests via API
-      const requestsResponse = await fetch(
-        `${API_BASE}/api/vendor-requests/${userId}`
-      );
-
-      console.log("Response status:", requestsResponse.status);
-      console.log("Response OK:", requestsResponse.ok);
-
-      if (!requestsResponse.ok) {
-        throw new Error(
-          `Vendor requests API error! status: ${requestsResponse.status}`
-        );
-      }
-
-      const requestsData = await requestsResponse.json();
-      console.log("API Requests data:", requestsData);
-
-      const pending = [];
-      const accepted = [];
-      const plannerIds = new Set();
-
-      if (requestsData && requestsData.length > 0) {
-        requestsData.forEach((req) => {
-          const eventDetails = req.events
-            ? {
-                id: req.events.event_id,
-                eventName: req.events.name,
-                eventDate: req.events.start_time
-                  ? new Date(req.events.start_time)
-                  : null,
-                eventTime: req.events.start_time,
-                venue: req.events.venue,
-                plannerId: req.events.planner_id,
-                requestId: req.request_id,
-              }
-            : null;
-
-          if (req.status === "pending" && eventDetails) {
-            pending.push(eventDetails);
-            plannerIds.add(req.events.planner_id);
-          } else if (req.status === "accepted" && eventDetails) {
-            accepted.push(eventDetails);
-            plannerIds.add(req.events.planner_id);
-          }
-        });
-      }
-
-      // Fetch planner names using your planner API
-      const plannerPromises = [...plannerIds].map(async (plannerId) => {
-        try {
-          const response = await fetch(`${API_BASE}/api/planners/${plannerId}`);
-          if (!response.ok) {
-            throw new Error(
-              `Planner API error for ${plannerId}: ${response.status}`
-            );
-          }
-          const plannerData = await response.json();
-          return { id: plannerId, name: plannerData.name || "Planner" };
-        } catch (error) {
-          console.error(`Error fetching planner ${plannerId}:`, error);
-          return { id: plannerId, name: "Planner" };
-        }
-      });
-
-      const planners = await Promise.all(plannerPromises);
-      const plannerMap = Object.fromEntries(
-        planners.map((p) => [p.id, p.name])
-      );
-
-      const pendingWithNames = pending.map((req) => ({
-        ...req,
-        plannerName: plannerMap[req.plannerId] || "Planner",
-      }));
-
-      const acceptedWithNames = accepted.map((req) => ({
-        ...req,
-        plannerName: plannerMap[req.plannerId] || "Planner",
-      }));
-
-      setPendingRequests(pendingWithNames);
-      setAcceptedEvents(acceptedWithNames);
-    } catch (error) {
-      console.error("Error in initial data fetch:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (!session?.user) {
@@ -208,9 +71,124 @@ export default function VendorDashboard({ session }) {
       }
     };
 
+    const fetchInitialData = async () => {
+      if (!session?.user) return;
+
+      try {
+        setIsLoading(true);
+        const userId = session.user.id;
+
+        // Vendor info
+        const { data: vendorData, error: vendorError } = await supabase
+          .from("vendors")
+          .select("name, profile_picture")
+          .eq("vendor_id", userId)
+          .single();
+
+        if (vendorError || !vendorData) {
+          console.error("Error fetching vendor data:", vendorError?.message);
+          const email = session.user.email || "";
+          setVendorName(email.split("@")[0] || "Vendor");
+          setPreview(null);
+        } else {
+          setVendorName(vendorData.name);
+          setPreview(vendorData.profile_picture);
+        }
+
+        console.log("Fetching from:", `/api/vendor-requests/${userId}`);
+
+        // Fetch vendor requests via API
+        const requestsResponse = await fetch(
+          `${API_BASE}/api/vendor-requests/${userId}`
+        );
+
+        console.log("Response status:", requestsResponse.status);
+        console.log("Response OK:", requestsResponse.ok);
+
+        if (!requestsResponse.ok) {
+          throw new Error(
+            `Vendor requests API error! status: ${requestsResponse.status}`
+          );
+        }
+
+        const requestsData = await requestsResponse.json();
+        console.log("API Requests data:", requestsData);
+
+        const pending = [];
+        const accepted = [];
+        const plannerIds = new Set();
+
+        if (requestsData && requestsData.length > 0) {
+          requestsData.forEach((req) => {
+            const eventDetails = req.events
+              ? {
+                  id: req.events.event_id,
+                  eventName: req.events.name,
+                  eventDate: req.events.start_time
+                    ? new Date(req.events.start_time)
+                    : null,
+                  eventTime: req.events.start_time,
+                  venue: req.events.venue,
+                  plannerId: req.events.planner_id,
+                  requestId: req.request_id,
+                }
+              : null;
+
+            if (req.status === "pending" && eventDetails) {
+              pending.push(eventDetails);
+              plannerIds.add(req.events.planner_id);
+            } else if (req.status === "accepted" && eventDetails) {
+              accepted.push(eventDetails);
+              plannerIds.add(req.events.planner_id);
+            }
+          });
+        }
+
+        // Fetch planner names using your planner API
+        const plannerPromises = [...plannerIds].map(async (plannerId) => {
+          try {
+            const response = await fetch(
+              `${API_BASE}/api/planners/${plannerId}`
+            );
+            if (!response.ok) {
+              throw new Error(
+                `Planner API error for ${plannerId}: ${response.status}`
+              );
+            }
+            const plannerData = await response.json();
+            return { id: plannerId, name: plannerData.name || "Planner" };
+          } catch (error) {
+            console.error(`Error fetching planner ${plannerId}:`, error);
+            return { id: plannerId, name: "Planner" };
+          }
+        });
+
+        const planners = await Promise.all(plannerPromises);
+        const plannerMap = Object.fromEntries(
+          planners.map((p) => [p.id, p.name])
+        );
+
+        const pendingWithNames = pending.map((req) => ({
+          ...req,
+          plannerName: plannerMap[req.plannerId] || "Planner",
+        }));
+
+        const acceptedWithNames = accepted.map((req) => ({
+          ...req,
+          plannerName: plannerMap[req.plannerId] || "Planner",
+        }));
+
+        setPendingRequests(pendingWithNames);
+        setAcceptedEvents(acceptedWithNames);
+      } catch (error) {
+        console.error("Error in initial data fetch:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     updateUserRole();
 
-    // Subscribe to changes
     const subscription = supabase
       .channel("vendor_requests_changes")
       .on(
@@ -221,16 +199,16 @@ export default function VendorDashboard({ session }) {
           table: "vendor_requests",
           filter: `vendor_id=eq.${userId}`,
         },
-        () => fetchInitialData() // Now this will work
+        () => fetchInitialData()
       )
       .subscribe();
 
-    fetchInitialData(); // Initial fetch
+    fetchInitialData();
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [session]); // Add fetchInitialData to dependencies if needed, but be careful of infinite loops
+  }, [session, API_BASE]);
 
   const handleRequestResponse = async (requestId, status) => {
     if (!session?.user) return;
@@ -255,7 +233,6 @@ export default function VendorDashboard({ session }) {
         throw new Error(errorData.error || "Failed to update request status");
       }
 
-      const result = await response.json();
       alert(`Request ${status} successfully!`);
     } catch (error) {
       console.error("Error updating request status:", error);
