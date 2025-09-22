@@ -577,7 +577,7 @@ export default function VendorDashboard({ session }) {
                         </div>
                         <button
                           className="view-details-btn"
-                          onClick={() => navigate(`/vendor/event/${event.id}`)}
+                          onClick={() => navigate(`/viewEvent/${event.id}?readonly=true`)}
                         >
                           View Details →
                         </button>
