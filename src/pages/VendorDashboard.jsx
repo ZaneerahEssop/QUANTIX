@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { FaTrash, FaUser } from "react-icons/fa";
+import { FaUser } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../client";
 import ChatUI from "../components/ChatUI";
@@ -16,7 +16,6 @@ export default function VendorDashboard({ session }) {
   const [acceptedEvents, setAcceptedEvents] = useState([]);
   const [date, setDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
-  const [showAllEvents, setShowAllEvents] = useState(false);
   //const [plannerNames, setPlannerNames] = useState({});
 
   // Prevent scrolling until page is fully loaded
@@ -242,24 +241,6 @@ export default function VendorDashboard({ session }) {
     }
   };
 
-  const handleDeleteEvent = async (eventId) => {
-    if (!session?.user) return;
-    if (!window.confirm("Are you sure you want to remove this event?")) return;
-
-    try {
-      const { error } = await supabase
-        .from("vendor_events")
-        .delete()
-        .eq("vendor_id", session.user.id)
-        .eq("event_id", eventId);
-
-      if (error) throw error;
-      alert("Event removed successfully!");
-    } catch (error) {
-      console.error("Error removing event:", error);
-      alert("Failed to remove event. Please try again.");
-    }
-  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "Date not specified";
@@ -267,9 +248,23 @@ export default function VendorDashboard({ session }) {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const formatTime = (timeString) => {
-    if (!timeString) return "Time not specified";
-    return timeString;
+  const formatTime = (dateTimeString) => {
+    if (!dateTimeString) return "Time not specified";
+    try {
+      // If it's a full ISO date string, extract just the time in 24h format
+      const date = new Date(dateTimeString);
+      if (isNaN(date.getTime())) return dateTimeString; // Return original if not a valid date
+      
+      // Get hours and minutes, pad with leading zeros
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      // Return in 24-hour format (HH:MM)
+      return `${hours}:${minutes}`;
+    } catch (e) {
+      console.error('Error formatting time:', e);
+      return dateTimeString; // Return original if there's an error
+    }
   };
 
   const getEventsForDate = (date) => {
@@ -342,16 +337,67 @@ export default function VendorDashboard({ session }) {
         .react-calendar__tile--now { background: #ffebee; border: 2px solid #ffb6c1; color: #ff6b8b; font-weight: 600; }
         .react-calendar__tile--now:enabled:hover, .react-calendar__tile--now:enabled:focus { background: #ffd6de; border-color: #ff8fa3; }
         .react-calendar__tile--active { background: #ffb6c1 !important; color: white !important; border-color: #ffb6c1 !important; font-weight: 600; }
+        .react-calendar__tile.has-events { position: relative; }
         .react-calendar__tile--active:enabled:hover, .react-calendar__tile--active:enabled:focus { background: #ffc0cb !important; border-color: #ffc0cb !important; }
         .react-calendar__month-view__days__day--neighboringMonth { color: #ccc; }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid rgba(0, 0, 0, 0.1); padding-bottom: 0.5rem; }
-        .event-card { position: relative; display: flex; flex-direction: column; min-height: 200px; width: 100%; padding: 1.25rem; background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid var(--blush, #FFC0CB); transition: transform 0.2s, box-shadow 0.2s; }
+        .event-card { position: relative; display: flex; flex-direction: column; min-height: auto; width: 100%; padding: 0.75rem; padding-bottom: 0.5rem; background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; }
         .event-card:hover { transform: translateY(-5px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .delete-event-btn { background: transparent; border: none; color: #ff4d4f; cursor: pointer; font-size: 16px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; position: absolute; top: 10px; right: 10px; }
         .delete-event-btn:hover { background: rgba(255, 77, 79, 0.1); transform: scale(1.1); }
-        .event-details-icons { display: flex; align-items: center; gap: 6px; color: #555; font-size: 0.85rem; }
-        .view-details-btn { width: 100%; padding: 8px 12px; background-color: var(--blush, #FFC0CB); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: flex; justify-content: center; align-items: center; gap: 6px; transition: background-color 0.2s; }
-        .view-details-btn:hover { background-color: var(--coral, #FF7F50); }
+        .event-details-icons { display: flex; align-items: center; gap: 4px; color: #555; font-size: 0.8rem; margin: 1px 0; }
+        .view-details-btn { 
+          padding: 4px 10px; 
+          background-color: #FFC0CB; 
+          color: white; 
+          border: none; 
+          border-radius: 4px; 
+          cursor: pointer; 
+          font-size: 0.8rem; 
+          display: flex; 
+          align-items: center; 
+          gap: 4px; 
+          transition: all 0.2s; 
+          margin-left: auto;
+          position: absolute;
+          top: 30px;
+          right: 10px;
+        }
+        
+        /* Hide scrollbar by default */
+        .custom-scrollbar {
+          overflow-y: hidden;
+          transition: overflow-y 0.2s ease-in-out;
+        }
+        
+        /* Show scrollbar on hover */
+        .custom-scrollbar:hover {
+          overflow-y: auto;
+        }
+        
+        /* Custom scrollbar styling */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+          margin: 4px 0;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #ccc;
+          border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #aaa;
+        }
+        .view-details-btn:hover { 
+          background-color: #ffa7b8;
+          transform: translateY(-1px);
+        }
         .pending-requests-card { background: #f8f9fa; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
         .pending-list { list-style: none; padding: 0; margin: 0; }
         .pending-list li { background: #FFF0F5; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border: 1px solid #FFD1DC; }
@@ -488,66 +534,26 @@ export default function VendorDashboard({ session }) {
                 }}
               >
                 <div className="section-header">
-                  <h2 style={{ margin: 0 }}>Your Events</h2>
-                  {acceptedEvents.length > 3 && (
-                    <button
-                      onClick={() => setShowAllEvents(!showAllEvents)}
-                      style={{
-                        backgroundColor: "transparent",
-                        border: "1px solid #FFC0CB",
-                        color: "#FFC0CB",
-                        padding: "0.5rem 1rem",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontWeight: "500",
-                        transition: "all 0.2s",
-                        fontSize: "0.875rem",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        position: "relative",
-                        top: "-4px",
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = "#FFC0CB";
-                        e.currentTarget.style.color = "white";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                        e.currentTarget.style.color = "#FFC0CB";
-                      }}
-                    >
-                      {showAllEvents ? (
-                        <span>Show Less</span>
-                      ) : (
-                        <>
-                          <span>View All</span>
-                          <span style={{ fontSize: "0.75rem" }}>
-                            ({acceptedEvents.length - 3} more)
-                          </span>
-                        </>
-                      )}
-                    </button>
-                  )}
+                  <h2 style={{ margin: 0 }}>Upcoming Events</h2>
                 </div>
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(250px, 1fr))",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
                     gap: "1.5rem",
+                    maxHeight: "500px",
+                    overflowY: "auto",
+                    paddingRight: "0.5rem",
                   }}
+                  className="custom-scrollbar"
                 >
                   {acceptedEvents.length > 0 ? (
-                    (showAllEvents
-                      ? acceptedEvents
-                      : acceptedEvents.slice(0, 3)
-                    ).map((event) => (
+                    acceptedEvents.map((event) => (
                       <div key={`event-${event.id}`} className="event-card">
                         <h3
                           style={{
                             margin: "0 0 8px 0",
-                            fontSize: "0.95rem",
+                            fontSize: "0.9rem",
                             fontWeight: "600",
                             color: "#333",
                           }}
@@ -558,7 +564,8 @@ export default function VendorDashboard({ session }) {
                           style={{
                             display: "flex",
                             flexDirection: "column",
-                            gap: "4px",
+                            gap: "1px",
+                            margin: "0.25rem 0 0.5rem 0",
                           }}
                         >
                           <div className="event-details-icons">
@@ -567,22 +574,13 @@ export default function VendorDashboard({ session }) {
                           <div className="event-details-icons">
                             <span>⏰</span> {formatTime(event.eventTime)}
                           </div>
-                          <div className="event-details-icons">
-                            <span>📍</span> {event.venue || "TBC"}
-                          </div>
                         </div>
-                        <div
-                          style={{ marginTop: "auto", paddingTop: "0.5rem" }}
+                        <button
+                          className="view-details-btn"
+                          onClick={() => navigate(`/vendor/event/${event.id}`)}
                         >
-                          <button
-                            className="view-details-btn"
-                            onClick={() =>
-                              navigate(`/vendor/event/${event.id}`)
-                            }
-                          >
-                            View Details
-                          </button>
-                        </div>
+                          View Details →
+                        </button>
                       </div>
                     ))
                   ) : (
@@ -594,7 +592,7 @@ export default function VendorDashboard({ session }) {
                         margin: 0,
                       }}
                     >
-                      No upcoming events. Accepted events will appear here.
+                      No upcoming events. Your upcoming accepted events will appear here.
                     </p>
                   )}
                 </div>
@@ -636,9 +634,19 @@ export default function VendorDashboard({ session }) {
                     className="dashboard-calendar"
                     next2Label={null}
                     prev2Label={null}
+                    tileClassName={({ date, view }) => {
+                      const dateEvents = getEventsForDate(date);
+                      return dateEvents.length > 0 ? 'has-events' : null;
+                    }}
                     tileContent={({ date, view }) => {
                       const dateEvents = getEventsForDate(date);
-                      return dateEvents.length > 0 ? (
+                      if (dateEvents.length === 0) return null;
+                      
+                      const now = new Date();
+                      const isPastDate = date < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                      const isToday = date.toDateString() === now.toDateString();
+                      
+                      return (
                         <div
                           style={{
                             position: "absolute",
@@ -649,22 +657,65 @@ export default function VendorDashboard({ session }) {
                             gap: "2px",
                           }}
                         >
-                          {[...Array(Math.min(3, dateEvents.length))].map(
-                            (_, i) => (
+                          {dateEvents.slice(0, 3).map((event, i) => {
+                            // For past dates, all dots are red
+                            if (isPastDate) {
+                              return (
+                                <div
+                                  key={i}
+                                  style={{
+                                    width: "6px",
+                                    height: "6px",
+                                    borderRadius: "50%",
+                                    backgroundColor: "#ff4d4f",
+                                    opacity: 0.8,
+                                  }}
+                                />
+                              );
+                            }
+                            
+                            // For today, check if the event time has passed
+                            if (isToday && event.eventTime) {
+                              try {
+                                const [hours, minutes] = event.eventTime.split(':').map(Number);
+                                const eventTime = new Date(now);
+                                eventTime.setHours(hours, minutes, 0, 0);
+                                
+                                if (now > eventTime) {
+                                  return (
+                                    <div
+                                      key={i}
+                                      style={{
+                                        width: "6px",
+                                        height: "6px",
+                                        borderRadius: "50%",
+                                        backgroundColor: "#ff4d4f",
+                                        opacity: 0.8,
+                                      }}
+                                    />
+                                  );
+                                }
+                              } catch (e) {
+                                console.error('Error processing event time:', e);
+                              }
+                            }
+                            
+                            // Default to green for upcoming events
+                            return (
                               <div
                                 key={i}
                                 style={{
                                   width: "6px",
                                   height: "6px",
                                   borderRadius: "50%",
-                                  backgroundColor: "#ff6b8b",
+                                  backgroundColor: "#52c41a",
                                   opacity: 0.8,
                                 }}
                               />
-                            )
-                          )}
+                            );
+                          })}
                         </div>
-                      ) : null;
+                      );
                     }}
                   />
                 </div>
@@ -683,50 +734,74 @@ export default function VendorDashboard({ session }) {
                           key={event.id}
                           style={{
                             backgroundColor: "white",
-                            padding: "0.75rem 1rem",
+                            padding: "0.75rem 1rem 0.75rem 1.25rem",
                             borderRadius: "6px",
                             marginBottom: "0.5rem",
                             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
+                            position: "relative",
+                            overflow: "hidden"
                           }}
                         >
-                          <div>
+                          {(() => {
+                            const now = new Date();
+                            const eventDate = new Date(event.eventDate);
+                            const isPastEvent = eventDate < new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+                            
+                            // For today's events, check if the time has passed
+                            let isEventPassed = isPastEvent;
+                            if (!isPastEvent && event.eventTime && eventDate.toDateString() === now.toDateString()) {
+                              try {
+                                const [hours, minutes] = event.eventTime.split(':').map(Number);
+                                const eventTime = new Date(now);
+                                eventTime.setHours(hours, minutes, 0, 0);
+                                isEventPassed = now > eventTime;
+                              } catch (e) {
+                                console.error('Error processing event time:', e);
+                              }
+                            }
+                            
+                            return (
+                              <>
+                                <div style={{
+                                  position: "absolute",
+                                  left: 0,
+                                  top: 0,
+                                  bottom: 0,
+                                  width: "4px",
+                                  backgroundColor: isEventPassed ? "#ff4d4f" : "#52c41a"
+                                }} />
+                                {isEventPassed && (
+                                  <div style={{
+                                    position: "absolute",
+                                    top: "8px",
+                                    right: "8px",
+                                    backgroundColor: "#fff1f0",
+                                    color: "#ff4d4f",
+                                    fontSize: "0.7rem",
+                                    padding: "2px 6px",
+                                    borderRadius: "10px",
+                                    border: "1px solid #ffccc7",
+                                    fontWeight: "500"
+                                  }}>
+                                    Past Event
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                          <div style={{ marginLeft: "8px" }}>
                             <div style={{ fontWeight: "600" }}>
                               {event.eventName}
                             </div>
                             <div
                               style={{ fontSize: "0.875rem", color: "#6c757d" }}
                             >
-                              {event.eventTime} • {event.venue || "No location"}
+                              {formatTime(event.eventTime)}
                             </div>
                           </div>
-                          <button
-                            onClick={() => handleDeleteEvent(event.id)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "#dc3545",
-                              cursor: "pointer",
-                              padding: "0.25rem",
-                              borderRadius: "4px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              transition: "background-color 0.2s",
-                            }}
-                            onMouseOver={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                "#f1f1f1")
-                            }
-                            onMouseOut={(e) =>
-                              (e.currentTarget.style.backgroundColor =
-                                "transparent")
-                            }
-                          >
-                            <FaTrash size={14} />
-                          </button>
                         </li>
                       ))}
                     </ul>
@@ -757,20 +832,13 @@ export default function VendorDashboard({ session }) {
                             style={{ fontSize: "0.875rem", color: "#6c757d" }}
                           >
                             {request.eventDate
-                              ? request.eventDate.toLocaleDateString()
-                              : "No Date"}{" "}
-                            •{" "}
+                              ? formatDate(request.eventDate)
+                              : "No Date"}
+                            {" • "}
                             {request.eventTime
-                              ? new Date(request.eventTime).toLocaleTimeString(
-                                  [],
-                                  {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  }
-                                )
-                              : "No Time"}{" "}
-                            • {request.venue || "Venue TBC"} •{" "}
-                            {request.plannerName || "Planner"}
+                              ? formatTime(request.eventTime)
+                              : "No Time"}
+                            {" • "}{request.plannerName || "Planner"}
                           </div>
                         </div>
                         <div className="request-actions">
