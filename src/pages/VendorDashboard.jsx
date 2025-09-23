@@ -534,7 +534,7 @@ export default function VendorDashboard({ session }) {
                 }}
               >
                 <div className="section-header">
-                  <h2 style={{ margin: 0 }}>Upcoming Events</h2>
+                  <h2 style={{ margin: 0, color: 'black' }}>Upcoming Events</h2>
                 </div>
                 <div
                   style={{
@@ -617,7 +617,7 @@ export default function VendorDashboard({ session }) {
                 }}
               >
                 <div className="section-header">
-                  <h2 style={{ margin: 0, borderBottom: "none" }}>Calendar</h2>
+                  <h2 style={{ margin: 0, color: 'black', borderBottom: "none" }}>Calendar</h2>
                 </div>
                 <div
                   style={{
@@ -815,7 +815,7 @@ export default function VendorDashboard({ session }) {
           <div style={{ gridColumn: "1 / -1" }}>
             <div className="pending-requests-card">
               <div className="section-header">
-                <h2 style={{ margin: 0 }}>Pending Requests</h2>
+                <h2 style={{ margin: 0, color: 'black' }}>Pending Requests</h2>
               </div>
               {pendingRequests.length > 0 ? (
                 <ul className="pending-list">
