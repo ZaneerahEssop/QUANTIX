@@ -77,6 +77,10 @@ export default function App() {
         <Route path="/vendor/services" element={
           session ? <VendorServices session={session} /> : <Navigate to="/login" />
         } />
+        {/* ✨ CHANGED: Added new route for planners to view vendor services */}
+        <Route path="/vendors/:vendorId/services" element={
+          session ? <VendorServices session={session} /> : <Navigate to="/login" />
+        } />
         <Route path="/admin-dashboard" element={
           session? <AdminDashboard session={session} /> : <Navigate to="/login" />
         } />
