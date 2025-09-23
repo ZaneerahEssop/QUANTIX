@@ -221,15 +221,15 @@ body{
 }
 
 .vendor-card {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 10px;
+  background-color: white;
+  border-radius: 12px;
   padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
   transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
 }
 
 .vendor-card:hover {
@@ -239,24 +239,50 @@ body{
 
 .vendor-info {
   margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+  width: 100%;
 }
 
 .vendor-info h4 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 auto; /* Center the vendor name */
   color: #24292e;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center; /* Ensure text is centered within its container */
+  width: 100%; /* Take full width to allow proper centering */
 }
 
 .vendor-category {
-  display: inline-block;
+  display: block; /* Changed to block to take full width */
   background-color: rgba(226, 197, 174, 0.3);
   color: var(--text-dark);
   font-size: 0.8rem;
   font-weight: 500;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
-  margin-bottom: 0.75rem;
+  margin: 0.5rem auto; /* Center the category */
   border: 1px solid rgba(226, 197, 174, 0.5);
+  width: fit-content; /* Make width fit content */
+  text-align: center; /* Center text within category */
+}
+
+.vendor-description {
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.5;
+  margin: 0.5rem 0 0 0;
+  word-wrap: break-word;
+  white-space: normal;
+  display: block;
+  overflow: visible;
+  max-height: none;
+  -webkit-line-clamp: none;
+  -webkit-box-orient: horizontal;
+  text-overflow: clip;
+  text-align: left; /* Ensure description is left-aligned */
 }
 
 .vendor-contact {
@@ -269,6 +295,8 @@ body{
 .vendor-actions {
   display: flex;
   justify-content: center;
+  margin-top: auto;
+  padding-top: 0.5rem;
   gap: 1rem;
   margin-top: 1rem;
   width: 100%;

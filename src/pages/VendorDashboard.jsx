@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { FaUser } from "react-icons/fa";
@@ -17,9 +17,7 @@ export default function VendorDashboard({ session }) {
   const [acceptedEvents, setAcceptedEvents] = useState([]);
   const [date, setDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
-  const [showAllEvents, setShowAllEvents] = useState(false);
-  const [plannerNames, setPlannerNames] = useState({});
-  
+
   // Chat state
   const [selectedPlanner, setSelectedPlanner] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
@@ -216,7 +214,34 @@ export default function VendorDashboard({ session }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [session]); // Add fetchInitialData to dependencies if needed, but be careful of infinite loops
+  }, [session, API_BASE]);
+
+  // Load conversations for the vendor
+  const loadConversations = useCallback(async () => {
+    if (!session?.user) return;
+
+    try {
+      const conversations = await chatService.getUserConversations(
+        session.user.id
+      );
+      console.log("Loaded conversations:", conversations);
+      setConversations(conversations);
+    } catch (error) {
+      console.error("Error loading conversations:", error);
+    }
+  }, [session?.user]);
+
+  // Load unread message count
+  const loadUnreadCount = useCallback(async () => {
+    if (!session?.user) return;
+
+    try {
+      const { unreadCount } = await chatService.getUnreadCount(session.user.id);
+      setUnreadCount(unreadCount);
+    } catch (error) {
+      console.error("Error loading unread count:", error);
+    }
+  }, [session?.user]);
 
   // Initialize chat service and set up real-time listeners
   useEffect(() => {
@@ -226,45 +251,45 @@ export default function VendorDashboard({ session }) {
 
       // Set up real-time listeners
       chatService.onNewMessage((message) => {
-        console.log('New message received on vendor side:', message);
-        console.log('Current user ID:', session.user.id);
-        console.log('Message sender ID:', message.sender_id);
-        console.log('Is current user?', message.sender_id === session.user.id);
-        
+        console.log("New message received on vendor side:", message);
+        console.log("Current user ID:", session.user.id);
+        console.log("Message sender ID:", message.sender_id);
+        console.log("Is current user?", message.sender_id === session.user.id);
+
         // Update messages for the conversation
-        setChatMessages(prev => {
+        setChatMessages((prev) => {
           const conversationId = message.conversation_id;
-          console.log('Updating messages for conversation:', conversationId);
-          console.log('Previous messages for this conversation:', prev[conversationId] || []);
-          
+          console.log("Updating messages for conversation:", conversationId);
+          console.log(
+            "Previous messages for this conversation:",
+            prev[conversationId] || []
+          );
+
           const newMessage = {
             id: message.message_id,
             text: message.message_text,
             timestamp: message.created_at,
             isCurrentUser: message.sender_id === session.user.id,
-            sender: message.sender?.name || 'Unknown',
-            conversationId: message.conversation_id
+            sender: message.sender?.name || "Unknown",
+            conversationId: message.conversation_id,
           };
-          
-          console.log('Adding new message:', newMessage);
-          
+
+          console.log("Adding new message:", newMessage);
+
           return {
             ...prev,
-            [conversationId]: [
-              ...(prev[conversationId] || []),
-              newMessage
-            ]
+            [conversationId]: [...(prev[conversationId] || []), newMessage],
           };
         });
       });
 
       chatService.onMessageError((error) => {
-        console.error('Message error:', error);
+        console.error("Message error:", error);
       });
 
       chatService.onMessageNotification((notification) => {
-        console.log('Message notification:', notification);
-        setUnreadCount(prev => prev + 1);
+        console.log("Message notification:", notification);
+        setUnreadCount((prev) => prev + 1);
       });
 
       // Load conversations and unread count
@@ -275,32 +300,7 @@ export default function VendorDashboard({ session }) {
     return () => {
       chatService.removeAllListeners();
     };
-  }, [session?.user]);
-
-  // Load conversations for the vendor
-  const loadConversations = async () => {
-    if (!session?.user) return;
-
-    try {
-      const conversations = await chatService.getUserConversations(session.user.id);
-      console.log('Loaded conversations:', conversations);
-      setConversations(conversations);
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-    }
-  };
-
-  // Load unread message count
-  const loadUnreadCount = async () => {
-    if (!session?.user) return;
-
-    try {
-      const { unreadCount } = await chatService.getUnreadCount(session.user.id);
-      setUnreadCount(unreadCount);
-    } catch (error) {
-      console.error('Error loading unread count:', error);
-    }
-  };
+  }, [session?.user, loadConversations, loadUnreadCount]);
 
   // Handle sending a message
   const handleSendMessage = async (message) => {
@@ -312,7 +312,7 @@ export default function VendorDashboard({ session }) {
         currentConversation.conversation_id,
         session.user.id,
         message.text,
-        'text'
+        "text"
       );
 
       // Also send via API as backup
@@ -320,22 +320,22 @@ export default function VendorDashboard({ session }) {
         currentConversation.conversation_id,
         session.user.id,
         message.text,
-        'text'
+        "text"
       );
 
       // Update local state immediately for better UX
-      setChatMessages(prev => ({
+      setChatMessages((prev) => ({
         ...prev,
         [currentConversation.conversation_id]: [
           ...(prev[currentConversation.conversation_id] || []),
           {
             ...message,
-            conversationId: currentConversation.conversation_id
-          }
-        ]
+            conversationId: currentConversation.conversation_id,
+          },
+        ],
       }));
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
     }
   };
 
@@ -343,20 +343,20 @@ export default function VendorDashboard({ session }) {
   const handleSelectPlanner = async (planner) => {
     if (!session?.user) return;
 
-    console.log('Vendor selecting planner:', planner);
+    console.log("Vendor selecting planner:", planner);
     setSelectedPlanner(planner);
 
     try {
       let conversation;
-      
+
       // If planner has a conversation_id, use that directly
       if (planner.conversationId) {
-        console.log('Using existing conversation:', planner.conversationId);
+        console.log("Using existing conversation:", planner.conversationId);
         conversation = { conversation_id: planner.conversationId };
         setCurrentConversation(conversation);
-        
+
         // Join the conversation room for real-time updates
-        console.log('Joining conversation room:', conversation.conversation_id);
+        console.log("Joining conversation room:", conversation.conversation_id);
         chatService.joinConversation(conversation.conversation_id);
       } else {
         // Get or create conversation with the planner
@@ -365,38 +365,43 @@ export default function VendorDashboard({ session }) {
           session.user.id
         );
 
-        console.log('Got conversation:', conversation);
+        console.log("Got conversation:", conversation);
         setCurrentConversation(conversation);
 
         // Join the conversation room for real-time updates
-        console.log('Joining conversation room:', conversation.conversation_id);
+        console.log("Joining conversation room:", conversation.conversation_id);
         chatService.joinConversation(conversation.conversation_id);
       }
-      
+
       // Also join the user's personal room for notifications
       chatService.connect(session.user.id);
 
       // Load messages for this conversation
-      const messages = await chatService.getConversationMessages(conversation.conversation_id);
-      
+      const messages = await chatService.getConversationMessages(
+        conversation.conversation_id
+      );
+
       // Transform messages to match ChatUI format
-      const formattedMessages = messages.map(msg => ({
+      const formattedMessages = messages.map((msg) => ({
         id: msg.message_id,
         text: msg.message_text,
         timestamp: msg.created_at,
         isCurrentUser: msg.sender_id === session.user.id,
-        sender: msg.sender?.name || 'Unknown'
+        sender: msg.sender?.name || "Unknown",
       }));
 
-      setChatMessages(prev => ({
+      setChatMessages((prev) => ({
         ...prev,
-        [conversation.conversation_id]: formattedMessages
+        [conversation.conversation_id]: formattedMessages,
       }));
 
       // Mark messages as read
-      await chatService.markMessagesAsRead(conversation.conversation_id, session.user.id);
+      await chatService.markMessagesAsRead(
+        conversation.conversation_id,
+        session.user.id
+      );
     } catch (error) {
-      console.error('Error selecting planner:', error);
+      console.error("Error selecting planner:", error);
     }
   };
 
@@ -432,7 +437,6 @@ export default function VendorDashboard({ session }) {
     }
   };
 
-
   const formatDate = (dateString) => {
     if (!dateString) return "Date not specified";
     const options = { year: "numeric", month: "short", day: "numeric" };
@@ -445,15 +449,15 @@ export default function VendorDashboard({ session }) {
       // If it's a full ISO date string, extract just the time in 24h format
       const date = new Date(dateTimeString);
       if (isNaN(date.getTime())) return dateTimeString; // Return original if not a valid date
-      
+
       // Get hours and minutes, pad with leading zeros
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+
       // Return in 24-hour format (HH:MM)
       return `${hours}:${minutes}`;
     } catch (e) {
-      console.error('Error formatting time:', e);
+      console.error("Error formatting time:", e);
       return dateTimeString; // Return original if there's an error
     }
   };
@@ -1087,7 +1091,7 @@ export default function VendorDashboard({ session }) {
           >
             <ChatUI
               listTitle="Planners"
-              vendors={conversations.map((conv, index) => ({
+              vendors={conversations.map((conv) => ({
                 id: conv.conversation_id, // Use conversation_id instead of planner_id
                 name: conv.planner?.name || 'Unknown Planner',
                 lastMessage: conv.last_message_at ? 'Last message: ' + new Date(conv.last_message_at).toLocaleString() : 'No messages yet',

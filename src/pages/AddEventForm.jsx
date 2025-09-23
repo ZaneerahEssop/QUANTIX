@@ -17,6 +17,11 @@ import "../AddEventForm.css";
 
 export default function AddEventForm() {
   const navigate = useNavigate();
+
+  // Function to handle vendor card click
+  const handleVendorCardClick = (vendorId) => {
+    navigate(`/vendors/${vendorId}/services?readonly=true`);
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -1129,13 +1134,17 @@ export default function AddEventForm() {
                     <div
                       key={vendor.vendor_id}
                       className="vendor-card"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleVendorCardClick(vendor.vendor_id);
+                      }}
+                      style={{ cursor: 'pointer' }}
                     >
                       <div className="vendor-info">
                         <h4>{vendor.business_name}</h4>
-                        <span className="vendor-category">
+                        <div className="vendor-category">
                           {vendor.service_type}
-                        </span>
+                        </div>
                         <div className="vendor-description">
                           {vendor.description || "No description available."}
                         </div>

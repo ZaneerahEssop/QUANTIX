@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../client";
 import { FaPlus, FaTrash, FaCheck, FaUser, FaClock } from "react-icons/fa";
@@ -21,11 +21,35 @@ export default function PlannerDashboard({ session }) {
   const [loading, setLoading] = useState(true);
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
-  const [conversations, setConversations] = useState([]);
+  const [, setConversations] = useState([]);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
   console.log("API URL:", process.env.REACT_APP_API_URL);
+
+  // Load conversations for the planner
+  const loadConversations = useCallback(async () => {
+    if (!session?.user) return;
+
+    try {
+      const conversations = await chatService.getUserConversations(session.user.id);
+      setConversations(conversations);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
+  }, [session?.user]);
+
+  // Load unread message count
+  const loadUnreadCount = useCallback(async () => {
+    if (!session?.user) return;
+
+    try {
+      const count = await chatService.getUnreadCount(session.user.id);
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Error loading unread count:', error);
+    }
+  }, [session?.user]);
 
   // Initialize chat service and set up real-time listeners
   useEffect(() => {
@@ -76,31 +100,7 @@ export default function PlannerDashboard({ session }) {
     return () => {
       chatService.removeAllListeners();
     };
-  }, [session?.user]);
-
-  // Load conversations for the planner
-  const loadConversations = async () => {
-    if (!session?.user) return;
-
-    try {
-      const conversations = await chatService.getUserConversations(session.user.id);
-      setConversations(conversations);
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-    }
-  };
-
-  // Load unread message count
-  const loadUnreadCount = async () => {
-    if (!session?.user) return;
-
-    try {
-      const { unreadCount } = await chatService.getUnreadCount(session.user.id);
-      setUnreadCount(unreadCount);
-    } catch (error) {
-      console.error('Error loading unread count:', error);
-    }
-  };
+  }, [session?.user, loadConversations, loadUnreadCount]);
 
   // Handle sending a message
   const handleSendMessage = async (message) => {
