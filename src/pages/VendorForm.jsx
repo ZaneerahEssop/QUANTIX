@@ -133,7 +133,7 @@ const VendorForm = () => {
       setWarning("Error saving profile: " + error.message);
       return;
     }
-    navigate("/vendor-dashboard");
+    navigate("/pending-approval");
   };
 
   return (
