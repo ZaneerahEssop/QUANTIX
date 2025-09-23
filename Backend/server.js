@@ -5,8 +5,6 @@ console.log("SUPABASE_SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY 
 console.log("------------------------------------");
 // --- END OF TEMPORARY DEBUG CODE ---
 
-const express = require('express');
-// ... rest of your server.js file
 
 const express = require("express");
 const cors = require("cors");
