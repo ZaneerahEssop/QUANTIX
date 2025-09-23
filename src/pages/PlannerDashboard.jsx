@@ -6,6 +6,7 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Navbar from "../components/Navbar";
 import ChatUI from "../components/ChatUI";
+import chatService from "../services/chatService";
 
 export default function PlannerDashboard({ session }) {
   const navigate = useNavigate();
@@ -20,25 +21,164 @@ export default function PlannerDashboard({ session }) {
   const [loading, setLoading] = useState(true);
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
+  const [conversations, setConversations] = useState([]);
+  const [currentConversation, setCurrentConversation] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   console.log("API URL:", process.env.REACT_APP_API_URL);
 
-  // Handle sending a message
-  const handleSendMessage = (message) => {
-    console.log("Message to vendor:", message);
-    // Add the message to the chat history
-    setChatMessages(prev => ({
-      ...prev,
-      [message.vendorId]: [
-        ...(prev[message.vendorId] || []),
-        message
-      ]
-    }));
+  // Initialize chat service and set up real-time listeners
+  useEffect(() => {
+    if (session?.user) {
+      // Connect to chat service
+      chatService.connect(session.user.id);
+
+      // Set up real-time listeners
+      chatService.onNewMessage((message) => {
+        console.log('New message received:', message);
+        
+        // Update messages for the conversation
+        setChatMessages(prev => {
+          const conversationId = message.conversation_id;
+          return {
+            ...prev,
+            [conversationId]: [
+              ...(prev[conversationId] || []),
+              {
+                id: message.message_id,
+                text: message.message_text,
+                timestamp: message.created_at,
+                isCurrentUser: message.sender_id === session.user.id,
+                sender: message.sender?.name || 'Unknown',
+                conversationId: message.conversation_id
+              }
+            ]
+          };
+        });
+      });
+
+      chatService.onMessageError((error) => {
+        console.error('Message error:', error);
+        // You could show a toast notification here
+      });
+
+      chatService.onMessageNotification((notification) => {
+        console.log('Message notification:', notification);
+        // Update unread count or show notification
+        setUnreadCount(prev => prev + 1);
+      });
+
+      // Load conversations and unread count
+      loadConversations();
+      loadUnreadCount();
+    }
+
+    return () => {
+      chatService.removeAllListeners();
+    };
+  }, [session?.user]);
+
+  // Load conversations for the planner
+  const loadConversations = async () => {
+    if (!session?.user) return;
+
+    try {
+      const conversations = await chatService.getUserConversations(session.user.id);
+      setConversations(conversations);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
   };
 
-  // Handle vendor selection
-  const handleSelectVendor = (vendor) => {
+  // Load unread message count
+  const loadUnreadCount = async () => {
+    if (!session?.user) return;
+
+    try {
+      const { unreadCount } = await chatService.getUnreadCount(session.user.id);
+      setUnreadCount(unreadCount);
+    } catch (error) {
+      console.error('Error loading unread count:', error);
+    }
+  };
+
+  // Handle sending a message
+  const handleSendMessage = async (message) => {
+    if (!currentConversation || !session?.user) return;
+
+    try {
+      // Send message via WebSocket for real-time delivery
+      chatService.sendMessage(
+        currentConversation.conversation_id,
+        session.user.id,
+        message.text,
+        'text'
+      );
+
+      // Also send via API as backup
+      await chatService.sendMessageAPI(
+        currentConversation.conversation_id,
+        session.user.id,
+        message.text,
+        'text'
+      );
+
+      // Update local state immediately for better UX
+      setChatMessages(prev => ({
+        ...prev,
+        [currentConversation.conversation_id]: [
+          ...(prev[currentConversation.conversation_id] || []),
+          {
+            ...message,
+            conversationId: currentConversation.conversation_id
+          }
+        ]
+      }));
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  // Handle vendor selection and load conversation
+  const handleSelectVendor = async (vendor) => {
+    if (!session?.user) return;
+
     setSelectedVendor(vendor);
+
+    try {
+      // Get or create conversation with the vendor
+      const conversation = await chatService.getOrCreateConversation(
+        session.user.id,
+        vendor.id
+      );
+
+      setCurrentConversation(conversation);
+
+      // Join the conversation room for real-time updates
+      chatService.joinConversation(conversation.conversation_id);
+
+      // Load messages for this conversation
+      const messages = await chatService.getConversationMessages(conversation.conversation_id);
+      
+      // Transform messages to match ChatUI format
+      const formattedMessages = messages.map(msg => ({
+        id: msg.message_id,
+        text: msg.message_text,
+        timestamp: msg.created_at,
+        isCurrentUser: msg.sender_id === session.user.id,
+        sender: msg.sender?.name || 'Unknown'
+      }));
+
+      setChatMessages(prev => ({
+        ...prev,
+        [conversation.conversation_id]: formattedMessages
+      }));
+
+      // Mark messages as read
+      await chatService.markMessagesAsRead(conversation.conversation_id, session.user.id);
+    } catch (error) {
+      console.error('Error selecting vendor:', error);
+    }
   };
 
   const API_URL =
@@ -1167,7 +1307,8 @@ export default function PlannerDashboard({ session }) {
               onSendMessage={handleSendMessage}
               onSelectVendor={handleSelectVendor}
               selectedVendor={selectedVendor}
-              messages={selectedVendor ? chatMessages[selectedVendor.id] || [] : []}
+              messages={currentConversation ? chatMessages[currentConversation.conversation_id] || [] : []}
+              unreadCount={unreadCount}
             />
           </div>
         </div>
