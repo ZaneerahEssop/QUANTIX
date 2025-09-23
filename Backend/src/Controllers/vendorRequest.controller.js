@@ -76,6 +76,48 @@ const getVendorRequestByVendorId = async (req, res) => {
   }
 };
 
+const getVendorRequestByEventId = async (req, res) => {
+  try {
+    const { event_id } = req.params;
+    if (!event_id)
+      return res.status(400).json({ error: "event_id is required" });
+
+    console.log("Fetching vendor requests for event:", event_id);
+
+    const { data, error } = await supabase
+      .from("vendor_requests")
+      .select(
+        `
+        request_id,
+        status,
+        created_at,
+        vendor_id,
+        vendor:vendor_id (
+          vendor_id,
+          business_name,
+          service_type,
+          contact_number
+        )`
+      )
+      .eq("event_id", event_id);
+
+    if (error) {
+      console.error("Supabase error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    console.log("Vendor requests found:", data);
+
+    if (!data || data.length === 0) {
+      return res.status(200).json([]);
+    }
+    res.status(200).json(data || []);
+  } catch (err) {
+    console.error("Error fetching request by vendor id:", err.message);
+    res.status(500).json({ error: "Failed to fetch Vendor Request" });
+  }
+};
+
 const updateVendorRequest = async (req, res) => {
   try {
     const { id } = req.params;
@@ -99,5 +141,6 @@ const updateVendorRequest = async (req, res) => {
 module.exports = {
   createVendorRequest,
   getVendorRequestByVendorId,
+  getVendorRequestByEventId,
   updateVendorRequest,
 };
