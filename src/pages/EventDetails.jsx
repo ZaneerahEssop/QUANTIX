@@ -1,23 +1,23 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "../client";
+import { useEffect, useRef, useState } from "react";
 import {
   FaArrowLeft,
-  FaEdit,
-  FaSave,
-  FaUpload,
-  FaFilePdf,
-  FaTimes,
   FaCalendarAlt,
-  FaClock,
-  FaMapMarkerAlt,
-  FaStar,
-  FaPlus,
-  FaTrash,
-  FaEnvelope,
-  FaSearch,
   FaCheck,
+  FaClock,
+  FaEdit,
+  FaEnvelope,
+  FaFilePdf,
+  FaMapMarkerAlt,
+  FaPlus,
+  FaSave,
+  FaSearch,
+  FaStar,
+  FaTimes,
+  FaTrash,
+  FaUpload,
 } from "react-icons/fa";
+import { useNavigate, useParams } from "react-router-dom";
+import { supabase } from "../client";
 import "../styling/eventDetails.css";
 
 // --- Sub-components (EventSchedule, EventTheme) are unchanged ---
@@ -295,7 +295,11 @@ const GuestManagement = ({ guests, onUpdate, isEditing }) => {
                               guest.rsvpStatus === "attending"
                                 ? "pending"
                                 : "attending";
-                            handleUpdateGuest(guest.id, "rsvpStatus", newStatus);
+                            handleUpdateGuest(
+                              guest.id,
+                              "rsvpStatus",
+                              newStatus
+                            );
                           }}
                         />{" "}
                         Yes
@@ -309,7 +313,11 @@ const GuestManagement = ({ guests, onUpdate, isEditing }) => {
                               guest.rsvpStatus === "declined"
                                 ? "pending"
                                 : "declined";
-                            handleUpdateGuest(guest.id, "rsvpStatus", newStatus);
+                            handleUpdateGuest(
+                              guest.id,
+                              "rsvpStatus",
+                              newStatus
+                            );
                           }}
                         />{" "}
                         No
@@ -394,7 +402,7 @@ const EventDetails = () => {
     if (uiStatus === "declined") return "Declined";
     return "Pending";
   };
-  
+
   const fetchVendors = async () => {
     try {
       const {
@@ -444,7 +452,9 @@ const EventDetails = () => {
           return;
         }
 
-        const eventResponse = await fetch(`${API_URL}/api/events/id/${eventId}`);
+        const eventResponse = await fetch(
+          `${API_URL}/api/events/id/${eventId}`
+        );
         if (!eventResponse.ok) throw new Error("Failed to fetch event");
         const eventData = await eventResponse.json();
 
@@ -497,6 +507,67 @@ const EventDetails = () => {
     fetchData();
   }, [eventId, navigate, API_URL]);
 
+  const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
+  const [vendorRequests, setVendorRequests] = useState([]);
+
+  useEffect(() => {
+    const fetchVendorRequests = async () => {
+      try {
+        if (!eventId) return;
+
+        const response = await fetch(
+          `${API_BASE}/api/vendor-requests/event/${eventId}`
+        );
+
+        if (response.ok) {
+          const requestsData = await response.json();
+          setVendorRequests(requestsData || []);
+        }
+      } catch (error) {
+        console.error("Error fetching vendor requests:", error);
+      }
+    };
+
+    fetchVendorRequests();
+  }, [eventId, API_BASE]);
+
+  const handleVendorRequestResponse = async (requestId, status) => {
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/vendor-requests/${requestId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status }),
+        }
+      );
+
+      if (response.ok) {
+        setVendorRequests((prev) =>
+          prev.map((req) =>
+            req.request_id === requestId ? { ...req, status } : req
+          )
+        );
+
+        if (status === "accepted") {
+          const request = vendorRequests.find(
+            (req) => req.request_id === requestId
+          );
+          if (request && request.vendor_id) {
+            setSelectedVendors((prev) => [...prev, request.vendor_id]);
+          }
+        }
+
+        alert(`Vendor request ${status} successfully!`);
+      }
+    } catch (error) {
+      console.error("Error updating vendor request:", error);
+      alert("Failed to update vendor request.");
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -526,7 +597,8 @@ const EventDetails = () => {
         dietary_info: currentGuest.dietary,
       };
 
-      if (typeof currentGuest.id === "number") { // New guest
+      if (typeof currentGuest.id === "number") {
+        // New guest
         promises.push(
           fetch(`${API_URL}/api/guests/${eventId}`, {
             method: "POST",
@@ -534,7 +606,8 @@ const EventDetails = () => {
             body: JSON.stringify(payload),
           })
         );
-      } else { // Existing guest
+      } else {
+        // Existing guest
         const initialGuest = initialGuestsRef.current.find(
           (g) => g.id === currentGuest.id
         );
@@ -627,12 +700,9 @@ const EventDetails = () => {
 
   const handleExport = async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/events/${eventId}/export`,
-        {
-          method: "GET",
-        }
-      );
+      const response = await fetch(`${API_URL}/api/events/${eventId}/export`, {
+        method: "GET",
+      });
       if (!response.ok) throw new Error("Failed to export event data");
 
       const disposition = response.headers.get("Content-Disposition");
@@ -769,19 +839,13 @@ const EventDetails = () => {
   };
 
   const toggleEdit = () => {
-    if (isReadOnly) return;
-    setIsEditing(!isEditing);
+    if (!isReadOnly) {
+      setIsEditing(!isEditing);
+    }
   };
 
-  // Add read-only class to the main container when in read-only mode
   return (
-    <div className={`event-details ${isReadOnly ? 'read-only-mode' : ''}`}>
-      {/* Add a banner to indicate read-only mode */}
-      {isReadOnly && (
-        <div className="read-only-banner">
-          <span>Viewing in read-only mode</span>
-        </div>
-      )}
+    <div className="event-details">
       <div className="event-header">
         <button onClick={() => navigate(-1)} className="back-button">
           <FaArrowLeft /> Back to Dashboard
@@ -828,11 +892,7 @@ const EventDetails = () => {
               </button>
             )
           )}
-          <button 
-            onClick={handleExport} 
-            className="export-button"
-            disabled={isLoading}
-          >
+          <button onClick={handleExport} className="export-button">
             <FaUpload /> Export Event Data
           </button>
         </div>
@@ -849,7 +909,6 @@ const EventDetails = () => {
                 name="date"
                 value={formData.date}
                 onChange={handleInputChange}
-                disabled={isReadOnly}
               />
             ) : (
               formatDisplayDate(formData.date)
@@ -867,7 +926,6 @@ const EventDetails = () => {
                 name="time"
                 value={formData.time}
                 onChange={handleInputChange}
-                disabled={isReadOnly}
               />
             ) : (
               formData.time || "Not specified"
@@ -880,13 +938,12 @@ const EventDetails = () => {
           </h4>
           <p>
             {isEditing ? (
-              <textarea
-                name="notes"
-                value={formData.notes}
+              <input
+                type="text"
+                name="venue"
+                value={formData.venue}
                 onChange={handleInputChange}
-                placeholder="Add notes..."
-                className="event-notes"
-                disabled={isReadOnly}
+                placeholder="Venue"
               />
             ) : (
               event.venue || "Not specified"
@@ -1068,7 +1125,84 @@ const EventDetails = () => {
                     })}
                   </ul>
                 ) : (
-                  <p>No vendors selected</p>
+                  <div className="no-vendors-section">
+                    <p>No vendors selected</p>
+
+                    {/* Vendor Requests Display */}
+                    {vendorRequests && vendorRequests.length > 0 && (
+                      <div className="vendor-requests-container">
+                        <h4>Vendor Requests</h4>
+                        <div className="vendor-requests-list">
+                          {vendorRequests.map((request) => (
+                            <div
+                              key={request.request_id}
+                              className="vendor-request-item"
+                            >
+                              <div className="vendor-request-info">
+                                <strong>
+                                  {request.vendor?.business_name || "Vendor"}
+                                </strong>
+                                <span
+                                  className={`status-badge status-${request.status}`}
+                                >
+                                  {request.status}
+                                </span>
+                                <div className="vendor-details">
+                                  <small>
+                                    Service:{" "}
+                                    {request.vendor?.service_type || "Unknown"}
+                                  </small>
+                                  <small>
+                                    Contact:{" "}
+                                    {request.vendor?.contact_number ||
+                                      "Not provided"}
+                                  </small>
+                                </div>
+                              </div>
+                              <div className="vendor-request-actions">
+                                {request.status === "pending" && isEditing && (
+                                  <div className="action-buttons">
+                                    <button
+                                      onClick={() =>
+                                        handleVendorRequestResponse(
+                                          request.request_id,
+                                          "accepted"
+                                        )
+                                      }
+                                      className="accept-btn"
+                                    >
+                                      Accept
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleVendorRequestResponse(
+                                          request.request_id,
+                                          "rejected"
+                                        )
+                                      }
+                                      className="reject-btn"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                )}
+                                {request.status === "accepted" && (
+                                  <span className="status-label accepted">
+                                    ✓ Accepted
+                                  </span>
+                                )}
+                                {request.status === "rejected" && (
+                                  <span className="status-label rejected">
+                                    ✗ Rejected
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}
