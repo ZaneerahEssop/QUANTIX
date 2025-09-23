@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '../../client';
 import { FaCheckCircle, FaTimesCircle, FaInfoCircle } from 'react-icons/fa';
-import './FlowerService.css'; // Renamed CSS import
+import './FlowerService.css';
 
 // Simple Text Editor Component (Can be reused or imported from a shared location)
 const SimpleTextEditor = ({ value, onChange, placeholder, height = '150px' }) => {
@@ -71,7 +71,7 @@ const SimpleTextEditor = ({ value, onChange, placeholder, height = '150px' }) =>
   );
 };
 
-const FlowerService = ({ vendorId }) => { // Renamed component
+const FlowerService = ({ vendorId, isReadOnly }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [photos, setPhotos] = useState([]);
@@ -105,13 +105,13 @@ const FlowerService = ({ vendorId }) => { // Renamed component
     };
   }, []);
 
-  const fetchFlowerData = useCallback(async () => { // Renamed function
+  const fetchFlowerData = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('vendor_services')
         .select('*')
         .eq('vendor_id', vendorId)
-        .eq('service_type', 'flowers') // CHANGED
+        .eq('service_type', 'flowers')
         .single();
 
       if (error && error.code !== 'PGRST116') {
@@ -162,7 +162,7 @@ const FlowerService = ({ vendorId }) => { // Renamed component
       const serviceData = {
         ...formData,
         vendor_id: vendorId,
-        service_type: 'flowers', // CHANGED
+        service_type: 'flowers',
         photos: photos,
         updated_at: new Date().toISOString()
       };
@@ -202,7 +202,7 @@ const FlowerService = ({ vendorId }) => { // Renamed component
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('You must be logged in to upload photos.');
 
-      const filePath = `${user.id}/flowers/${Date.now()}-${file.name}`; // CHANGED
+      const filePath = `${user.id}/flowers/${Date.now()}-${file.name}`;
 
       const { error: uploadError } = await supabase.storage
         .from('portfolio-photos')
@@ -221,7 +221,7 @@ const FlowerService = ({ vendorId }) => { // Renamed component
         .from('vendor_services')
         .upsert({
             vendor_id: vendorId,
-            service_type: 'flowers', // CHANGED
+            service_type: 'flowers',
             photos: updatedPhotos,
             updated_at: new Date().toISOString(),
         }, { onConflict: 'vendor_id, service_type' });
@@ -257,7 +257,7 @@ const FlowerService = ({ vendorId }) => { // Renamed component
         .from('vendor_services')
         .update({ photos: updatedPhotos, updated_at: new Date().toISOString() })
         .eq('vendor_id', vendorId)
-        .eq('service_type', 'flowers'); // CHANGED
+        .eq('service_type', 'flowers');
       
       if (updateError) throw updateError;
 
@@ -290,7 +290,7 @@ const FlowerService = ({ vendorId }) => { // Renamed component
   }
 
   return (
-    <div className="flower-service"> {/* Renamed class */}
+    <div className="flower-service">
       {toast && <ToastNotification />}
       <div className="service-content">
         <div className="service-header">
@@ -300,7 +300,7 @@ const FlowerService = ({ vendorId }) => { // Renamed component
               <button type="button" className="cancel-button" onClick={() => { setIsEditing(false); fetchFlowerData(); }}>Cancel</button>
               <button type="submit" className="save-button" form="service-form">Save Changes</button>
             </div>
-          ) : (
+          ) : !isReadOnly && (
             <button type="button" className="edit-button" onClick={() => setIsEditing(true)}>Edit Service</button>
           )}
         </div>
