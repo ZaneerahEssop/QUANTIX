@@ -438,7 +438,7 @@ const EventDetails = () => {
 
   const API_URL =
     window.location.hostname === "production"
-      ? "https://quantix-production.up.railway.app"
+      ? "https://soothing-manifestation-production.up.railway.app"
       : "http://localhost:5000";
 
   const formatGuestStatusForUI = (dbStatus) => {
