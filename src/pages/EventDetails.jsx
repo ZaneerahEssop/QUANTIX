@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FaArrowLeft,
   FaCalendarAlt,
@@ -187,8 +187,6 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
   );
 };
 
-// --- MODIFIED GuestManagement Component ---
-// --- CHANGE: Added eventData and API_URL props ---
 const GuestManagement = ({ guests, onUpdate, isEditing, eventData, API_URL }) => {
   const [newGuest, setNewGuest] = useState({
     name: "",
@@ -220,60 +218,7 @@ const GuestManagement = ({ guests, onUpdate, isEditing, eventData, API_URL }) =>
     onUpdate((guests || []).filter((g) => g.id !== guestId));
 
   const handleSendInvite = async (guest) => {
-    // Temporary: Email functionality disabled for now
     alert(`Email functionality is temporarily disabled. Guest ${guest.name} (${guest.contact}) would receive an invitation to ${eventData?.name || "the event"}.`);
-    
-    // TODO: Re-enable email functionality once Google OAuth is properly configured
-    /*
-    // 1. Get the full current session from Supabase
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError || !session) {
-      alert("Authentication error. Please log in again.");
-      return;
-    }
-
-    // 2. Check if the Google provider tokens exist
-    if (!session.provider_token || !session.provider_refresh_token) {
-      alert("Google account permission not granted or token is missing. Please try logging out and logging back in to grant permissions.");
-      return;
-    }
-
-    // --- CHANGE: Using eventData prop to get the event name ---
-    const eventName = eventData?.name || "our event";
-
-    try {
-      alert(`Sending invitation to ${guest.name}...`);
-      
-      // --- CHANGE: Updated fetch URL to the correct endpoint ---
-      const response = await fetch(`${API_URL}/api/emails/send-invite`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          guestEmail: guest.contact,
-          guestName: guest.name,
-          eventName: eventName,
-          googleAccessToken: session.provider_token,
-          googleRefreshToken: session.provider_refresh_token,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to send invite.');
-      }
-
-      alert(`Successfully sent invite to ${guest.name}!`);
-
-    } catch (error) {
-      console.error('Error sending invite:', error);
-      alert(`Error: ${error.message}`);
-    }
-    */
   };
 
   return (
@@ -407,7 +352,11 @@ const EventDetails = () => {
   const isReadOnly = searchParams.get("readonly") === "true";
   const eventId = id;
   const navigate = useNavigate();
-  // --- CHANGE: Renamed state variable to avoid conflicts ---
+
+  // Function to handle vendor card click
+  const handleVendorCardClick = (vendorId) => {
+    navigate(`/vendors/${vendorId}/services?readonly=true`);
+  };
   const [eventData, setEventData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   useEffect(() => {
@@ -453,7 +402,7 @@ const EventDetails = () => {
     return "Pending";
   };
 
-  const fetchVendors = async () => {
+  const fetchVendors = useCallback(async () => {
     try {
       const {
         data: { session },
@@ -479,11 +428,11 @@ const EventDetails = () => {
     } catch (error) {
       console.error("Error fetching vendors:", error);
     }
-  };
+  }, [API_URL]);
 
   useEffect(() => {
     fetchVendors();
-  }, []);
+  }, [fetchVendors]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -640,7 +589,6 @@ const EventDetails = () => {
       };
 
       if (typeof currentGuest.id === "number") {
-       
         promises.push(
           fetch(`${API_URL}/api/guests/${eventId}`, {
             method: "POST",
@@ -649,7 +597,6 @@ const EventDetails = () => {
           })
         );
       } else {
-       
         const initialGuest = initialGuestsRef.current.find(
           (g) => g.id === currentGuest.id
         );
@@ -1019,14 +966,13 @@ const EventDetails = () => {
           </>
         )}
         {activeView === "guests" && (
-            // --- CHANGE: Pass eventData and API_URL props to the child component ---
-            <GuestManagement
-                guests={guests}
-                onUpdate={setGuests}
-                isEditing={isEditing}
-                eventData={eventData}
-                API_URL={API_URL}
-            />
+          <GuestManagement
+            guests={guests}
+            onUpdate={setGuests}
+            isEditing={isEditing}
+            eventData={eventData}
+            API_URL={API_URL}
+          />
         )}
         {activeView === "vendors" && (
           <section className="vendors-section">
@@ -1064,20 +1010,18 @@ const EventDetails = () => {
                     <option value="All">All Categories</option>
                     {Array.from(
                       new Set([
-                        ...vendors.map((v) => v.service_type),
-                        "Catering",
-                      ])
+                        // This gets all categories from your vendor data
+                        ...vendors.map((v) => v.service_type.trim().toLowerCase()),
+                        // This line ensures 'photography' is always in the list
+                        "photography",
+                      ].filter(Boolean))
                     )
-                      .filter((type) => type)
-                      .map((type) => {
-                        const displayType =
-                          type.toLowerCase() === "venue" ? "Venue" : type;
-                        return (
-                          <option key={type} value={type}>
-                            {displayType}
-                          </option>
-                        );
-                      })}
+                      .sort()
+                      .map((category) => (
+                        <option key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div className="vendor-selection">
@@ -1093,13 +1037,21 @@ const EventDetails = () => {
                           .includes(searchTerm.toLowerCase());
                       const matchesCategory =
                         selectedCategory === "All" ||
-                        vendor.service_type === selectedCategory;
+                        vendor.service_type.trim().toLowerCase() ===
+                          selectedCategory;
                       return matchesSearch && matchesCategory;
                     })
                     .map((vendor) => (
-                      <div key={vendor.vendor_id} className="vendor-card">
-                        <div className="vendor-info">
-                          <h4>{vendor.business_name}</h4>
+                      <div
+                        key={vendor.vendor_id}
+                        className="vendor-card"
+                        onClick={() => handleVendorCardClick(vendor.vendor_id)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <div className="vendor-card-content">
+                          <div className="vendor-info">
+                            <h4>{vendor.business_name}</h4>
+                          </div>
                           <span className="vendor-category">
                             {vendor.service_type.toLowerCase() === "venue"
                               ? "Venue"
@@ -1110,42 +1062,40 @@ const EventDetails = () => {
                           </div>
                         </div>
                         <div className="vendor-actions">
-                          <div className="vendor-actions">
+                          <button
+                            type="button"
+                            className={`add-vendor-btn ${
+                              selectedVendors.includes(vendor.vendor_id)
+                                ? "added"
+                                : ""
+                            }`}
+                            onClick={() =>
+                              handleVendorToggle(vendor.vendor_id)
+                            }
+                            disabled={!isEditing}
+                          >
+                            {selectedVendors.includes(vendor.vendor_id) ? (
+                              <>
+                                <FaCheck /> Requested
+                              </>
+                            ) : (
+                              <>
+                                <FaPlus /> Request Vendor
+                              </>
+                            )}
+                          </button>
+                          {selectedVendors.includes(vendor.vendor_id) && (
                             <button
                               type="button"
-                              className={`add-vendor-btn ${
-                                selectedVendors.includes(vendor.vendor_id)
-                                  ? "added"
-                                  : ""
-                              }`}
+                              className="undo-request-btn"
                               onClick={() =>
                                 handleVendorToggle(vendor.vendor_id)
                               }
                               disabled={!isEditing}
                             >
-                              {selectedVendors.includes(vendor.vendor_id) ? (
-                                <>
-                                  <FaCheck /> Requested
-                                </>
-                              ) : (
-                                <>
-                                  <FaPlus /> Request Vendor
-                                </>
-                              )}
+                              <FaTimes /> Undo
                             </button>
-                            {selectedVendors.includes(vendor.vendor_id) && (
-                              <button
-                                type="button"
-                                className="undo-request-btn"
-                                onClick={() =>
-                                  handleVendorToggle(vendor.vendor_id)
-                                }
-                                disabled={!isEditing}
-                              >
-                                <FaTimes /> Undo
-                              </button>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1172,8 +1122,6 @@ const EventDetails = () => {
                 ) : (
                   <div className="no-vendors-section">
                     <p>No vendors selected</p>
-
-                    {/* Vendor Requests Display */}
                     {vendorRequests && vendorRequests.length > 0 && (
                       <div className="vendor-requests-container">
                         <h4>Vendor Requests</h4>
