@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../client';
 import '../ProfileForm.css';
 import '../App.css';
@@ -12,46 +12,42 @@ import MusicService from '../components/services/MusicService';
 import VenueService from '../components/services/VenueService';
 
 const VendorServices = ({ session }) => {
-  const [vendorData, setVendorData] = useState({
-    name: '',
-    businessName: '',
-    phone: '',
-    description: '',
-    categories: [],
-    profilePicture: null,
-    venue_names: []
-  });
+  const { vendorId } = useParams();
+  const navigate = useNavigate();
+
+  const [vendorData, setVendorData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [showImageModal, setShowImageModal] = useState(false);
-  const navigate = useNavigate();
+  
+  const loggedInUserId = session?.user?.id;
+  const targetVendorId = vendorId || loggedInUserId;
+  const isOwner = loggedInUserId === targetVendorId;
 
   useEffect(() => {
     const fetchVendorData = async () => {
-      try {
-        const userId = session?.user?.id;
-        if (!userId) {
-          setError('User not authenticated');
-          setIsLoading(false);
-          navigate('/login');
-          return;
-        }
+      if (!targetVendorId) {
+        setError('User not authenticated or vendor not specified.');
+        setIsLoading(false);
+        navigate('/login');
+        return;
+      }
 
-        const { data: vendor, error: vendorError } = await supabase
+      try {
+        // Fetches an array of vendors instead of a single object to prevent errors
+        const { data: vendors, error: vendorError } = await supabase
           .from('vendors')
           .select('*')
-          .eq('vendor_id', userId)
-          .single();
+          .eq('vendor_id', targetVendorId);
         
         if (vendorError) {
-          console.error('Error fetching vendor data:', vendorError);
-          setError('Failed to load vendor profile. Please try again.');
-          setIsLoading(false);
-          return;
+          throw vendorError;
         }
 
-        if (vendor) {
-          const categories = vendor.service_type ? vendor.service_type.split(',').map(s => s.trim()) : [];
+        // Checks if the returned array contains any vendors
+        if (vendors && vendors.length > 0) {
+          const vendor = vendors[0]; // Use the first record found
+          const categories = vendor.service_type ? vendor.service_type.toLowerCase().split(',').map(s => s.trim()) : [];
           
           setVendorData({
             name: vendor.name || '',
@@ -62,21 +58,20 @@ const VendorServices = ({ session }) => {
             profilePicture: vendor.profile_picture || null,
             venue_names: vendor.venue_names || []
           });
+        } else {
+          // If no vendors are found, set a clear error message
+          setError('Vendor profile not found.');
         }
       } catch (error) {
         console.error('Error in fetchVendorData:', error);
-        setError('An error occurred while loading your profile.');
+        setError('An error occurred while loading the profile.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (session) {
-      fetchVendorData();
-    } else {
-      navigate('/login');
-    }
-  }, [session, navigate]);
+    fetchVendorData();
+  }, [targetVendorId, navigate]);
 
   if (isLoading) {
     return (
@@ -87,15 +82,12 @@ const VendorServices = ({ session }) => {
     );
   }
 
-  if (error) {
+  if (error || !vendorData) {
     return (
       <div className="error-container">
-        <p className="error-message">{error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="retry-button"
-        >
-          Retry
+        <p className="error-message">{error || 'Could not load vendor data.'}</p>
+        <button onClick={() => navigate('/dashboard')} className="retry-button">
+          Back to Dashboard
         </button>
       </div>
     );
@@ -115,40 +107,26 @@ const VendorServices = ({ session }) => {
     display: capitalizeFirstLetter(service)
   }));
 
+  const isReadOnly = !isOwner;
+
   return (
     <div className="vendor-services-container">
-      <div style={{ marginBottom: '20px', textAlign: 'left' }}>
-        <button 
-          onClick={() => navigate('/vendor-dashboard')} 
-          className="back-to-dashboard"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '10px 20px',
-            backgroundColor: '#FFB6C1',
-            color: 'white',
-            border: 'none',
-            borderRadius: '25px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '600',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = '#FFA07A';
-            e.currentTarget.style.transform = 'translateX(-2px)';
-            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = '#FFB6C1';
-            e.currentTarget.style.transform = 'translateX(0)';
-            e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
-          }}
-        >
-          <span style={{ marginRight: '8px', fontSize: '16px' }}>←</span> Back to Dashboard
-        </button>
-      </div>
+      {isOwner && (
+        <div style={{ marginBottom: '20px', textAlign: 'left' }}>
+          <button 
+            onClick={() => navigate('/vendor-dashboard')} 
+            className="back-to-dashboard"
+            style={{
+              display: 'inline-flex', alignItems: 'center', padding: '10px 20px',
+              backgroundColor: '#FFB6C1', color: 'white', border: 'none', borderRadius: '25px',
+              cursor: 'pointer', fontSize: '14px', fontWeight: '600', transition: 'all 0.3s ease',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+            }}
+          >
+            <span style={{ marginRight: '8px', fontSize: '16px' }}>←</span> Back to Dashboard
+          </button>
+        </div>
+      )}
       <div className="vendor-profile-card">
         <div className="profile-header">
           <div 
@@ -157,14 +135,7 @@ const VendorServices = ({ session }) => {
             style={{ cursor: vendorData.profilePicture ? 'pointer' : 'default' }}
           >
             {vendorData.profilePicture ? (
-              <img 
-                src={vendorData.profilePicture} 
-                alt={`${vendorData.name}'s profile`} 
-                className="profile-picture"
-                style={{ transition: 'transform 0.2s' }}
-                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              />
+              <img src={vendorData.profilePicture} alt={`${vendorData.name}'s profile`} className="profile-picture"/>
             ) : (
               <div className="profile-picture-placeholder">
                 {vendorData.name ? vendorData.name.charAt(0).toUpperCase() : 'V'}
@@ -206,115 +177,80 @@ const VendorServices = ({ session }) => {
       </div>
 
       <div className="services-section">
-        <h2>My Services</h2>
+        <h2>{isOwner ? 'My Services' : 'Services Offered'}</h2>
         <div className="services-content">
           {vendorData.categories.length > 0 ? (
             <>
-              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'photography') && (
-                <PhotographyService vendorId={session?.user?.id} />
+              {vendorData.categories.includes('photography') && (
+                <PhotographyService vendorId={targetVendorId} isReadOnly={isReadOnly} />
               )}
-              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'catering') && (
-                <CateringService vendorId={session?.user?.id} />
+              {vendorData.categories.includes('catering') && (
+                <CateringService vendorId={targetVendorId} isReadOnly={isReadOnly} />
               )}
-              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'flowers') && (
-                <FlowerService vendorId={session?.user?.id} />
+              {vendorData.categories.includes('flowers') && (
+                <FlowerService vendorId={targetVendorId} isReadOnly={isReadOnly} />
               )}
-              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'decor') && (
-                <DecorService vendorId={session?.user?.id} />
+              {vendorData.categories.includes('decor') && (
+                <DecorService vendorId={targetVendorId} isReadOnly={isReadOnly} />
               )}
-              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'music') && (
-                <MusicService vendorId={session?.user?.id} />
+              {vendorData.categories.includes('music') && (
+                <MusicService vendorId={targetVendorId} isReadOnly={isReadOnly} />
               )}
-              {vendorData.categories.some(cat => cat.trim().toLowerCase() === 'venue') && (
+              {vendorData.categories.includes('venue') && (
                 <VenueService 
-                  vendorId={session?.user?.id} 
+                  vendorId={targetVendorId} 
                   venueNames={vendorData.venue_names} 
+                  isReadOnly={isReadOnly}
                 />
               )}
             </>
           ) : (
             <div className="no-services">
-              <p>You haven't added any services yet.</p>
-              <button 
-                onClick={() => navigate('/edit-vendor-profile')}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '10px 20px',
-                  backgroundColor: '#FFB6C1',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '25px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                  marginTop: '10px'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = '#FFA07A';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = '#FFB6C1';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
-                }}
-              >
-                <i className="fas fa-plus" style={{ marginRight: '8px' }}></i> Add Services to Your Profile
-              </button>
+              {isOwner ? (
+                <>
+                  <p>You haven't added any services yet.</p>
+                  <button 
+                    onClick={() => navigate('/edit-vendor-profile')}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', padding: '10px 20px',
+                      backgroundColor: '#FFB6C1', color: 'white', border: 'none', borderRadius: '25px',
+                      cursor: 'pointer', fontSize: '14px', fontWeight: '600', transition: 'all 0.3s ease',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.1)', marginTop: '10px'
+                    }}
+                  >
+                    Add Services to Your Profile
+                  </button>
+                </>
+              ) : (
+                <p>{vendorData.businessName} has not listed any specific services yet.</p>
+              )}
             </div>
           )}
         </div>
       </div>
 
       {showImageModal && (
-        <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
+        <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)', display: 'flex',
+            justifyContent: 'center', alignItems: 'center', zIndex: 1000,
           }}
           onClick={() => setShowImageModal(false)}
         >
           <div style={{ maxWidth: '90%', maxHeight: '90%', position: 'relative' }}>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowImageModal(false);
-              }}
+              onClick={(e) => { e.stopPropagation(); setShowImageModal(false); }}
               style={{
-                position: 'absolute',
-                top: '-40px',
-                right: '0',
-                background: 'none',
-                border: 'none',
-                color: 'white',
-                fontSize: '24px',
-                cursor: 'pointer',
-                padding: '8px',
-                zIndex: 1001
+                position: 'absolute', top: '-40px', right: '0', background: 'none',
+                border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer',
+                padding: '8px', zIndex: 1001
               }}
             >
               ✕
             </button>
             {vendorData.profilePicture && (
-              <img 
-                src={vendorData.profilePicture} 
-                alt="Profile Preview" 
-                style={{ 
-                  maxWidth: '100%', 
-                  maxHeight: '80vh',
-                  borderRadius: '8px',
+              <img src={vendorData.profilePicture} alt="Profile Preview" style={{ 
+                  maxWidth: '100%', maxHeight: '80vh', borderRadius: '8px',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
                 }} 
               />
