@@ -147,7 +147,7 @@
 }
 
 .new-button {
-    background-color: --card-background;
+    background-color: var(--card-background);
     color: var(--text-primary);
     border: 1px solid #ddd;
 }
@@ -275,7 +275,7 @@
     color: var(--text-dark);
 }
 
-/* Vendor Styling */
+/* --- VENDOR STYLING SECTION (FULLY REVISED) --- */
 .vendor-search-container {
     display: flex;
     gap: 1rem;
@@ -352,12 +352,12 @@
     border-radius: 10px;
     padding: 1.25rem;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    
+    /* This is the most important part: makes the card a vertical container */
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    min-height: 200px; 
 }
 
 .vendor-card:hover {
@@ -365,34 +365,53 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
+/* This new rule targets the content wrapper we added in the JSX */
+.vendor-card-content {
+    /* This is the magic: it tells the content to expand and fill all available space */
+    flex-grow: 1; 
+}
+
 .vendor-info h4 {
-    margin: 0 0 0.5rem 0;
+    margin: 0;
     color: var(--text-dark);
     font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+    word-wrap: break-word;
 }
 
 .vendor-category {
     display: inline-block;
-    background-color: rgba(226, 197, 174, 0.3); /* Lighter version of --cream */
+    background-color: rgba(226, 197, 174, 0.3);
     color: var(--text-dark);
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 500;
-    margin-bottom: 0.75rem;
-    border: 1px solid rgba(226, 197, 174, 0.5);
+    margin-bottom: 1rem; /* Added space below category */
+    align-self: flex-start;
 }
 
-.vendor-contact {
-    margin-top: 0.75rem;
+.vendor-description {
     font-size: 0.9rem;
     color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0;
+    word-wrap: break-word;
+    /* Styles for clamping text to a few lines */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
 }
 
 .vendor-actions {
-    margin-top: 1rem;
+    /* No longer needs margin-top: auto because the content wrapper pushes it down */
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-end; /* Keeps button on the right */
+    gap: 0.5rem; /* Adds space between buttons if both are visible */
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .add-vendor-btn {
@@ -440,14 +459,6 @@
     cursor: not-allowed;
 }
 
-.vendor-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.95rem;
-    color: var(--text-primary);
-}
-
 .vendors-list ul {
     list-style: none;
     padding: 0;
@@ -463,6 +474,7 @@
 .vendors-list li strong {
     color: var(--text-dark);
 }
+/* --- END OF REVISED VENDOR SECTION --- */
 
 /* Documents Styling */
 .documents-header {
@@ -866,4 +878,3 @@
         justify-content: center;
     }
 }
-
