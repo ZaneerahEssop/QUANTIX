@@ -18,7 +18,10 @@ const Landing = () => {
     <div className="landing-page">
       {/* Navigation Bar */}
       <nav>
+        {/* CORRECTED: The logo div is a direct child of nav */}
         <div className="logo"><span className="gradient">Event-ually Perfect</span></div>
+        
+        {/* CORRECTED: The nav-links div is a separate, direct child of nav */}
         <div className="nav-links">
           <a href="#services">Services</a>
           <a href="#about">About</a>
