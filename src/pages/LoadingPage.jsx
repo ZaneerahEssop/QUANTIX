@@ -46,7 +46,30 @@ function LoadingPage() {
         if (userData.user_role === 'planner') {
           navigate('/dashboard');
         } else if (userData.user_role === 'vendor') {
-          navigate('/vendor-dashboard');
+          // Fetch vendor status before deciding
+          const { data: vendor, error: vendorError } = await supabase
+            .from("vendors")
+            .select("status")
+            .eq("vendor_id", session.user.id)
+            .single();
+
+          if (vendorError || !vendor) {
+            console.error("Error fetching vendor status:", vendorError?.message);
+            navigate("/pending-approval");
+            return;
+          }
+
+          if (vendor.status === "accepted") {
+            navigate("/vendor-dashboard");
+          } else if (vendor.status === "pending") {
+            navigate("/pending-approval");
+          } else if (vendor.status === "rejected") {
+            navigate("/pending-approval", { state: { status: "rejected" } });
+          } else {
+            navigate("/pending-approval");
+          }
+        } else if (userData.user_role === 'admin') {
+          navigate('/admin-dashboard');
         } else {
           console.error('Unknown role:', userData.user_role);
           navigate('/login');
