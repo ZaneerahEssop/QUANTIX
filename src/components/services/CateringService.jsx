@@ -99,7 +99,7 @@ const SimpleTextEditor = ({ value, onChange, placeholder, height = '150px' }) =>
   );
 };
 
-const CateringService = ({ vendorId }) => {
+const CateringService = ({ vendorId, isReadOnly }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [photos, setPhotos] = useState([]);
@@ -472,7 +472,7 @@ const CateringService = ({ vendorId }) => {
                 Save Changes
               </button>
             </div>
-          ) : (
+          ) : !isReadOnly && (
             <button
               type="button"
               className="edit-button"
@@ -610,7 +610,7 @@ const CateringService = ({ vendorId }) => {
           )}
         </div>
 
-        {isEditing ? (
+        {isEditing && (
           <div className="photo-upload">
             <input
               ref={fileInputRef}
@@ -626,7 +626,7 @@ const CateringService = ({ vendorId }) => {
             </label>
             <p className="upload-hint">Upload high-quality images of your dishes and service.</p>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );

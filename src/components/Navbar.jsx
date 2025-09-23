@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../client';
@@ -16,25 +17,57 @@ const Navbar = ({ session, showOnlyLogout }) => {
   const [filteredVendors, setFilteredVendors] = useState([]);
   const searchRef = useRef(null);
 
-  // All your functions (fetchVendors, handleLogout, etc.) remain the same...
+  const fetchVendors = async () => {
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession) return;
+
+      // Use the same API URL as in other parts of your app
+      const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000'
+        : 'https://quantix-production.up.railway.app';
+
+      const response = await fetch(`${API_URL}/api/vendors`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${currentSession.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch vendors: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setVendors(data);
+        setFilteredVendors(data);
+      } else {
+        throw new Error('Invalid vendor data format received');
+      }
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+      // Fallback to mock data in development only
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Using mock vendor data due to API error');
+        const mockVendors = [
+          { vendor_id: 1, business_name: 'The Venue Collective', service_type: 'Venue', email: 'info@venuecollective.com' },
+          { vendor_id: 2, business_name: 'Gourmet Delights', service_type: 'Catering', email: 'info@gourmetdelights.com' },
+          { vendor_id: 3, business_name: 'Blooms & Petals', service_type: 'Florist', email: 'info@bloomsandpetals.com' },
+          { vendor_id: 4, business_name: 'Melody Makers', service_type: 'Music', email: 'info@melodymakers.com' }
+        ];
+        setVendors(mockVendors);
+        setFilteredVendors(mockVendors);
+      }
+    }
+  };
+
   useEffect(() => {
-    // Mock vendors data as fallback
-    const mockVendors = [
-      { vendor_id: 1, business_name: 'The Venue Collective', service_type: 'Venue', email: 'info@venuecollective.com' },
-      { vendor_id: 2, business_name: 'Gourmet Delights', service_type: 'Catering', email: 'info@gourmetdelights.com' },
-      { vendor_id: 3, business_name: 'Blooms & Petals', service_type: 'Florist', email: 'info@bloomsandpetals.com' },
-      { vendor_id: 4, business_name: 'Melody Makers', service_type: 'Music', email: 'info@melodymakers.com' }
-    ];
-
-    const fetchVendors = async () => {
-      // Your fetch logic... (no changes needed here)
-      // For brevity, using mock data as a placeholder for the example
-      setVendors(mockVendors);
-      setFilteredVendors(mockVendors);
-    };
-
-    fetchVendors();
-  }, []);
+    if (isPlannerDashboard) {
+      fetchVendors();
+    }
+  }, [isPlannerDashboard]);
 
   useEffect(() => {
     const searchTimeout = setTimeout(() => {
@@ -70,7 +103,8 @@ const Navbar = ({ session, showOnlyLogout }) => {
   };
 
   const handleVendorSelect = (vendor) => {
-    navigate(`/vendor/${vendor.vendor_id}`);
+    // ✨ CHANGED: Navigate to the new public-facing services page
+    navigate(`/vendors/${vendor.vendor_id}/services`);
     setShowSearch(false);
     setSearchTerm('');
   };

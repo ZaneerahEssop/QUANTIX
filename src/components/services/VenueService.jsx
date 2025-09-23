@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { supabase } from '../../client';
 import './VenueService.css';
 
-// Reusable SimpleTextEditor component
+// Reusable SimpleTextEditor component (unchanged)
 const SimpleTextEditor = ({ value, onChange, placeholder, height = '150px' }) => {
   const textareaRef = useRef(null);
   
@@ -47,7 +47,7 @@ const SimpleTextEditor = ({ value, onChange, placeholder, height = '150px' }) =>
 };
 
 
-const VenueService = ({ vendorId, venueNames }) => {
+const VenueService = ({ vendorId, venueNames, isReadOnly }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [serviceId, setServiceId] = useState(null);
@@ -68,6 +68,7 @@ const VenueService = ({ vendorId, venueNames }) => {
 
   useEffect(() => () => { if (toastTimeout.current) clearTimeout(toastTimeout.current); }, []);
 
+  // ✨ CHANGED: This function has been completely refactored to be read-only
   const fetchAndReconcileData = useCallback(async () => {
     if (!vendorId || !venueNames || venueNames.length === 0) {
         setIsLoading(false);
@@ -76,24 +77,36 @@ const VenueService = ({ vendorId, venueNames }) => {
     setIsLoading(true);
 
     try {
-        // 1. Ensure a service entry exists for this vendor/service type to get a service_id
+        // Step 1: ONLY READ from vendor_services to get the service ID.
+        // We no longer use .upsert() here.
         const { data: serviceData, error: serviceError } = await supabase
             .from('vendor_services')
-            .upsert({ vendor_id: vendorId, service_type: 'venue' }, { onConflict: 'vendor_id, service_type' })
             .select('id')
-            .single();
+            .eq('vendor_id', vendorId)
+            .eq('service_type', 'venue')
+            .maybeSingle(); // Use maybeSingle() to handle cases where the record doesn't exist without throwing an error.
+
         if (serviceError) throw serviceError;
+
+        // If no service record exists, the vendor hasn't set up this service yet.
+        // We can just show an empty state.
+        if (!serviceData) {
+            setVenues([]);
+            setIsLoading(false);
+            return;
+        }
+        
         const currentServiceId = serviceData.id;
         setServiceId(currentServiceId);
 
-        // 2. Fetch all existing venue details linked to this service
+        // Step 2: Fetch venue details from the 'venues' table.
         const { data: existingVenues, error: venuesError } = await supabase
             .from('venues')
             .select('*')
             .eq('service_id', currentServiceId);
         if (venuesError) throw venuesError;
-
-        // 3. Reconcile the prop `venueNames` with the fetched `existingVenues`
+        
+        // Step 3: Reconcile the data just like before.
         const reconciledVenues = venueNames.map(name => {
             const existing = existingVenues.find(v => v.name === name);
             return existing || {
@@ -152,7 +165,6 @@ const VenueService = ({ vendorId, venueNames }) => {
 
   const handleDeletePhoto = (venueIndex, photoIndex) => {
     const updatedVenues = [...venues];
-    // In a real app, you might want to delete the photo from storage here or on save.
     updatedVenues[venueIndex].photos.splice(photoIndex, 1);
     setVenues(updatedVenues);
   };
@@ -161,7 +173,7 @@ const VenueService = ({ vendorId, venueNames }) => {
     e.preventDefault();
     try {
       const venuesToSave = venues.map(venue => ({ ...venue, service_id: serviceId }));
-      const { error } = await supabase.from('venues').upsert(venuesToSave, { onConflict: 'service_id, name' }); // Assumes a unique constraint on (service_id, name)
+      const { error } = await supabase.from('venues').upsert(venuesToSave, { onConflict: 'service_id, name' });
       if (error) throw error;
       
       showToast('Venue information saved successfully!', 'success');
@@ -181,7 +193,11 @@ const VenueService = ({ vendorId, venueNames }) => {
     return (
         <div className="venue-service-container">
             <div className="service-header"><h3>Venue Services</h3></div>
-            <p>You have not listed any venues in your profile. Please edit your main profile to add your venue names first.</p>
+            {isReadOnly ? (
+              <p>This vendor has not listed any specific venues in their profile.</p>
+            ) : (
+              <p>You have not listed any venues in your profile. Please edit your main profile to add your venue names first.</p>
+            )}
         </div>
     );
   }
@@ -197,7 +213,7 @@ const VenueService = ({ vendorId, venueNames }) => {
               <button type="button" className="cancel-button" onClick={() => { setIsEditing(false); fetchAndReconcileData(); }}>Cancel</button>
               <button type="submit" className="save-button">Save Changes</button>
             </div>
-          ) : (
+          ) : !isReadOnly && (
             <button type="button" className="edit-button" onClick={() => setIsEditing(true)}>Edit Details</button>
           )}
         </div>

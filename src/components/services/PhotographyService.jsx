@@ -193,7 +193,7 @@ const SimpleTextEditor = ({ value, onChange, placeholder, height = '150px' }) =>
   );
 };
 
-const PhotographyService = ({ vendorId }) => {
+const PhotographyService = ({ vendorId, isReadOnly }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [photos, setPhotos] = useState([]);
@@ -566,7 +566,10 @@ const PhotographyService = ({ vendorId }) => {
               <button
                 type="button"
                 className="cancel-button"
-                onClick={() => setIsEditing(false)}
+                onClick={() => {
+                  setIsEditing(false);
+                  fetchPhotographyData();
+                }}
               >
                 Cancel
               </button>
@@ -574,7 +577,7 @@ const PhotographyService = ({ vendorId }) => {
                 Save Changes
               </button>
             </div>
-          ) : (
+          ) : !isReadOnly && (
             <button
               type="button"
               className="edit-button"
@@ -589,64 +592,40 @@ const PhotographyService = ({ vendorId }) => {
           <form onSubmit={handleSubmit} id="service-form" className="service-form">
             <div className="form-group rich-text-group">
               <label>Service Description</label>
-              {isEditing ? (
-                <SimpleTextEditor
-                  value={formData.service_description}
-                  onChange={(value) => handleChange(value, 'service_description')}
-                  placeholder="Describe your photography service..."
-                />
-              ) : (
-                <div className="markdown-preview">
-                  <ReactMarkdown>{formData.service_description || 'No description provided'}</ReactMarkdown>
-                </div>
-              )}
+              <SimpleTextEditor
+                value={formData.service_description}
+                onChange={(value) => handleChange(value, 'service_description')}
+                placeholder="Describe your photography service..."
+              />
             </div>
 
             <div className="form-group rich-text-group">
               <label>Camera Equipment & Specifications</label>
-              {isEditing ? (
-                <SimpleTextEditor
-                  value={formData.camera_specs}
-                  onChange={(value) => handleChange(value, 'camera_specs')}
-                  placeholder="List your camera equipment and specifications..."
-                />
-              ) : (
-                <div className="markdown-preview">
-                  <ReactMarkdown>{formData.camera_specs || 'No camera specifications provided'}</ReactMarkdown>
-                </div>
-              )}
+              <SimpleTextEditor
+                value={formData.camera_specs}
+                onChange={(value) => handleChange(value, 'camera_specs')}
+                placeholder="List your camera equipment and specifications..."
+              />
             </div>
 
             <div className="form-group rich-text-group">
               <label>Base Rate</label>
-              {isEditing ? (
-                <SimpleTextEditor
-                  value={formData.base_rate}
-                  onChange={(value) => handleChange(value, 'base_rate')}
-                  placeholder="e.g., $100 per hour"
-                  height="100px"
-                />
-              ) : (
-                <div className="markdown-preview">
-                  <ReactMarkdown>{formData.base_rate || 'Not specified'}</ReactMarkdown>
-                </div>
-              )}
+              <SimpleTextEditor
+                value={formData.base_rate}
+                onChange={(value) => handleChange(value, 'base_rate')}
+                placeholder="e.g., $100 per hour"
+                height="100px"
+              />
             </div>
 
             <div className="form-group rich-text-group">
               <label>Additional Pricing & Packages</label>
-              {isEditing ? (
-                <SimpleTextEditor
-                  value={formData.additional_rates}
-                  onChange={(value) => handleChange(value, 'additional_rates')}
-                  placeholder="List any additional pricing, packages, or special offers..."
-                  height="150px"
-                />
-              ) : (
-                <div className="markdown-preview">
-                  <ReactMarkdown>{formData.additional_rates || 'No additional pricing information provided'}</ReactMarkdown>
-                </div>
-              )}
+              <SimpleTextEditor
+                value={formData.additional_rates}
+                onChange={(value) => handleChange(value, 'additional_rates')}
+                placeholder="List any additional pricing, packages, or special offers..."
+                height="150px"
+              />
             </div>
           </form>
         ) : (

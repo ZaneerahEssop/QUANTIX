@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '../../client';
 import { FaCheckCircle, FaTimesCircle, FaInfoCircle } from 'react-icons/fa';
-import './DecorService.css'; // You will create this CSS file next
+import './DecorService.css';
 
 // Simple Text Editor Component (Can be reused or imported from a shared location)
 const SimpleTextEditor = ({ value, onChange, placeholder, height = '150px' }) => {
@@ -72,7 +72,7 @@ const SimpleTextEditor = ({ value, onChange, placeholder, height = '150px' }) =>
 };
 
 
-const DecorService = ({ vendorId }) => {
+const DecorService = ({ vendorId, isReadOnly }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [photos, setPhotos] = useState([]);
@@ -301,7 +301,7 @@ const DecorService = ({ vendorId }) => {
               <button type="button" className="cancel-button" onClick={() => { setIsEditing(false); fetchDecorData(); }}>Cancel</button>
               <button type="submit" className="save-button" form="service-form">Save Changes</button>
             </div>
-          ) : (
+          ) : !isReadOnly && (
             <button type="button" className="edit-button" onClick={() => setIsEditing(true)}>Edit Service</button>
           )}
         </div>

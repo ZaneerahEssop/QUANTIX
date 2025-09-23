@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '../../client';
 import { FaCheckCircle, FaTimesCircle, FaInfoCircle } from 'react-icons/fa';
-import './MusicService.css'; // You will create this CSS file next
+import './MusicService.css';
 
 // Simple Text Editor Component (Can be reused or imported from a shared location)
 const SimpleTextEditor = ({ value, onChange, placeholder, height = '150px' }) => {
@@ -72,7 +72,7 @@ const SimpleTextEditor = ({ value, onChange, placeholder, height = '150px' }) =>
 };
 
 
-const MusicService = ({ vendorId }) => {
+const MusicService = ({ vendorId, isReadOnly }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [photos, setPhotos] = useState([]);
@@ -301,7 +301,7 @@ const MusicService = ({ vendorId }) => {
               <button type="button" className="cancel-button" onClick={() => { setIsEditing(false); fetchMusicData(); }}>Cancel</button>
               <button type="submit" className="save-button" form="service-form">Save Changes</button>
             </div>
-          ) : (
+          ) : !isReadOnly && (
             <button type="button" className="edit-button" onClick={() => setIsEditing(true)}>Edit Service</button>
           )}
         </div>
