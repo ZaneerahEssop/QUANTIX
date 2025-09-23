@@ -188,12 +188,13 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
 };
 
 // --- MODIFIED GuestManagement Component ---
-const GuestManagement = ({ guests, onUpdate, isEditing }) => {
+// --- CHANGE: Added eventData and API_URL props ---
+const GuestManagement = ({ guests, onUpdate, isEditing, eventData, API_URL }) => {
   const [newGuest, setNewGuest] = useState({
     name: "",
     contact: "",
     dietary: "",
-    rsvpStatus: "pending", // Changed from isAttending
+    rsvpStatus: "pending",
   });
 
   const handleAddGuest = () => {
@@ -204,7 +205,7 @@ const GuestManagement = ({ guests, onUpdate, isEditing }) => {
         contact: "",
         dietary: "",
         rsvpStatus: "pending",
-      }); // Reset with new state
+      });
     }
   };
 
@@ -218,10 +219,62 @@ const GuestManagement = ({ guests, onUpdate, isEditing }) => {
   const handleRemoveGuest = (guestId) =>
     onUpdate((guests || []).filter((g) => g.id !== guestId));
 
-  const handleSendInvite = (guest) =>
-    alert(
-      `Simulating sending an email invite to ${guest.name} at ${guest.contact}`
-    );
+  const handleSendInvite = async (guest) => {
+    // Temporary: Email functionality disabled for now
+    alert(`Email functionality is temporarily disabled. Guest ${guest.name} (${guest.contact}) would receive an invitation to ${eventData?.name || "the event"}.`);
+    
+    // TODO: Re-enable email functionality once Google OAuth is properly configured
+    /*
+    // 1. Get the full current session from Supabase
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      alert("Authentication error. Please log in again.");
+      return;
+    }
+
+    // 2. Check if the Google provider tokens exist
+    if (!session.provider_token || !session.provider_refresh_token) {
+      alert("Google account permission not granted or token is missing. Please try logging out and logging back in to grant permissions.");
+      return;
+    }
+
+    // --- CHANGE: Using eventData prop to get the event name ---
+    const eventName = eventData?.name || "our event";
+
+    try {
+      alert(`Sending invitation to ${guest.name}...`);
+      
+      // --- CHANGE: Updated fetch URL to the correct endpoint ---
+      const response = await fetch(`${API_URL}/api/emails/send-invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          guestEmail: guest.contact,
+          guestName: guest.name,
+          eventName: eventName,
+          googleAccessToken: session.provider_token,
+          googleRefreshToken: session.provider_refresh_token,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send invite.');
+      }
+
+      alert(`Successfully sent invite to ${guest.name}!`);
+
+    } catch (error) {
+      console.error('Error sending invite:', error);
+      alert(`Error: ${error.message}`);
+    }
+    */
+  };
 
   return (
     <div className="guests-section">
@@ -274,7 +327,6 @@ const GuestManagement = ({ guests, onUpdate, isEditing }) => {
                   </div>
                 </div>
 
-                {/* --- VIEW MODE ACTIONS --- */}
                 {!isEditing && (
                   <div className="guest-actions view-mode">
                     <button
@@ -326,7 +378,6 @@ const GuestManagement = ({ guests, onUpdate, isEditing }) => {
                   </div>
                 )}
 
-                {/* --- EDIT MODE ACTIONS --- */}
                 {isEditing && (
                   <div className="guest-actions">
                     <button
@@ -356,7 +407,8 @@ const EventDetails = () => {
   const isReadOnly = searchParams.get("readonly") === "true";
   const eventId = id;
   const navigate = useNavigate();
-  const [event, setEvent] = useState(null);
+  // --- CHANGE: Renamed state variable to avoid conflicts ---
+  const [eventData, setEventData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   useEffect(() => {
     if (isReadOnly) {
@@ -389,14 +441,12 @@ const EventDetails = () => {
       ? "https://quantix-production.up.railway.app"
       : "http://localhost:5000";
 
-  // Helper to format database guest status for the UI
   const formatGuestStatusForUI = (dbStatus) => {
     if (dbStatus === "Attending") return "attending";
     if (dbStatus === "Declined") return "declined";
     return "pending";
   };
 
-  // Helper to format UI guest status for the database
   const formatGuestStatusForDB = (uiStatus) => {
     if (uiStatus === "attending") return "Attending";
     if (uiStatus === "declined") return "Declined";
@@ -409,11 +459,6 @@ const EventDetails = () => {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) return;
-
-      const API_URL =
-        process.env.NODE_ENV === "production"
-          ? "https://quantix-production.up.railway.app"
-          : "http://localhost:5000";
 
       const response = await fetch(`${API_URL}/api/vendors`, {
         headers: {
@@ -456,11 +501,11 @@ const EventDetails = () => {
           `${API_URL}/api/events/id/${eventId}`
         );
         if (!eventResponse.ok) throw new Error("Failed to fetch event");
-        const eventData = await eventResponse.json();
+        const fetchedEventData = await eventResponse.json();
 
-        if (!eventData) {
+        if (!fetchedEventData) {
           console.error("Event not found");
-          setEvent(null);
+          setEventData(null);
           return;
         }
 
@@ -468,7 +513,6 @@ const EventDetails = () => {
         if (!guestsResponse.ok) throw new Error("Failed to fetch guests");
         const guestsData = await guestsResponse.json();
 
-        // Format guest data with the new rsvpStatus property
         const formattedGuests = guestsData.map((g) => ({
           id: g.guest_id,
           name: g.name,
@@ -480,22 +524,22 @@ const EventDetails = () => {
         setGuests(formattedGuests);
         initialGuestsRef.current = formattedGuests;
 
-        setEvent(eventData);
-        setSchedule(eventData.schedule || []);
-        setTheme(eventData.theme || { name: "", colors: [], notes: "" });
-        setDocuments(eventData.documents || []);
-        setSelectedVendors(eventData.vendors || []);
+        setEventData(fetchedEventData);
+        setSchedule(fetchedEventData.schedule || []);
+        setTheme(fetchedEventData.theme || { name: "", colors: [], notes: "" });
+        setDocuments(fetchedEventData.documents || []);
+        setSelectedVendors(fetchedEventData.vendors || []);
 
-        const startTime = new Date(eventData.start_time);
+        const startTime = new Date(fetchedEventData.start_time);
         const date = startTime.toISOString().split("T")[0];
         const time = startTime.toTimeString().substring(0, 5);
 
         setFormData({
-          name: eventData.name || "",
+          name: fetchedEventData.name || "",
           date,
           time,
-          venue: eventData.venue || "",
-          notes: eventData.notes || "",
+          venue: fetchedEventData.venue || "",
+          notes: fetchedEventData.notes || "",
         });
       } catch (error) {
         console.error("Error loading data:", error);
@@ -577,7 +621,6 @@ const EventDetails = () => {
     const currentGuestsMap = new Map(guests.map((g) => [g.id, g]));
     const promises = [];
 
-    // Deletions
     for (const initialGuest of initialGuestsRef.current) {
       if (!currentGuestsMap.has(initialGuest.id)) {
         promises.push(
@@ -588,17 +631,16 @@ const EventDetails = () => {
       }
     }
 
-    // Additions and Updates
     for (const currentGuest of guests) {
       const payload = {
         name: currentGuest.name,
         email: currentGuest.contact,
-        rsvp_status: formatGuestStatusForDB(currentGuest.rsvpStatus), // Use helper
+        rsvp_status: formatGuestStatusForDB(currentGuest.rsvpStatus),
         dietary_info: currentGuest.dietary,
       };
 
       if (typeof currentGuest.id === "number") {
-        // New guest
+       
         promises.push(
           fetch(`${API_URL}/api/guests/${eventId}`, {
             method: "POST",
@@ -607,7 +649,7 @@ const EventDetails = () => {
           })
         );
       } else {
-        // Existing guest
+       
         const initialGuest = initialGuestsRef.current.find(
           (g) => g.id === currentGuest.id
         );
@@ -668,12 +710,12 @@ const EventDetails = () => {
         name: g.name,
         contact: g.email || "",
         dietary: g.dietary_info || "",
-        rsvpStatus: formatGuestStatusForUI(g.rsvp_status), // Use helper
+        rsvpStatus: formatGuestStatusForUI(g.rsvp_status),
       }));
       setGuests(formattedGuests);
       initialGuestsRef.current = formattedGuests;
 
-      setEvent((prev) => ({
+      setEventData((prev) => ({
         ...prev,
         ...formData,
         start_time: startTime,
@@ -814,7 +856,7 @@ const EventDetails = () => {
   };
 
   if (isLoading) return <div className="loading">Loading event details...</div>;
-  if (!event)
+  if (!eventData)
     return (
       <div className="error">
         <h2>Event Not Found</h2>
@@ -946,7 +988,7 @@ const EventDetails = () => {
                 placeholder="Venue"
               />
             ) : (
-              event.venue || "Not specified"
+              eventData.venue || "Not specified"
             )}
           </p>
         </div>
@@ -954,7 +996,7 @@ const EventDetails = () => {
           <h4>
             <FaStar /> Theme
           </h4>
-          <p>{event.theme?.name || "Not specified"}</p>
+          <p>{eventData.theme?.name || "Not specified"}</p>
         </div>
       </div>
       <div className="event-sections">
@@ -977,11 +1019,14 @@ const EventDetails = () => {
           </>
         )}
         {activeView === "guests" && (
-          <GuestManagement
-            guests={guests}
-            onUpdate={setGuests}
-            isEditing={isEditing}
-          />
+            // --- CHANGE: Pass eventData and API_URL props to the child component ---
+            <GuestManagement
+                guests={guests}
+                onUpdate={setGuests}
+                isEditing={isEditing}
+                eventData={eventData}
+                API_URL={API_URL}
+            />
         )}
         {activeView === "vendors" && (
           <section className="vendors-section">
