@@ -28,7 +28,17 @@ function SignUpPage() {
 
   useEffect(() => {
     if (session) {
-      navigate("/dashboard");
+      const role = sessionStorage.getItem("signupRole");
+
+      if (role === "vendor") {
+        // Vendors should always start at pending approval
+        navigate("/pending-approval", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+
+      // Clear it so relogin logic takes over later
+      sessionStorage.removeItem("signupRole");
     }
   }, [session, navigate]);
 

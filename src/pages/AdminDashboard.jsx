@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../client";
 import { useNavigate } from "react-router-dom";
 import "../styling/AdminDashboard.css";
-import { FaSearch, FaClock, FaCheckCircle, FaTimesCircle, FaListAlt } from "react-icons/fa";
+import {  FaClock, FaCheckCircle, FaTimesCircle, FaListAlt } from "react-icons/fa";
 
 export default function AdminDashboard() {
   const [vendors, setVendors] = useState([]);
@@ -107,10 +107,6 @@ export default function AdminDashboard() {
           <p>Here's what's happening with your vendors today</p>
         </div>
         <div className="admin-navbar-right">
-          <div className="search-bar">
-            <FaSearch />
-            <input type="text" placeholder="Search vendors..." />
-          </div>
           <button className="btn-logout" onClick={handleLogout}>
             Logout
           </button>
