@@ -1,11 +1,3 @@
-// --- START OF TEMPORARY DEBUG CODE ---
-console.log("--- Checking Environment Variables ---");
-console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
-console.log("SUPABASE_SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "Exists" : "Not Found!");
-console.log("------------------------------------");
-// --- END OF TEMPORARY DEBUG CODE ---
-
-
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
