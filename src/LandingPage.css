@@ -23,7 +23,7 @@ html {
   --text-muted: #6c757d;
   
   /* Gradients */
-  --hero-gradient: linear-gradient(135deg, rgba(226,197,174,0.8), rgba(229,172,191,0.8));
+  --hero-gradient: linear-gradient(135deg, rgba(226, 197, 174, 0.8), rgba(229, 172, 191, 0.8));
   --section-max-width: 1200px;
   --content-width: 80%;
 }
@@ -32,7 +32,7 @@ html {
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box; /* This is crucial */
+  box-sizing: border-box;
 }
 
 html, body, #root {
@@ -40,29 +40,19 @@ html, body, #root {
   height: 100%;
   margin: 0 !important;
   padding: 0 !important;
-  overflow-x: hidden; /* Prevents horizontal scroll */
- 
+  overflow-x: hidden;
 }
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-
 
 body {
   font-family: 'Poppins', sans-serif;
   color: var(--text-dark);
   line-height: 1.6;
   background-color: white;
-    width: 100%;
+  width: 100%;
   overflow-x: hidden;
   position: relative;
 }
 
-/* Let sections be 100% width by default */
 .landing-page {
   width: 100%;
   position: relative;
@@ -79,51 +69,56 @@ body {
 }
 
 /* ===== NAVIGATION ===== */
-nav {
+.landing-page nav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  /* width: 100% is fine here because of position: fixed */
-  width: 100%; 
+  width: 100%;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 5%;
+  align-items: baseline;
+  padding-top: 1.5rem; /* UPDATED: Pushes content down */
+  padding-bottom: -0.5rem; /* UPDATED: Balances the padding */
+  padding-left: 5%;
+  padding-right: 5%;
   background-color: white;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   z-index: 1000;
 }
 
-.logo {
-  font-size: 1.5rem;
+.landing-page .logo {
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--blush);
+  /* Removed relative positioning */
 }
 
-.nav-links {
+.landing-page .nav-links {
   display: flex;
   align-items: center;
   gap: 2rem;
+  flex-grow: 0; 
 }
 
-.nav-links a {
+.landing-page .nav-links a {
   color: var(--text-dark);
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s ease;
-  padding: 0.5rem 0;
+  padding: 0;
   position: relative;
+  font-size: 0.95rem;
 }
 
-.nav-links a:hover {
+.landing-page .nav-links a:hover {
   color: var(--blush);
 }
 
-.nav-links a::after {
+.landing-page .nav-links a::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  bottom: -4px;
   left: 0;
   width: 0;
   height: 2px;
@@ -131,23 +126,23 @@ nav {
   transition: width 0.3s ease;
 }
 
-.nav-links a:hover::after {
+.landing-page .nav-links a:hover::after {
   width: 100%;
 }
 
-nav .nav-button {
+.landing-page nav .nav-button {
   background-color: var(--peach) !important;
   color: white !important;
   border: none !important;
-  padding: 0.75rem 1.5rem !important;
+  padding: 0.6rem 1.5rem !important;
   border-radius: 50px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   transition: all 0.3s ease !important;
 }
 
-nav .nav-button:hover {
-  background-color: #f0b48c !important; /* Slightly darker peach on hover */
+.landing-page nav .nav-button:hover {
+  background-color: #f0b48c !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 15px rgba(232, 177, 128, 0.4) !important;
 }
@@ -171,8 +166,8 @@ nav .nav-button:hover {
   text-align: left;
   z-index: 0;
   overflow: hidden;
-  padding-left: 0; /* Ensure no left padding on the hero itself */
-  margin-bottom: 4rem; /* Add space below hero */
+  padding-left: 0;
+  margin-bottom: 4rem;
 }
 
 .hero::after {
@@ -193,15 +188,14 @@ nav .nav-button:hover {
   max-width: var(--section-max-width);
   width: 100%;
   color: white;
-  padding: 0 10% 0 5%; /* More padding on the right to push content left */
+  padding: 0 10% 0 5%;
   text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-  margin: 0 auto 0 0; /* Align to the left */
+  margin: 0 auto 0 0;
   box-sizing: border-box;
-  padding-left: 5%; /* Ensure left padding is consistent */
-  margin-left: 0; /* Remove any left margin */
+  padding-left: 5%;
+  margin-left: 0;
 }
 
-/* Reset text color for other sections */
 .services .section-container,
 .about .section-container {
   color: var(--text-dark);
@@ -297,19 +291,18 @@ nav .nav-button:hover {
   margin-bottom: 0;
 }
 
-/* Services Section */
 .content-section {
   padding: 6rem 0;
   position: relative;
   z-index: 1;
-  scroll-margin-top: 120px; /* Increased space for fixed header */
-  margin-bottom: 4rem; /* Add more space between sections */
+  scroll-margin-top: 120px;
+  margin-bottom: 4rem;
 }
 
 .services {
   background-color: #f8f9fa;
-  scroll-margin-top: 120px; /* Match other sections */
-  margin-bottom: 6rem; /* Extra space after services */
+  scroll-margin-top: 120px;
+  margin-bottom: 6rem;
 }
 
 .value-grid {
@@ -327,7 +320,7 @@ nav .nav-button:hover {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 2rem; /* Added padding for better spacing */
+  padding: 2rem;
   flex: 1;
   min-width: 280px;
 }
@@ -357,7 +350,7 @@ nav .nav-button:hover {
   background-color: white;
   padding: 3rem 0;
   position: relative;
-  min-height: calc(100vh - 80px); /* Full viewport height minus header */
+  min-height: calc(100vh - 80px);
   display: flex;
   align-items: center;
   box-sizing: border-box;
@@ -442,11 +435,11 @@ nav .nav-button:hover {
     margin: 0 auto 2rem auto;
   }
   
-  .nav-links {
+  .landing-page .nav-links {
     gap: 1rem;
   }
   
-  .nav-button {
+  .landing-page .nav-button {
     padding: 0.6rem 1.2rem;
     font-size: 0.9rem;
   }
@@ -462,16 +455,17 @@ nav .nav-button:hover {
 }
 
 @media (max-width: 480px) {
-  nav {
-    flex-direction: column; /* Stack nav items on small screens */
+  .landing-page nav {
     gap: 1rem;
-    padding: 1rem;
+    padding: 1rem 1.5rem;
   }
 
-  .nav-links {
+  .landing-page .logo {
+      font-size: 1.2rem;
+  }
+
+  .landing-page .nav-links {
     gap: 0.8rem;
-    justify-content: center;
-    width: 100%;
   }
 
   .hero h1 {
