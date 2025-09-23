@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../client";
 import ChatUI from "../components/ChatUI";
 import Navbar from "../components/Navbar";
+import chatService from "../services/chatService";
 
 export default function VendorDashboard({ session }) {
   const navigate = useNavigate();
@@ -16,7 +17,15 @@ export default function VendorDashboard({ session }) {
   const [acceptedEvents, setAcceptedEvents] = useState([]);
   const [date, setDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
-  //const [plannerNames, setPlannerNames] = useState({});
+  const [showAllEvents, setShowAllEvents] = useState(false);
+  const [plannerNames, setPlannerNames] = useState({});
+  
+  // Chat state
+  const [selectedPlanner, setSelectedPlanner] = useState(null);
+  const [chatMessages, setChatMessages] = useState({});
+  const [conversations, setConversations] = useState([]);
+  const [currentConversation, setCurrentConversation] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Prevent scrolling until page is fully loaded
   useLayoutEffect(() => {
@@ -207,7 +216,189 @@ export default function VendorDashboard({ session }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [session, API_BASE]);
+  }, [session]); // Add fetchInitialData to dependencies if needed, but be careful of infinite loops
+
+  // Initialize chat service and set up real-time listeners
+  useEffect(() => {
+    if (session?.user) {
+      // Connect to chat service
+      chatService.connect(session.user.id);
+
+      // Set up real-time listeners
+      chatService.onNewMessage((message) => {
+        console.log('New message received on vendor side:', message);
+        console.log('Current user ID:', session.user.id);
+        console.log('Message sender ID:', message.sender_id);
+        console.log('Is current user?', message.sender_id === session.user.id);
+        
+        // Update messages for the conversation
+        setChatMessages(prev => {
+          const conversationId = message.conversation_id;
+          console.log('Updating messages for conversation:', conversationId);
+          console.log('Previous messages for this conversation:', prev[conversationId] || []);
+          
+          const newMessage = {
+            id: message.message_id,
+            text: message.message_text,
+            timestamp: message.created_at,
+            isCurrentUser: message.sender_id === session.user.id,
+            sender: message.sender?.name || 'Unknown',
+            conversationId: message.conversation_id
+          };
+          
+          console.log('Adding new message:', newMessage);
+          
+          return {
+            ...prev,
+            [conversationId]: [
+              ...(prev[conversationId] || []),
+              newMessage
+            ]
+          };
+        });
+      });
+
+      chatService.onMessageError((error) => {
+        console.error('Message error:', error);
+      });
+
+      chatService.onMessageNotification((notification) => {
+        console.log('Message notification:', notification);
+        setUnreadCount(prev => prev + 1);
+      });
+
+      // Load conversations and unread count
+      loadConversations();
+      loadUnreadCount();
+    }
+
+    return () => {
+      chatService.removeAllListeners();
+    };
+  }, [session?.user]);
+
+  // Load conversations for the vendor
+  const loadConversations = async () => {
+    if (!session?.user) return;
+
+    try {
+      const conversations = await chatService.getUserConversations(session.user.id);
+      console.log('Loaded conversations:', conversations);
+      setConversations(conversations);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
+  };
+
+  // Load unread message count
+  const loadUnreadCount = async () => {
+    if (!session?.user) return;
+
+    try {
+      const { unreadCount } = await chatService.getUnreadCount(session.user.id);
+      setUnreadCount(unreadCount);
+    } catch (error) {
+      console.error('Error loading unread count:', error);
+    }
+  };
+
+  // Handle sending a message
+  const handleSendMessage = async (message) => {
+    if (!currentConversation || !session?.user) return;
+
+    try {
+      // Send message via WebSocket for real-time delivery
+      chatService.sendMessage(
+        currentConversation.conversation_id,
+        session.user.id,
+        message.text,
+        'text'
+      );
+
+      // Also send via API as backup
+      await chatService.sendMessageAPI(
+        currentConversation.conversation_id,
+        session.user.id,
+        message.text,
+        'text'
+      );
+
+      // Update local state immediately for better UX
+      setChatMessages(prev => ({
+        ...prev,
+        [currentConversation.conversation_id]: [
+          ...(prev[currentConversation.conversation_id] || []),
+          {
+            ...message,
+            conversationId: currentConversation.conversation_id
+          }
+        ]
+      }));
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  // Handle planner selection and load conversation
+  const handleSelectPlanner = async (planner) => {
+    if (!session?.user) return;
+
+    console.log('Vendor selecting planner:', planner);
+    setSelectedPlanner(planner);
+
+    try {
+      let conversation;
+      
+      // If planner has a conversation_id, use that directly
+      if (planner.conversationId) {
+        console.log('Using existing conversation:', planner.conversationId);
+        conversation = { conversation_id: planner.conversationId };
+        setCurrentConversation(conversation);
+        
+        // Join the conversation room for real-time updates
+        console.log('Joining conversation room:', conversation.conversation_id);
+        chatService.joinConversation(conversation.conversation_id);
+      } else {
+        // Get or create conversation with the planner
+        conversation = await chatService.getOrCreateConversation(
+          planner.plannerId || planner.id, // Use plannerId if available, fallback to id
+          session.user.id
+        );
+
+        console.log('Got conversation:', conversation);
+        setCurrentConversation(conversation);
+
+        // Join the conversation room for real-time updates
+        console.log('Joining conversation room:', conversation.conversation_id);
+        chatService.joinConversation(conversation.conversation_id);
+      }
+      
+      // Also join the user's personal room for notifications
+      chatService.connect(session.user.id);
+
+      // Load messages for this conversation
+      const messages = await chatService.getConversationMessages(conversation.conversation_id);
+      
+      // Transform messages to match ChatUI format
+      const formattedMessages = messages.map(msg => ({
+        id: msg.message_id,
+        text: msg.message_text,
+        timestamp: msg.created_at,
+        isCurrentUser: msg.sender_id === session.user.id,
+        sender: msg.sender?.name || 'Unknown'
+      }));
+
+      setChatMessages(prev => ({
+        ...prev,
+        [conversation.conversation_id]: formattedMessages
+      }));
+
+      // Mark messages as read
+      await chatService.markMessagesAsRead(conversation.conversation_id, session.user.id);
+    } catch (error) {
+      console.error('Error selecting planner:', error);
+    }
+  };
 
   const handleRequestResponse = async (requestId, status) => {
     if (!session?.user) return;
@@ -896,20 +1087,19 @@ export default function VendorDashboard({ session }) {
           >
             <ChatUI
               listTitle="Planners"
-              vendors={[
-                {
-                  id: 1,
-                  name: "Alice Johnson",
-                  lastMessage: "Hi, can you confirm your availability?",
-                  unread: 0,
-                },
-              ]}
-              onSendMessage={(message) => {
-                console.log("Message to planner:", message);
-              }}
-              onSelectVendor={(vendor) => {
-                // Handle vendor selection if needed
-              }}
+              vendors={conversations.map((conv, index) => ({
+                id: conv.conversation_id, // Use conversation_id instead of planner_id
+                name: conv.planner?.name || 'Unknown Planner',
+                lastMessage: conv.last_message_at ? 'Last message: ' + new Date(conv.last_message_at).toLocaleString() : 'No messages yet',
+                unread: 0, // You could calculate this from unread messages
+                plannerId: conv.planner_id, // Store the actual planner ID for selection
+                conversationId: conv.conversation_id, // Store the conversation ID
+              }))}
+              onSendMessage={handleSendMessage}
+              onSelectVendor={handleSelectPlanner}
+              selectedVendor={selectedPlanner}
+              messages={currentConversation ? chatMessages[currentConversation.conversation_id] || [] : []}
+              unreadCount={unreadCount}
               showSearch={false}
             />
           </div>

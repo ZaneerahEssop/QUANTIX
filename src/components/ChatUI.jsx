@@ -238,7 +238,8 @@ const ChatUI = ({
   selectedVendor = null,
   messages = [],
   showSearch = true,
-  vendors = []
+  vendors = [],
+  unreadCount = 0
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -281,6 +282,23 @@ const ChatUI = ({
       <ComponentHeader>
         <FaComments size={22} />
         <h2>Chat</h2>
+        {unreadCount > 0 && (
+          <div style={{
+            backgroundColor: '#ff4444',
+            color: 'white',
+            borderRadius: '50%',
+            width: '20px',
+            height: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            marginLeft: '8px'
+          }}>
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </div>
+        )}
       </ComponentHeader>
       <ChatContainer>
         <Sidebar>
@@ -352,7 +370,7 @@ const ChatUI = ({
               ) : (
                 messages.map((message, index) => (
                   <MessageBubble 
-                    key={index} 
+                    key={message.id || `msg-${index}`} 
                     $isCurrentUser={message.isCurrentUser}
                   >
                     <MessageHeader $isCurrentUser={message.isCurrentUser}>
