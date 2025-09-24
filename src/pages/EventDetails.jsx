@@ -1045,7 +1045,12 @@ const EventDetails = () => {
                       <div
                         key={vendor.vendor_id}
                         className="vendor-card"
-                        onClick={() => handleVendorCardClick(vendor.vendor_id)}
+                        onClick={(e) => {
+                          // Only navigate if the click is not on the request button or its children
+                          if (!e.target.closest('.add-vendor-btn, .undo-request-btn')) {
+                            handleVendorCardClick(vendor.vendor_id);
+                          }
+                        }}
                         style={{ cursor: "pointer" }}
                       >
                         <div className="vendor-card-content">
@@ -1057,7 +1062,7 @@ const EventDetails = () => {
                               ? "Venue"
                               : vendor.service_type}
                           </span>
-                          <div className="vendor-description">
+                          <div className="vendor-description" style={{ textAlign: 'center' }}>
                             {vendor.description || "No description available."}
                           </div>
                         </div>
