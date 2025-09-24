@@ -219,7 +219,7 @@ const PhotographyService = ({ vendorId, isReadOnly }) => {
     toastTimeout.current = setTimeout(() => {
       setToast(null);
       toastTimeout.current = null;
-    }, 5000);
+    }, 5001);
   };
 
   // Close toast manually

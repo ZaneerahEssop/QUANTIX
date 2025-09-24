@@ -91,7 +91,7 @@ const FlowerService = ({ vendorId, isReadOnly }) => {
   const showToast = (message, type = 'info') => {
     if (toastTimeout.current) clearTimeout(toastTimeout.current);
     setToast({ message, type });
-    toastTimeout.current = setTimeout(() => setToast(null), 5000);
+    toastTimeout.current = setTimeout(() => setToast(null), 5001);
   };
 
   const closeToast = () => {

@@ -172,7 +172,7 @@ export default function AddEventForm() {
         const API_URL =
           process.env.NODE_ENV === "production"
             ? "https://quantix-production.up.railway.app"
-            : "http://localhost:5000";
+            : "http://localhost:5001";
 
         const response = await fetch(`${API_URL}/api/vendors`, {
           headers: {
@@ -317,7 +317,7 @@ export default function AddEventForm() {
         process.env.REACT_APP_API_URL ||
         (process.env.NODE_ENV === "production"
           ? "https://quantix-production.up.railway.app"
-          : "http://localhost:5000");
+          : "http://localhost:5001");
 
       const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -438,7 +438,7 @@ export default function AddEventForm() {
           process.env.REACT_APP_API_URL ||
           (process.env.NODE_ENV === "production"
             ? "https://quantix-production.up.railway.app"
-            : "http://localhost:5000");
+            : "http://localhost:5001");
 
         // In development, just simulate the deletion
         if (process.env.NODE_ENV === "development") {
@@ -564,7 +564,7 @@ export default function AddEventForm() {
         process.env.REACT_APP_API_URL ||
         (process.env.NODE_ENV === "production"
           ? "https://quantix-production.up.railway.app"
-          : "http://localhost:5000");
+          : "http://localhost:5001");
 
       for (const vendor of selectedVendors) {
         const response = await fetch(`${API_URL}/api/vendor-requests`, {

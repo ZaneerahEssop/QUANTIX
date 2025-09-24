@@ -92,7 +92,7 @@ const DecorService = ({ vendorId, isReadOnly }) => {
   const showToast = (message, type = 'info') => {
     if (toastTimeout.current) clearTimeout(toastTimeout.current);
     setToast({ message, type });
-    toastTimeout.current = setTimeout(() => setToast(null), 5000);
+    toastTimeout.current = setTimeout(() => setToast(null), 5001);
   };
 
   const closeToast = () => {
@@ -329,7 +329,7 @@ const DecorService = ({ vendorId, isReadOnly }) => {
               <SimpleTextEditor
                 value={formData.base_rate}
                 onChange={(v) => handleChange(v, 'base_rate')}
-                placeholder="e.g., Styling services from R5000, Minimum rental order... "
+                placeholder="e.g., Styling services from R5001, Minimum rental order... "
                 height="100px"
               />
             </div>

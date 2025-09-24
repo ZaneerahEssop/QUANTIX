@@ -12,7 +12,7 @@ class ChatService {
       return;
     }
 
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
     this.socket = io(API_URL, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
@@ -110,7 +110,7 @@ class ChatService {
 
   // API calls for chat data
   async getOrCreateConversation(plannerId, vendorId, eventId = null) {
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
     const response = await fetch(`${API_URL}/api/chat/conversations`, {
       method: 'POST',
       headers: {
@@ -131,7 +131,7 @@ class ChatService {
   }
 
   async getUserConversations(userId) {
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
     const response = await fetch(`${API_URL}/api/chat/conversations/${userId}`);
 
     if (!response.ok) {
@@ -142,7 +142,7 @@ class ChatService {
   }
 
   async getConversationMessages(conversationId, page = 1, limit = 50) {
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
     const response = await fetch(
       `${API_URL}/api/chat/conversations/${conversationId}/messages?page=${page}&limit=${limit}`
     );
@@ -155,7 +155,7 @@ class ChatService {
   }
 
   async sendMessageAPI(conversationId, senderId, messageText, messageType = 'text') {
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
     const response = await fetch(`${API_URL}/api/chat/messages`, {
       method: 'POST',
       headers: {
@@ -177,7 +177,7 @@ class ChatService {
   }
 
   async markMessagesAsRead(conversationId, userId) {
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
     const response = await fetch(`${API_URL}/api/chat/messages/read`, {
       method: 'POST',
       headers: {
@@ -197,7 +197,7 @@ class ChatService {
   }
 
   async getUnreadCount(userId) {
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
     console.log('Fetching unread count for user:', userId);
     console.log('API URL:', `${API_URL}/api/chat/unread/${userId}`);
     

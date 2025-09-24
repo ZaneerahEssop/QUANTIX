@@ -80,7 +80,7 @@ const VendorSearch = ({ onSelectVendor, selectedVendorId }) => {
 
         // Use the same API URL as PlannerDashboard
         const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-          ? 'http://localhost:5000'
+          ? 'http://localhost:5001'
           : 'https://quantix-production.up.railway.app';
 
         const response = await fetch(`${API_URL}/api/vendors`, {

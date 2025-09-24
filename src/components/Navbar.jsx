@@ -24,7 +24,7 @@ const Navbar = ({ session, showOnlyLogout }) => {
 
       // Use the same API URL as in other parts of your app
       const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:5000'
+        ? 'http://localhost:5001'
         : 'https://quantix-production.up.railway.app';
 
       const response = await fetch(`${API_URL}/api/vendors`, {

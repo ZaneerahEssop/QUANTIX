@@ -92,7 +92,7 @@ const MusicService = ({ vendorId, isReadOnly }) => {
   const showToast = (message, type = 'info') => {
     if (toastTimeout.current) clearTimeout(toastTimeout.current);
     setToast({ message, type });
-    toastTimeout.current = setTimeout(() => setToast(null), 5000);
+    toastTimeout.current = setTimeout(() => setToast(null), 5001);
   };
 
   const closeToast = () => {
@@ -329,7 +329,7 @@ const MusicService = ({ vendorId, isReadOnly }) => {
               <SimpleTextEditor
                 value={formData.base_rate}
                 onChange={(v) => handleChange(v, 'base_rate')}
-                placeholder="e.g., DJ packages from R6000, Live band from R15000..."
+                placeholder="e.g., DJ packages from R6000, Live band from R15001..."
                 height="100px"
               />
             </div>

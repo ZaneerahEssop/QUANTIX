@@ -184,7 +184,7 @@ export default function PlannerDashboard({ session }) {
   const API_URL =
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1"
-      ? "http://localhost:5000"
+      ? "http://localhost:5001"
       : "https://quantix-production.up.railway.app";
 
   console.log("Current hostname:", window.location.hostname);
