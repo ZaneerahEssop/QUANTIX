@@ -6,6 +6,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const newEventRoutes = require("./src/Routes/newEvent.routes");
 const getEventsRoutes = require("./src/Routes/getEvent.routes");
+const editEventRoutes = require("./src/Routes/editEvent.routes");
 const plannerRoutes = require("./src/Routes/planner.routes");
 const exportRoutes = require("./src/Routes/export.routes");
 const vendorRoutes = require("./src/Routes/vendor.routes");
@@ -46,6 +47,7 @@ app.use(express.json());
 // Routes go here
 app.use("/api/events", getEventsRoutes);
 app.use("/api/events", newEventRoutes);
+app.use("/api/events", editEventRoutes);
 app.use("/api/planners", plannerRoutes);
 app.use("/api/events", exportRoutes);
 app.use("/api/vendors", vendorRoutes);
@@ -93,92 +95,106 @@ app.use((err, req, res, next) => {
 });
 
 // WebSocket connection handling
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
 
   // Join user to their personal room
-  socket.on('join', (userId) => {
+  socket.on("join", (userId) => {
     socket.join(`user_${userId}`);
     console.log(`User ${userId} joined their room`);
   });
 
   // Join conversation room
-  socket.on('join_conversation', (conversationId) => {
+  socket.on("join_conversation", (conversationId) => {
     socket.join(`conversation_${conversationId}`);
     console.log(`User joined conversation ${conversationId}`);
   });
 
   // Handle new message
-  socket.on('send_message', async (data) => {
+  socket.on("send_message", async (data) => {
     try {
-      const { conversationId, senderId, messageText, messageType = 'text' } = data;
-      
-      console.log('Received message:', { conversationId, senderId, messageText, messageType });
-      
+      const {
+        conversationId,
+        senderId,
+        messageText,
+        messageType = "text",
+      } = data;
+
+      console.log("Received message:", {
+        conversationId,
+        senderId,
+        messageText,
+        messageType,
+      });
+
       // Save message to database
       const { data: message, error } = await supabase
-        .from('messages')
+        .from("messages")
         .insert({
           conversation_id: conversationId,
           sender_id: senderId,
           message_text: messageText,
-          message_type: messageType
+          message_type: messageType,
         })
-        .select(`
+        .select(
+          `
           *,
           sender:users(name, user_role)
-        `)
+        `
+        )
         .single();
 
       if (error) {
-        console.error('Error saving message:', error);
-        socket.emit('message_error', { error: 'Failed to send message' });
+        console.error("Error saving message:", error);
+        socket.emit("message_error", { error: "Failed to send message" });
         return;
       }
 
-      console.log('Message saved successfully:', message);
+      console.log("Message saved successfully:", message);
 
       // Broadcast message to conversation room
-      console.log(`Broadcasting to conversation room: conversation_${conversationId}`);
-      io.to(`conversation_${conversationId}`).emit('new_message', message);
-      
+      console.log(
+        `Broadcasting to conversation room: conversation_${conversationId}`
+      );
+      io.to(`conversation_${conversationId}`).emit("new_message", message);
+
       // Also notify users in their personal rooms
       const { data: conversation } = await supabase
-        .from('conversations')
-        .select('planner_id, vendor_id')
-        .eq('conversation_id', conversationId)
+        .from("conversations")
+        .select("planner_id, vendor_id")
+        .eq("conversation_id", conversationId)
         .single();
 
       if (conversation) {
-        console.log('Sending notifications to users:', conversation);
-        io.to(`user_${conversation.planner_id}`).emit('message_notification', {
+        console.log("Sending notifications to users:", conversation);
+        io.to(`user_${conversation.planner_id}`).emit("message_notification", {
           conversationId,
           message: messageText,
-          sender: message.sender.name
+          sender: message.sender.name,
         });
-        io.to(`user_${conversation.vendor_id}`).emit('message_notification', {
+        io.to(`user_${conversation.vendor_id}`).emit("message_notification", {
           conversationId,
           message: messageText,
-          sender: message.sender.name
+          sender: message.sender.name,
         });
       }
     } catch (error) {
-      console.error('Error in send_message:', error);
-      socket.emit('message_error', { error: 'Internal server error' });
+      console.error("Error in send_message:", error);
+      socket.emit("message_error", { error: "Internal server error" });
     }
   });
 
   // Handle typing indicators
-  socket.on('typing', (data) => {
-    socket.to(`conversation_${data.conversationId}`).emit('user_typing', {
+  socket.on("typing", (data) => {
+    socket.to(`conversation_${data.conversationId}`).emit("user_typing", {
       userId: data.userId,
-      isTyping: data.isTyping
+      isTyping: data.isTyping,
     });
   });
 
   // Handle disconnect
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
   });
 });
 
