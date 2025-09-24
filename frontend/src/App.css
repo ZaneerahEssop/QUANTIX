@@ -1,0 +1,99 @@
+/* Scrollbar Styles */
+.events-scroll-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.events-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.events-scroll-container::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.events-scroll-container:hover::-webkit-scrollbar-thumb {
+  background-color: #E8B180;
+}
+
+/* For Firefox */
+.events-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.events-scroll-container:hover {
+  scrollbar-color: #E8B180 transparent;
+}
+
+/* Loading Page Styles */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #FFF0F5;
+  border-top: 5px solid #FFB6C1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+.loading-container p {
+  color: #FFB6C1;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* App Styles */
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
