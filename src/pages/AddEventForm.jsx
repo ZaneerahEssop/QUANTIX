@@ -319,7 +319,7 @@ export default function AddEventForm() {
 
       // API base URL
       const API_URL =
-        process.env.REACT_APP_API_URL ||
+        process.env.REACT_APP_BASE_URL ||
         (process.env.NODE_ENV === "production"
           ? "https://quantix-production.up.railway.app"
           : "http://localhost:5000");
@@ -440,7 +440,7 @@ export default function AddEventForm() {
         }
 
         const API_URL =
-          process.env.REACT_APP_API_URL ||
+          process.env.REACT_APP_BASE_URL ||
           (process.env.NODE_ENV === "production"
             ? "https://quantix-production.up.railway.app"
             : "http://localhost:5000");
@@ -566,7 +566,7 @@ export default function AddEventForm() {
 
       // 2️⃣ Send vendor requests via backend API
       const API_URL =
-        process.env.REACT_APP_API_URL ||
+        process.env.REACT_APP_BASE_URL ||
         (process.env.NODE_ENV === "production"
           ? "https://quantix-production.up.railway.app"
           : "http://localhost:5000");
