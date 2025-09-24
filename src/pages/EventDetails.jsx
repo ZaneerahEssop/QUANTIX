@@ -86,24 +86,38 @@ const EventSchedule = ({ schedule, onUpdate, isEditing }) => {
 };
 
 const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
+  const safeTheme =
+    typeof theme === "string"
+      ? (() => {
+          try {
+            return JSON.parse(theme);
+          } catch (e) {
+            return { name: "", colors: [], notes: "" };
+          }
+        })()
+      : theme || { name: "", colors: [], notes: "" };
+
   const handleChange = (field, value) => {
-    onUpdate({ ...theme, [field]: value });
+    onUpdate({ ...safeTheme, [field]: value });
   };
 
   const handleColorChange = (index, value) => {
-    const newColors = [...theme.colors];
+    const newColors = [...(safeTheme.colors || [])];
     newColors[index] = value;
-    onUpdate({ ...theme, colors: newColors });
+    onUpdate({ ...safeTheme, colors: newColors });
   };
 
   const addColor = () => {
-    onUpdate({ ...theme, colors: [...(theme.colors || []), "#ffffff"] });
+    onUpdate({
+      ...safeTheme,
+      colors: [...(safeTheme.colors || []), "#ffffff"],
+    });
   };
 
   const removeColor = (index) => {
     onUpdate({
-      ...theme,
-      colors: (theme.colors || []).filter((_, i) => i !== index),
+      ...safeTheme,
+      colors: (safeTheme.colors || []).filter((_, i) => i !== index),
     });
   };
 
@@ -118,7 +132,7 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
             <label>Theme Name</label>
             <input
               type="text"
-              value={theme?.name || ""}
+              value={safeTheme.name || ""}
               onChange={(e) => handleChange("name", e.target.value)}
               placeholder="Enter theme name"
             />
@@ -127,8 +141,8 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
           <div className="form-group">
             <label>Colors</label>
             <div className="color-palette">
-              {theme?.colors &&
-                theme.colors.map((color, index) => (
+              {safeTheme.colors &&
+                safeTheme.colors.map((color, index) => (
                   <div key={index} className="color-item">
                     <input
                       type="color"
@@ -152,7 +166,7 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
           <div className="form-group">
             <label>Theme Notes</label>
             <textarea
-              value={theme?.notes || ""}
+              value={safeTheme.notes || ""}
               onChange={(e) => handleChange("notes", e.target.value)}
               placeholder="Add notes about your theme..."
               rows="3"
@@ -161,12 +175,12 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
         </div>
       ) : (
         <div className="theme-display">
-          {theme?.name ? (
+          {safeTheme.name ? (
             <>
-              <h3>{theme.name}</h3>
-              {theme.colors && theme.colors.length > 0 && (
+              <h3>{safeTheme.name}</h3>
+              {safeTheme.colors && safeTheme.colors.length > 0 && (
                 <div className="color-palette-display">
-                  {theme.colors.map((color, index) => (
+                  {safeTheme.colors.map((color, index) => (
                     <div
                       key={index}
                       className="color-swatch"
@@ -176,7 +190,7 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
                   ))}
                 </div>
               )}
-              {theme.notes && <p>{theme.notes}</p>}
+              {safeTheme.notes && <p>{safeTheme.notes}</p>}
             </>
           ) : (
             <p>No theme has been set for this event.</p>
@@ -186,8 +200,13 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
     </div>
   );
 };
-
-const GuestManagement = ({ guests, onUpdate, isEditing, eventData, API_URL }) => {
+const GuestManagement = ({
+  guests,
+  onUpdate,
+  isEditing,
+  eventData,
+  API_URL,
+}) => {
   const [newGuest, setNewGuest] = useState({
     name: "",
     contact: "",
@@ -218,7 +237,11 @@ const GuestManagement = ({ guests, onUpdate, isEditing, eventData, API_URL }) =>
     onUpdate((guests || []).filter((g) => g.id !== guestId));
 
   const handleSendInvite = async (guest) => {
-    alert(`Email functionality is temporarily disabled. Guest ${guest.name} (${guest.contact}) would receive an invitation to ${eventData?.name || "the event"}.`);
+    alert(
+      `Email functionality is temporarily disabled. Guest ${guest.name} (${
+        guest.contact
+      }) would receive an invitation to ${eventData?.name || "the event"}.`
+    );
   };
 
   return (
@@ -352,7 +375,6 @@ const EventDetails = () => {
   const isReadOnly = searchParams.get("readonly") === "true";
   const eventId = id;
   const navigate = useNavigate();
-
   // Function to handle vendor card click
   const handleVendorCardClick = (vendorId) => {
     navigate(`/vendors/${vendorId}/services?readonly=true`);
@@ -475,7 +497,33 @@ const EventDetails = () => {
 
         setEventData(fetchedEventData);
         setSchedule(fetchedEventData.schedule || []);
-        setTheme(fetchedEventData.theme || { name: "", colors: [], notes: "" });
+        let themeData = fetchedEventData.theme;
+
+        // If theme is a string, parse it
+        if (typeof themeData === "string") {
+          try {
+            themeData = JSON.parse(themeData);
+          } catch (e) {
+            console.error("Error parsing theme string:", e);
+            themeData = { name: "", colors: [], notes: "" };
+          }
+        }
+
+        // If theme is an object but corrupted, clean it
+        if (themeData && typeof themeData === "object") {
+          const hasCorruptedProperties = Object.keys(themeData).some(
+            (key) => !isNaN(parseInt(key)) && themeData[key] !== undefined
+          );
+
+          if (hasCorruptedProperties) {
+            themeData = {
+              name: themeData.name || "",
+              colors: Array.isArray(themeData.colors) ? themeData.colors : [],
+              notes: themeData.notes || "",
+            };
+          }
+        }
+        setTheme(themeData || { name: "", colors: [], notes: "" });
         setDocuments(fetchedEventData.documents || []);
         setSelectedVendors(fetchedEventData.vendors || []);
 
@@ -615,6 +663,31 @@ const EventDetails = () => {
     await Promise.all(promises);
   };
 
+  const cleanThemeObject = (theme) => {
+    if (!theme || typeof theme !== "object") {
+      return { name: "", colors: [], notes: "" };
+    }
+
+    const hasCorruptedProperties = Object.keys(theme).some(
+      (key) => !isNaN(parseInt(key)) && theme[key] !== undefined
+    );
+
+    if (hasCorruptedProperties) {
+      // Reconstruct a clean theme object
+      return {
+        name: theme.name || "",
+        colors: Array.isArray(theme.colors) ? theme.colors : [],
+        notes: theme.notes || "",
+      };
+    }
+
+    return {
+      name: theme.name || "",
+      colors: Array.isArray(theme.colors) ? theme.colors : [],
+      notes: theme.notes || "",
+    };
+  };
+
   const handleSave = async () => {
     if (isReadOnly) return;
     try {
@@ -625,28 +698,34 @@ const EventDetails = () => {
 
       await handleGuestUpdates();
 
+      const cleanTheme = cleanThemeObject(theme);
+
       const startTime = formData.time
         ? `${formData.date}T${formData.time}`
         : `${formData.date}T00:00:00`;
 
       const mainEventPayload = {
-        ...formData,
+        name: formData.name,
+        venue: formData.venue,
+        theme: cleanTheme,
         start_time: `${formData.date}T${formData.time || "00:00"}:00`,
-        schedule,
-        theme,
-        documents,
-        vendors: selectedVendors,
       };
 
-      const { error: eventUpdateError } = await fetch(
-        `${API_URL}/api/events/${eventId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(mainEventPayload),
-        }
-      );
-      if (eventUpdateError) throw new Error(eventUpdateError.message);
+      const response = await fetch(`${API_URL}/api/events/${eventId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(mainEventPayload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update event");
+      }
+
+      const result = await response.json();
+      console.log("Save response:", result);
 
       setIsEditing(false);
 
@@ -664,17 +743,16 @@ const EventDetails = () => {
 
       setEventData((prev) => ({
         ...prev,
-        ...formData,
+        name: formData.name,
         start_time: startTime,
-        schedule,
-        theme,
-        documents,
+        venue: formData.venue,
+        theme: theme,
       }));
 
       alert("Event and guests updated successfully!");
     } catch (error) {
       console.error("Error updating event:", error);
-      alert("Failed to update event. Please try again.");
+      alert(`Failed to update event: ${error.message}`);
     }
   };
 
@@ -1009,12 +1087,16 @@ const EventDetails = () => {
                   >
                     <option value="All">All Categories</option>
                     {Array.from(
-                      new Set([
-                        // This gets all categories from your vendor data
-                        ...vendors.map((v) => v.service_type.trim().toLowerCase()),
-                        // This line ensures 'photography' is always in the list
-                        "photography",
-                      ].filter(Boolean))
+                      new Set(
+                        [
+                          // This gets all categories from your vendor data
+                          ...vendors.map((v) =>
+                            v.service_type.trim().toLowerCase()
+                          ),
+                          // This line ensures 'photography' is always in the list
+                          "photography",
+                        ].filter(Boolean)
+                      )
                     )
                       .sort()
                       .map((category) => (
@@ -1069,9 +1151,7 @@ const EventDetails = () => {
                                 ? "added"
                                 : ""
                             }`}
-                            onClick={() =>
-                              handleVendorToggle(vendor.vendor_id)
-                            }
+                            onClick={() => handleVendorToggle(vendor.vendor_id)}
                             disabled={!isEditing}
                           >
                             {selectedVendors.includes(vendor.vendor_id) ? (
