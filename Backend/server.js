@@ -15,16 +15,24 @@ const chatRoutes = require("./src/Routes/chat.routes");
 const guestRoutes = require("./src/Routes/guests.routes");
 const emailRoutes = require("./src/Routes/email.routes");
 
+const path = require('path');
+
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+// The fix
+// 1. Add this line to tell Express to trust Railway's proxy
+app.set('trust proxy', 1);
+
 const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     methods: ["GET", "POST"],
     credentials: true,
   },
+  // 2. Add transports for better proxy compatibility
+  transports: ['websocket', 'polling']
 });
 
 app.use(
@@ -46,6 +54,16 @@ app.use("/api/emails", emailRoutes);
 app.use("/api/chat", chatRoutes);
 // Add the new guests route
 app.use("/api/guests", guestRoutes);
+
+
+// Serve static files from the React build folder
+app.use(express.static(path.join(__dirname, 'client/build')));
+
+// The "catchall" handler: for any request that doesn't match an API route,
+// send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+});
 
 // Supabase client
 const supabase = createClient(
