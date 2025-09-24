@@ -1135,8 +1135,10 @@ export default function AddEventForm() {
                       key={vendor.vendor_id}
                       className="vendor-card"
                       onClick={(e) => {
-                        e.stopPropagation();
-                        handleVendorCardClick(vendor.vendor_id);
+                        // Only navigate if the click is not on the request button or its children
+                        if (!e.target.closest('.add-vendor-btn, .undo-request-btn')) {
+                          handleVendorCardClick(vendor.vendor_id);
+                        }
                       }}
                       style={{ cursor: 'pointer' }}
                     >
