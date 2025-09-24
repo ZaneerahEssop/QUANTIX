@@ -1,0 +1,274 @@
+/* src/styling/VendorServices.css */
+
+/* Wrapper to center the page content and set a max-width */
+.vendor-services-content-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 30px 20px 0 20px; /* Adds space at the top and sides */
+}
+
+/* Reusable class for consistent card styling */
+.content-card {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 32px;
+  margin-bottom: 30px;
+}
+
+/* --- Top Two-Column Layout --- */
+.profile-reviews-container {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+}
+
+/* New CSS to center the profile block when no reviews are present */
+.profile-reviews-container.centered-profile {
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profile-reviews-container.centered-profile .vendor-profile-card {
+    width: 100%; /* Take full width of the centered container */
+    max-width: 800px; /* Set a max-width for better aesthetics */
+}
+
+.back-button-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.back-to-dashboard {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #FFB6C1;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.back-to-dashboard:hover {
+  background-color: #FFA07A;
+}
+
+/* Profile Card Styling - updated to be a flex container */
+.profile-reviews-container .vendor-profile-card {
+  width: 60%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-reviews-container .reviews-card {
+  width: 40%;
+}
+
+
+/* --- Profile Card Header & Image Styling --- */
+
+/* Makes the header a flex container to align items side-by-side */
+.vendor-profile-card .profile-header {
+  display: flex;
+  align-items: center; 
+  gap: 20px;
+}
+
+/* Vertically centers the Name and Business Name text */
+.vendor-profile-card .profile-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Increased heading font sizes */
+.vendor-profile-card .profile-info h1 {
+  font-size: 2.2em;
+  margin: 0;
+  margin-bottom: 8px;
+}
+
+.vendor-profile-card .profile-info h2 {
+  font-size: 1.4em;
+  color: #555;
+  margin: 0;
+}
+
+/* Increased profile picture size */
+.vendor-profile-card .profile-picture-container {
+  width: 150px;
+  height: 150px;
+  flex-shrink: 0;
+}
+
+/* Controls the profile picture's appearance */
+.vendor-profile-card .profile-picture {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%; /* This makes the image a circle */
+}
+
+/* Styles for the bottom section of the profile card */
+.profile-details-bottom {
+  border-top: 1px solid #eee;
+  margin-top: 24px;
+  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  font-size: 1.1em;
+}
+
+.profile-details-bottom .profile-description {
+    margin-top: 24px;
+}
+
+/* Creates the side-by-side layout for Contact and Services */
+.details-grid {
+  display: flex;
+  gap: 20px;
+}
+
+.details-grid > .contact-info,
+.details-grid > .service-tags-container {
+  flex: 1; /* Each item takes up half the space */
+}
+
+.contact-label {
+  font-weight: 600;
+  color: #333;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Styles for the Service Tags */
+.service-tags-container {
+  padding-top: 0;
+  border-top: none;
+  margin-top: 0;
+}
+
+.tags-wrapper {
+  display: flex;
+  flex-wrap: wrap; 
+  gap: 8px;
+}
+
+.service-tag {
+  display: inline-block;
+  background-color: #f0f2f5;
+  color: #555;
+  padding: 8px 14px;
+  border-radius: 16px;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+
+/* --- Reviews Card Specific Styling --- */
+.reviews-card {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.reviews-card h3 {
+  margin-top: 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.average-rating-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.average-rating-value {
+  font-size: 2em;
+  font-weight: bold;
+  color: #333;
+}
+.review-count {
+  font-size: 0.9em;
+  color: #777;
+}
+
+.review-form {
+  margin-bottom: 20px;
+}
+.review-form h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+.review-form textarea {
+  width: 100%;
+  min-height: 80px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  padding: 8px;
+  font-family: inherit;
+}
+.review-form button {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background-color: #FFB6C1;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.review-form button:hover {
+  background-color: #FFA07A;
+}
+.review-form button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.star-rating span {
+  font-size: 1.5em;
+  cursor: pointer;
+  color: #ddd;
+}
+.star-rating.read-only span {
+  cursor: default;
+}
+.star-rating span.filled {
+  color: #f5c518;
+}
+
+/* Updated reviews list with a smaller scrollable area */
+.reviews-list {
+  max-height: 120px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+.review-item {
+  border-top: 1px solid #eee;
+  padding: 15px 0;
+}
+.review-item:first-child {
+  border-top: none;
+}
+.review-comment {
+  margin: 5px 0;
+}
+.review-author {
+  font-style: italic;
+  color: #888;
+}
