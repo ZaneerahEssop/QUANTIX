@@ -54,7 +54,7 @@ export default function VendorDashboard({ session }) {
     };
   }, []);
 
-  const API_BASE = process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+  const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   useEffect(() => {
     if (!session?.user) {
@@ -729,12 +729,13 @@ export default function VendorDashboard({ session }) {
                 }}
               >
                 <div className="section-header">
-                  <h2 style={{ margin: 0, color: 'black' }}>Upcoming Events</h2>
+                  <h2 style={{ margin: 0, color: "black" }}>Upcoming Events</h2>
                 </div>
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(250px, 1fr))",
                     gap: "1.5rem",
                     maxHeight: "500px",
                     overflowY: "auto",
@@ -772,7 +773,9 @@ export default function VendorDashboard({ session }) {
                         </div>
                         <button
                           className="view-details-btn"
-                          onClick={() => navigate(`/viewEvent/${event.id}?readonly=true`)}
+                          onClick={() =>
+                            navigate(`/viewEvent/${event.id}?readonly=true`)
+                          }
                         >
                           View Details →
                         </button>
@@ -787,7 +790,8 @@ export default function VendorDashboard({ session }) {
                         margin: 0,
                       }}
                     >
-                      No upcoming events. Your upcoming accepted events will appear here.
+                      No upcoming events. Your upcoming accepted events will
+                      appear here.
                     </p>
                   )}
                 </div>
@@ -812,7 +816,11 @@ export default function VendorDashboard({ session }) {
                 }}
               >
                 <div className="section-header">
-                  <h2 style={{ margin: 0, color: 'black', borderBottom: "none" }}>Calendar</h2>
+                  <h2
+                    style={{ margin: 0, color: "black", borderBottom: "none" }}
+                  >
+                    Calendar
+                  </h2>
                 </div>
                 <div
                   style={{
@@ -831,16 +839,23 @@ export default function VendorDashboard({ session }) {
                     prev2Label={null}
                     tileClassName={({ date, view }) => {
                       const dateEvents = getEventsForDate(date);
-                      return dateEvents.length > 0 ? 'has-events' : null;
+                      return dateEvents.length > 0 ? "has-events" : null;
                     }}
                     tileContent={({ date, view }) => {
                       const dateEvents = getEventsForDate(date);
                       if (dateEvents.length === 0) return null;
-                      
+
                       const now = new Date();
-                      const isPastDate = date < new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                      const isToday = date.toDateString() === now.toDateString();
-                      
+                      const isPastDate =
+                        date <
+                        new Date(
+                          now.getFullYear(),
+                          now.getMonth(),
+                          now.getDate()
+                        );
+                      const isToday =
+                        date.toDateString() === now.toDateString();
+
                       return (
                         <div
                           style={{
@@ -868,14 +883,16 @@ export default function VendorDashboard({ session }) {
                                 />
                               );
                             }
-                            
+
                             // For today, check if the event time has passed
                             if (isToday && event.eventTime) {
                               try {
-                                const [hours, minutes] = event.eventTime.split(':').map(Number);
+                                const [hours, minutes] = event.eventTime
+                                  .split(":")
+                                  .map(Number);
                                 const eventTime = new Date(now);
                                 eventTime.setHours(hours, minutes, 0, 0);
-                                
+
                                 if (now > eventTime) {
                                   return (
                                     <div
@@ -891,10 +908,13 @@ export default function VendorDashboard({ session }) {
                                   );
                                 }
                               } catch (e) {
-                                console.error('Error processing event time:', e);
+                                console.error(
+                                  "Error processing event time:",
+                                  e
+                                );
                               }
                             }
-                            
+
                             // Default to green for upcoming events
                             return (
                               <div
@@ -937,50 +957,71 @@ export default function VendorDashboard({ session }) {
                             justifyContent: "space-between",
                             alignItems: "center",
                             position: "relative",
-                            overflow: "hidden"
+                            overflow: "hidden",
                           }}
                         >
                           {(() => {
                             const now = new Date();
                             const eventDate = new Date(event.eventDate);
-                            const isPastEvent = eventDate < new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-                            
+                            const isPastEvent =
+                              eventDate <
+                              new Date(
+                                now.getFullYear(),
+                                now.getMonth(),
+                                now.getDate() + 1
+                              );
+
                             // For today's events, check if the time has passed
                             let isEventPassed = isPastEvent;
-                            if (!isPastEvent && event.eventTime && eventDate.toDateString() === now.toDateString()) {
+                            if (
+                              !isPastEvent &&
+                              event.eventTime &&
+                              eventDate.toDateString() === now.toDateString()
+                            ) {
                               try {
-                                const [hours, minutes] = event.eventTime.split(':').map(Number);
+                                const [hours, minutes] = event.eventTime
+                                  .split(":")
+                                  .map(Number);
                                 const eventTime = new Date(now);
                                 eventTime.setHours(hours, minutes, 0, 0);
                                 isEventPassed = now > eventTime;
                               } catch (e) {
-                                console.error('Error processing event time:', e);
+                                console.error(
+                                  "Error processing event time:",
+                                  e
+                                );
                               }
                             }
-                            
+
                             return (
                               <>
-                                <div style={{
-                                  position: "absolute",
-                                  left: 0,
-                                  top: 0,
-                                  bottom: 0,
-                                  width: "4px",
-                                  backgroundColor: isEventPassed ? "#ff4d4f" : "#52c41a"
-                                }} />
-                                {isEventPassed && (
-                                  <div style={{
+                                <div
+                                  style={{
                                     position: "absolute",
-                                    top: "8px",
-                                    right: "8px",
-                                    backgroundColor: "#fff1f0",
-                                    color: "#ff4d4f",
-                                    fontSize: "0.7rem",
-                                    padding: "2px 6px",
-                                    borderRadius: "10px",
-                                    border: "1px solid #ffccc7",
-                                    fontWeight: "500"
-                                  }}>
+                                    left: 0,
+                                    top: 0,
+                                    bottom: 0,
+                                    width: "4px",
+                                    backgroundColor: isEventPassed
+                                      ? "#ff4d4f"
+                                      : "#52c41a",
+                                  }}
+                                />
+                                {isEventPassed && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      top: "8px",
+                                      right: "8px",
+                                      backgroundColor: "#fff1f0",
+                                      color: "#ff4d4f",
+                                      fontSize: "0.7rem",
+                                      padding: "2px 6px",
+                                      borderRadius: "10px",
+                                      border: "1px solid #ffccc7",
+                                      fontWeight: "500",
+                                    }}
+                                  >
                                     Past Event
                                   </div>
                                 )}
@@ -1010,7 +1051,7 @@ export default function VendorDashboard({ session }) {
           <div style={{ gridColumn: "1 / -1" }}>
             <div className="pending-requests-card">
               <div className="section-header">
-                <h2 style={{ margin: 0, color: 'black' }}>Pending Requests</h2>
+                <h2 style={{ margin: 0, color: "black" }}>Pending Requests</h2>
               </div>
               {pendingRequests.length > 0 ? (
                 <ul className="pending-list">
@@ -1033,7 +1074,8 @@ export default function VendorDashboard({ session }) {
                             {request.eventTime
                               ? formatTime(request.eventTime)
                               : "No Time"}
-                            {" • "}{request.plannerName || "Planner"}
+                            {" • "}
+                            {request.plannerName || "Planner"}
                           </div>
                         </div>
                         <div className="request-actions">
@@ -1093,8 +1135,11 @@ export default function VendorDashboard({ session }) {
               listTitle="Planners"
               vendors={conversations.map((conv) => ({
                 id: conv.conversation_id, // Use conversation_id instead of planner_id
-                name: conv.planner?.name || 'Unknown Planner',
-                lastMessage: conv.last_message_at ? 'Last message: ' + new Date(conv.last_message_at).toLocaleString() : 'No messages yet',
+                name: conv.planner?.name || "Unknown Planner",
+                lastMessage: conv.last_message_at
+                  ? "Last message: " +
+                    new Date(conv.last_message_at).toLocaleString()
+                  : "No messages yet",
                 unread: 0, // You could calculate this from unread messages
                 plannerId: conv.planner_id, // Store the actual planner ID for selection
                 conversationId: conv.conversation_id, // Store the conversation ID
@@ -1102,7 +1147,11 @@ export default function VendorDashboard({ session }) {
               onSendMessage={handleSendMessage}
               onSelectVendor={handleSelectPlanner}
               selectedVendor={selectedPlanner}
-              messages={currentConversation ? chatMessages[currentConversation.conversation_id] || [] : []}
+              messages={
+                currentConversation
+                  ? chatMessages[currentConversation.conversation_id] || []
+                  : []
+              }
               unreadCount={unreadCount}
               showSearch={false}
             />
