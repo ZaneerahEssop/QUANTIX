@@ -1,4 +1,4 @@
-const supabase = require("../../../frontend/src/supabaseClient");
+const supabase = require("../Config/supabase");
 
 // Get or create a conversation between planner and vendor
 const getOrCreateConversation = async (req, res) => {
