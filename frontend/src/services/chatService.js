@@ -1,10 +1,26 @@
-import { io } from 'socket.io-client';
+import { io } from "socket.io-client";
 
 class ChatService {
   constructor() {
     this.socket = null;
     this.isConnected = false;
     this.listeners = new Map();
+    this.API_URL = this.getApiUrl();
+  }
+
+  getApiUrl() {
+    if (process.env.REACT_APP_BASE_URL) {
+      return process.env.REACT_APP_BASE_URL;
+    }
+
+    if (
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1"
+    ) {
+      return "http://localhost:5000";
+    } else {
+      return window.location.origin;
+    }
   }
 
   connect(userId) {
@@ -12,25 +28,26 @@ class ChatService {
       return;
     }
 
-    const API_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
-    this.socket = io(API_URL, {
-      transports: ['websocket', 'polling'],
+    console.log("Connecting to chat server at:", this.API_URL);
+
+    this.socket = io(this.API_URL, {
+      transports: ["websocket", "polling"],
       autoConnect: true,
     });
 
-    this.socket.on('connect', () => {
-      console.log('Connected to chat server');
+    this.socket.on("connect", () => {
+      console.log("Connected to chat server");
       this.isConnected = true;
-      this.socket.emit('join', userId);
+      this.socket.emit("join", userId);
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('Disconnected from chat server');
+    this.socket.on("disconnect", () => {
+      console.log("Disconnected from chat server");
       this.isConnected = false;
     });
 
-    this.socket.on('connect_error', (error) => {
-      console.error('Connection error:', error);
+    this.socket.on("connect_error", (error) => {
+      console.error("Connection error:", error);
       this.isConnected = false;
     });
   }
@@ -46,18 +63,18 @@ class ChatService {
   // Join a conversation room
   joinConversation(conversationId) {
     if (this.socket && this.isConnected) {
-      this.socket.emit('join_conversation', conversationId);
+      this.socket.emit("join_conversation", conversationId);
     }
   }
 
   // Send a message
-  sendMessage(conversationId, senderId, messageText, messageType = 'text') {
+  sendMessage(conversationId, senderId, messageText, messageType = "text") {
     if (this.socket && this.isConnected) {
-      this.socket.emit('send_message', {
+      this.socket.emit("send_message", {
         conversationId,
         senderId,
         messageText,
-        messageType
+        messageType,
       });
     }
   }
@@ -65,10 +82,10 @@ class ChatService {
   // Send typing indicator
   sendTyping(conversationId, userId, isTyping) {
     if (this.socket && this.isConnected) {
-      this.socket.emit('typing', {
+      this.socket.emit("typing", {
         conversationId,
         userId,
-        isTyping
+        isTyping,
       });
     }
   }
@@ -76,28 +93,28 @@ class ChatService {
   // Listen for new messages
   onNewMessage(callback) {
     if (this.socket) {
-      this.socket.on('new_message', callback);
+      this.socket.on("new_message", callback);
     }
   }
 
   // Listen for message errors
   onMessageError(callback) {
     if (this.socket) {
-      this.socket.on('message_error', callback);
+      this.socket.on("message_error", callback);
     }
   }
 
   // Listen for typing indicators
   onTyping(callback) {
     if (this.socket) {
-      this.socket.on('user_typing', callback);
+      this.socket.on("user_typing", callback);
     }
   }
 
   // Listen for message notifications
   onMessageNotification(callback) {
     if (this.socket) {
-      this.socket.on('message_notification', callback);
+      this.socket.on("message_notification", callback);
     }
   }
 
@@ -110,110 +127,113 @@ class ChatService {
 
   // API calls for chat data
   async getOrCreateConversation(plannerId, vendorId, eventId = null) {
-    const API_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
-    const response = await fetch(`${API_URL}/api/chat/conversations`, {
-      method: 'POST',
+    const response = await fetch(`${this.API_URL}/api/chat/conversations`, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         plannerId,
         vendorId,
-        eventId
+        eventId,
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to get or create conversation');
+      throw new Error("Failed to get or create conversation");
     }
 
     return response.json();
   }
 
   async getUserConversations(userId) {
-    const API_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
-    const response = await fetch(`${API_URL}/api/chat/conversations/${userId}`);
+    const response = await fetch(
+      `${this.API_URL}/api/chat/conversations/${userId}`
+    );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch conversations');
+      throw new Error("Failed to fetch conversations");
     }
 
     return response.json();
   }
 
   async getConversationMessages(conversationId, page = 1, limit = 50) {
-    const API_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
     const response = await fetch(
-      `${API_URL}/api/chat/conversations/${conversationId}/messages?page=${page}&limit=${limit}`
+      `${this.API_URL}/api/chat/conversations/${conversationId}/messages?page=${page}&limit=${limit}`
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch messages');
+      throw new Error("Failed to fetch messages");
     }
 
     return response.json();
   }
 
-  async sendMessageAPI(conversationId, senderId, messageText, messageType = 'text') {
-    const API_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
-    const response = await fetch(`${API_URL}/api/chat/messages`, {
-      method: 'POST',
+  async sendMessageAPI(
+    conversationId,
+    senderId,
+    messageText,
+    messageType = "text"
+  ) {
+    const response = await fetch(`${this.API_URL}/api/chat/messages`, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         conversationId,
         senderId,
         messageText,
-        messageType
+        messageType,
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to send message');
+      throw new Error("Failed to send message");
     }
 
     return response.json();
   }
 
   async markMessagesAsRead(conversationId, userId) {
-    const API_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
-    const response = await fetch(`${API_URL}/api/chat/messages/read`, {
-      method: 'POST',
+    const response = await fetch(`${this.API_URL}/api/chat/messages/read`, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         conversationId,
-        userId
+        userId,
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to mark messages as read');
+      throw new Error("Failed to mark messages as read");
     }
 
     return response.json();
   }
 
   async getUnreadCount(userId) {
-    const API_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
-    console.log('Fetching unread count for user:', userId);
-    console.log('API URL:', `${API_URL}/api/chat/unread/${userId}`);
-    
-    const response = await fetch(`${API_URL}/api/chat/unread/${userId}`);
+    console.log("Fetching unread count for user:", userId);
+    console.log("API URL:", `${this.API_URL}/api/chat/unread/${userId}`);
 
-    console.log('Unread count response status:', response.status);
-    console.log('Unread count response ok:', response.ok);
+    const response = await fetch(`${this.API_URL}/api/chat/unread/${userId}`);
+
+    console.log("Unread count response status:", response.status);
+    console.log("Unread count response ok:", response.ok);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Unread count API Error Response:', errorText);
-      throw new Error(`Failed to fetch unread count: ${response.status} - ${errorText}`);
+      console.error("Unread count API Error Response:", errorText);
+      throw new Error(
+        `Failed to fetch unread count: ${response.status} - ${errorText}`
+      );
     }
 
     const data = await response.json();
-    console.log('Unread count data:', data);
+    console.log("Unread count data:", data);
     return data;
   }
 }

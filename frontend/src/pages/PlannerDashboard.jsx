@@ -1,4 +1,9 @@
-import React, { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../client";
 import { FaPlus, FaTrash, FaCheck, FaUser, FaClock } from "react-icons/fa";
@@ -32,10 +37,12 @@ export default function PlannerDashboard({ session }) {
     if (!session?.user) return;
 
     try {
-      const conversations = await chatService.getUserConversations(session.user.id);
+      const conversations = await chatService.getUserConversations(
+        session.user.id
+      );
       setConversations(conversations);
     } catch (error) {
-      console.error('Error loading conversations:', error);
+      console.error("Error loading conversations:", error);
     }
   }, [session?.user]);
 
@@ -47,22 +54,26 @@ export default function PlannerDashboard({ session }) {
       const count = await chatService.getUnreadCount(session.user.id);
       setUnreadCount(count);
     } catch (error) {
-      console.error('Error loading unread count:', error);
+      console.error("Error loading unread count:", error);
     }
   }, [session?.user]);
 
   // Initialize chat service and set up real-time listeners
   useEffect(() => {
     if (session?.user) {
+      const WS_URL =
+        process.env.NODE_ENV === "development"
+          ? "http://localhost:5000"
+          : window.location.origin;
       // Connect to chat service
-      chatService.connect(session.user.id);
+      chatService.connect(session.user.id, WS_URL);
 
       // Set up real-time listeners
       chatService.onNewMessage((message) => {
-        console.log('New message received:', message);
-        
+        console.log("New message received:", message);
+
         // Update messages for the conversation
-        setChatMessages(prev => {
+        setChatMessages((prev) => {
           const conversationId = message.conversation_id;
           return {
             ...prev,
@@ -73,23 +84,23 @@ export default function PlannerDashboard({ session }) {
                 text: message.message_text,
                 timestamp: message.created_at,
                 isCurrentUser: message.sender_id === session.user.id,
-                sender: message.sender?.name || 'Unknown',
-                conversationId: message.conversation_id
-              }
-            ]
+                sender: message.sender?.name || "Unknown",
+                conversationId: message.conversation_id,
+              },
+            ],
           };
         });
       });
 
       chatService.onMessageError((error) => {
-        console.error('Message error:', error);
+        console.error("Message error:", error);
         // You could show a toast notification here
       });
 
       chatService.onMessageNotification((notification) => {
-        console.log('Message notification:', notification);
+        console.log("Message notification:", notification);
         // Update unread count or show notification
-        setUnreadCount(prev => prev + 1);
+        setUnreadCount((prev) => prev + 1);
       });
 
       // Load conversations and unread count
@@ -112,7 +123,7 @@ export default function PlannerDashboard({ session }) {
         currentConversation.conversation_id,
         session.user.id,
         message.text,
-        'text'
+        "text"
       );
 
       // Also send via API as backup
@@ -120,22 +131,22 @@ export default function PlannerDashboard({ session }) {
         currentConversation.conversation_id,
         session.user.id,
         message.text,
-        'text'
+        "text"
       );
 
       // Update local state immediately for better UX
-      setChatMessages(prev => ({
+      setChatMessages((prev) => ({
         ...prev,
         [currentConversation.conversation_id]: [
           ...(prev[currentConversation.conversation_id] || []),
           {
             ...message,
-            conversationId: currentConversation.conversation_id
-          }
-        ]
+            conversationId: currentConversation.conversation_id,
+          },
+        ],
       }));
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
     }
   };
 
@@ -158,36 +169,40 @@ export default function PlannerDashboard({ session }) {
       chatService.joinConversation(conversation.conversation_id);
 
       // Load messages for this conversation
-      const messages = await chatService.getConversationMessages(conversation.conversation_id);
-      
+      const messages = await chatService.getConversationMessages(
+        conversation.conversation_id
+      );
+
       // Transform messages to match ChatUI format
-      const formattedMessages = messages.map(msg => ({
+      const formattedMessages = messages.map((msg) => ({
         id: msg.message_id,
         text: msg.message_text,
         timestamp: msg.created_at,
         isCurrentUser: msg.sender_id === session.user.id,
-        sender: msg.sender?.name || 'Unknown'
+        sender: msg.sender?.name || "Unknown",
       }));
 
-      setChatMessages(prev => ({
+      setChatMessages((prev) => ({
         ...prev,
-        [conversation.conversation_id]: formattedMessages
+        [conversation.conversation_id]: formattedMessages,
       }));
 
       // Mark messages as read
-      await chatService.markMessagesAsRead(conversation.conversation_id, session.user.id);
+      await chatService.markMessagesAsRead(
+        conversation.conversation_id,
+        session.user.id
+      );
     } catch (error) {
-      console.error('Error selecting vendor:', error);
+      console.error("Error selecting vendor:", error);
     }
   };
 
   const API_URL =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1"
+    process.env.NODE_ENV === "development"
       ? "http://localhost:5000"
-      : "https://quantix-production.up.railway.app";
+      : window.location.origin;
 
-  console.log("Current hostname:", window.location.hostname);
+  console.log("Current URL:", window.location.href);
   console.log("Using API_URL:", API_URL);
   // Prevent scrolling until page is fully loaded
   useLayoutEffect(() => {
@@ -232,6 +247,7 @@ export default function PlannerDashboard({ session }) {
           {
             headers: {
               Accept: "application/json",
+              "Content-Type": "application/json",
             },
           }
         );
@@ -266,6 +282,7 @@ export default function PlannerDashboard({ session }) {
             cache: "no-store",
             headers: {
               Accept: "application/json",
+              "Content-Type": "application/json",
             },
           }
         );
@@ -495,7 +512,9 @@ export default function PlannerDashboard({ session }) {
 
   // Get only future events
   const getUpcomingEvents = () => {
-    return events.filter(event => event.start_time && isFutureEvent(event.start_time));
+    return events.filter(
+      (event) => event.start_time && isFutureEvent(event.start_time)
+    );
   };
 
   // Get events for the selected date
@@ -686,15 +705,17 @@ export default function PlannerDashboard({ session }) {
                     transition: "all 0.3s ease",
                     scrollbarWidth: "thin",
                     scrollbarColor: "transparent transparent",
-                    msOverflowStyle: "none"
+                    msOverflowStyle: "none",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.overflowY = "auto";
-                    e.currentTarget.style.scrollbarColor = "#E8B180 transparent";
+                    e.currentTarget.style.scrollbarColor =
+                      "#E8B180 transparent";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.overflowY = "hidden";
-                    e.currentTarget.style.scrollbarColor = "transparent transparent";
+                    e.currentTarget.style.scrollbarColor =
+                      "transparent transparent";
                   }}
                   className="events-scroll-container"
                 >
@@ -713,7 +734,7 @@ export default function PlannerDashboard({ session }) {
                       style={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: "1rem"
+                        gap: "1rem",
                       }}
                     >
                       {getUpcomingEvents().map((event) => (
@@ -755,7 +776,7 @@ export default function PlannerDashboard({ session }) {
                             >
                               {event.name}
                             </h3>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div style={{ display: "flex", gap: "0.5rem" }}>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -799,7 +820,7 @@ export default function PlannerDashboard({ session }) {
                                   cursor: "pointer",
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "center"
+                                  justifyContent: "center",
                                 }}
                                 title="Delete Event"
                               >
@@ -995,7 +1016,11 @@ export default function PlannerDashboard({ session }) {
                                   width: "6px",
                                   height: "6px",
                                   borderRadius: "50%",
-                                  backgroundColor: isFutureEvent(dateEvents[i]?.start_time) ? "#4caf50" : "#ff6b6b",
+                                  backgroundColor: isFutureEvent(
+                                    dateEvents[i]?.start_time
+                                  )
+                                    ? "#4caf50"
+                                    : "#ff6b6b",
                                 }}
                               />
                             )
@@ -1034,90 +1059,121 @@ export default function PlannerDashboard({ session }) {
                               borderRadius: "6px",
                               marginBottom: "0.5rem",
                               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                              borderLeft: isPast ? "3px solid #ff6b6b" : "3px solid #4caf50",
+                              borderLeft: isPast
+                                ? "3px solid #ff6b6b"
+                                : "3px solid #4caf50",
                               opacity: isPast ? 0.8 : 1,
                             }}
                           >
                             <div style={{ width: "100%" }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.5rem",
+                                  marginBottom: "0.25rem",
+                                }}
+                              >
                                 {isPast && (
-                                  <span style={{
-                                    fontSize: '0.65rem',
-                                    backgroundColor: '#ffebee',
-                                    color: '#d32f2f',
-                                    padding: '0.15rem 0.5rem',
-                                    borderRadius: '10px',
-                                    fontWeight: '500',
-                                    flexShrink: 0,
-                                  }}>
+                                  <span
+                                    style={{
+                                      fontSize: "0.65rem",
+                                      backgroundColor: "#ffebee",
+                                      color: "#d32f2f",
+                                      padding: "0.15rem 0.5rem",
+                                      borderRadius: "10px",
+                                      fontWeight: "500",
+                                      flexShrink: 0,
+                                    }}
+                                  >
                                     Past Event
                                   </span>
                                 )}
-                                <div style={{ 
-                                  fontWeight: "600", 
-                                  color: isPast ? "#6c757d" : "#333",
-                                  flex: 1,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
-                                }}>
+                                <div
+                                  style={{
+                                    fontWeight: "600",
+                                    color: isPast ? "#6c757d" : "#333",
+                                    flex: 1,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
                                   {event.name || event.title}
                                 </div>
                               </div>
-                              
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
-                                <div style={{ 
-                                  fontSize: '0.8rem', 
-                                  color: isPast ? "#adb5bd" : "#6c757d",
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '0.5rem',
-                                  flex: 1,
-                                }}>
+
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  marginTop: "0.25rem",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontSize: "0.8rem",
+                                    color: isPast ? "#adb5bd" : "#6c757d",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
+                                    flex: 1,
+                                  }}
+                                >
                                   <FaClock size={12} />
-                                  {formatTime(event.start_time) || 'Time not set'}
+                                  {formatTime(event.start_time) ||
+                                    "Time not set"}
                                 </div>
-                                
+
                                 {isPast && (
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      navigate(`/viewEvent/${event.event_id || event.id}?readonly=true`);
+                                      navigate(
+                                        `/viewEvent/${
+                                          event.event_id || event.id
+                                        }?readonly=true`
+                                      );
                                     }}
                                     style={{
-                                      fontSize: '0.7rem',
-                                      backgroundColor: 'transparent',
-                                      color: '#e91e63',
-                                      border: '1px solid #e91e63',
-                                      padding: '0.15rem 0.5rem',
-                                      borderRadius: '4px',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '0.25rem',
-                                      transition: 'all 0.2s',
+                                      fontSize: "0.7rem",
+                                      backgroundColor: "transparent",
+                                      color: "#e91e63",
+                                      border: "1px solid #e91e63",
+                                      padding: "0.15rem 0.5rem",
+                                      borderRadius: "4px",
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "0.25rem",
+                                      transition: "all 0.2s",
                                     }}
                                     onMouseOver={(e) => {
-                                      e.currentTarget.style.backgroundColor = '#fce4ec';
+                                      e.currentTarget.style.backgroundColor =
+                                        "#fce4ec";
                                     }}
                                     onMouseOut={(e) => {
-                                      e.currentTarget.style.backgroundColor = 'transparent';
+                                      e.currentTarget.style.backgroundColor =
+                                        "transparent";
                                     }}
                                   >
                                     View Details
                                   </button>
                                 )}
                               </div>
-                              
+
                               {event.venue && (
-                                <div style={{ 
-                                  fontSize: "0.8rem", 
-                                  color: isPast ? "#adb5bd" : "#6c757d",
-                                  marginTop: "0.25rem",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "0.5rem"
-                                }}>
+                                <div
+                                  style={{
+                                    fontSize: "0.8rem",
+                                    color: isPast ? "#adb5bd" : "#6c757d",
+                                    marginTop: "0.25rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
+                                  }}
+                                >
                                   <span>📍</span>
                                   {event.venue}
                                 </div>
@@ -1307,7 +1363,11 @@ export default function PlannerDashboard({ session }) {
               onSendMessage={handleSendMessage}
               onSelectVendor={handleSelectVendor}
               selectedVendor={selectedVendor}
-              messages={currentConversation ? chatMessages[currentConversation.conversation_id] || [] : []}
+              messages={
+                currentConversation
+                  ? chatMessages[currentConversation.conversation_id] || []
+                  : []
+              }
               unreadCount={unreadCount}
             />
           </div>
