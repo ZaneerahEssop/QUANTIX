@@ -12,33 +12,33 @@ const exportRoutes = require("./src/Routes/export.routes");
 const vendorRoutes = require("./src/Routes/vendor.routes");
 const vendorRequestRoutes = require("./src/Routes/vendorRequest.routes");
 const chatRoutes = require("./src/Routes/chat.routes");
-
 const guestRoutes = require("./src/Routes/guests.routes");
 const emailRoutes = require("./src/Routes/email.routes");
-
-const path = require('path');
+const path = require("path");
 
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-// The fix
-// 1. Add this line to tell Express to trust Railway's proxy
-app.set('trust proxy', 1);
+
+app.set("trust proxy", 1);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? ["https://quantix-production.up.railway.app", "https://*.railway.app"]
+        : "http://localhost:3000",
     methods: ["GET", "POST"],
     credentials: true,
   },
-  // 2. Add transports for better proxy compatibility
-  transports: ['websocket', 'polling']
+  transports: ["websocket", "polling"],
 });
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin:
+      process.env.NODE_ENV === "production" ? true : "http://localhost:3000",
     credentials: true,
   })
 );
@@ -54,17 +54,15 @@ app.use("/api/vendors", vendorRoutes);
 app.use("/api/vendor-requests", vendorRequestRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/chat", chatRoutes);
-// Add the new guests route
 app.use("/api/guests", guestRoutes);
 
-
 // Serve static files from the React build folder
-app.use(express.static(path.join(__dirname, 'client/build')));
+app.use(express.static(path.join(__dirname, "../frontend/build")));
 
 // The "catchall" handler: for any request that doesn't match an API route,
 // send back React's index.html file.
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/build", "index.html"));
 });
 
 // Supabase client
@@ -151,7 +149,6 @@ io.on("connection", (socket) => {
       }
 
       console.log("Message saved successfully:", message);
-    
 
       // Broadcast message to conversation room
       console.log(
@@ -199,6 +196,8 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, "0.0.0.0", () =>
+  console.log(`Server running on port ${PORT}`)
+);

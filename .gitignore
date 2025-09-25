@@ -4,8 +4,10 @@
 /node_modules
 /Backend/node_modules
 /Backend/.env
+/frontend/node_modules
 /.pnp
 .pnp.js
+.cache/
 
 # Testing
 /coverage
@@ -22,4 +24,6 @@
 # Log files
 npm-debug.log*
 yarn-debug.log*
+yarn-error.log*node_modules/ 
+.cache/ 
 yarn-error.log*
