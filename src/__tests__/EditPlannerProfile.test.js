@@ -1,8 +1,19 @@
-// EditPlannerProfile.test.js
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import EditPlannerProfile from "../pages/EditPlannerProfile";
+
+// Mock the entire supabase module
+jest.mock('../client', () => ({
+  supabase: {
+    from: jest.fn(),
+    storage: {
+      from: jest.fn(),
+    },
+  },
+}));
+
+// Import the mocked supabase
 import { supabase } from '../client';
 
 // Mock useNavigate
@@ -35,6 +46,7 @@ describe("EditPlannerProfile Testing", () => {
 
   const mockPlannerData = {
     name: 'John Doe',
+    email: 'test@example.com',
     contact_number: '1234567890',
     bio: 'Test bio',
     profile_picture: 'test-profile-pic-url',
@@ -43,211 +55,284 @@ describe("EditPlannerProfile Testing", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset all mocks to default behavior
+    jest.useFakeTimers();
+
+    // Mock supabase.from chain with a delayed response
     supabase.from.mockImplementation(() => {
       const builder = {
         select: jest.fn(() => builder),
         insert: jest.fn(() => Promise.resolve({ error: null })),
         update: jest.fn(() => ({
-          eq: jest.fn(() => Promise.resolve({ error: null })), 
+          eq: jest.fn(() => Promise.resolve({ error: null })),
         })),
         delete: jest.fn(() => builder),
         eq: jest.fn(() => builder),
         order: jest.fn(() => builder),
-        single: jest.fn(() => Promise.resolve({ data: mockPlannerData, error: null })),
+        single: jest.fn(() => new Promise(resolve => {
+          setTimeout(() => resolve({ data: mockPlannerData, error: null }), 100);
+        })),
       };
       return builder;
     });
-    
-    // Mock console methods to avoid noise
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Mock supabase.storage.from chain
+    supabase.storage.from.mockImplementation(() => ({
+      upload: jest.fn(() => Promise.resolve({ error: null })),
+      getPublicUrl: jest.fn(() => ({ data: { publicUrl: 'mock-url' } })),
+    }));
+
+    // Mock console methods
+    jest.spyOn(global.console, 'error').mockImplementation(() => {});
+    jest.spyOn(global.console, 'warn').mockImplementation(() => {});
+    jest.spyOn(global.console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
     console.error.mockRestore();
     console.warn.mockRestore();
     console.log.mockRestore();
   });
 
-  test("renders loading state initially", () => {
-    render(
-      <MemoryRouter>
-        <EditPlannerProfile session={mockSession} />
-      </MemoryRouter>
-    );
+  test("renders loading state initially", async () => {
+    let resolveFetch;
+    supabase.from.mockImplementationOnce(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          single: jest.fn(() => new Promise(resolve => {
+            resolveFetch = resolve; // Capture resolve to control timing
+          })),
+        })),
+      })),
+    }));
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
     expect(screen.getByText('Loading your profile...')).toBeInTheDocument();
+
+    // Resolve the fetch to clean up
+    await act(async () => {
+      resolveFetch({ data: mockPlannerData, error: null });
+    });
   });
 
   test("fetches and displays planner data", async () => {
-    render(
-      <MemoryRouter>
-        <EditPlannerProfile session={mockSession} />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
 
-    // Wait for data to load
     await waitFor(() => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Check that form fields are populated
     expect(screen.getByDisplayValue('John Doe')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('test@example.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue('1234567890')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Test bio')).toBeInTheDocument();
   });
 
   test("shows warning for invalid phone number", async () => {
-    render(
-      <MemoryRouter>
-        <EditPlannerProfile session={mockSession} />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
 
-    // Wait for data to load
     await waitFor(() => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Enter invalid phone number
-    const phoneInput = screen.getByDisplayValue('1234567890');
-    fireEvent.change(phoneInput, { target: { value: "0123" } });
+    await act(async () => {
+      fireEvent.change(screen.getByDisplayValue('1234567890'), { target: { value: 'invalid' } });
+    });
 
-    fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
 
-    expect(await screen.findByText(/Please enter a valid 10-digit phone number/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/Please enter a valid 10-digit phone number/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 
   test("shows warning when name is empty", async () => {
-    render(
-      <MemoryRouter>
-        <EditPlannerProfile session={mockSession} />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
 
-    // Wait for data to load
     await waitFor(() => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Clear name field
-    const nameInput = screen.getByDisplayValue('John Doe');
-    fireEvent.change(nameInput, { target: { value: "" } });
+    await act(async () => {
+      fireEvent.change(screen.getByDisplayValue('John Doe'), { target: { value: '' } });
+    });
 
-    fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
 
-    expect(await screen.findByText(/Please enter your name/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Please enter your name')).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 
   test("handles cancel button click", async () => {
-    render(
-      <MemoryRouter>
-        <EditPlannerProfile session={mockSession} />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
 
-    // Wait for data to load
     await waitFor(() => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    fireEvent.click(screen.getByRole("button", { name: /Cancel/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Cancel/i }));
+    });
 
     expect(mockedNavigate).toHaveBeenCalledWith("/dashboard");
   });
 
   test("handles form submission successfully", async () => {
-    render(
-      <MemoryRouter>
-        <EditPlannerProfile session={mockSession} />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
 
-    // Wait for data to load
     await waitFor(() => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    await act(async () => {
+      fireEvent.change(screen.getByDisplayValue('test@example.com'), { target: { value: 'test@example.com' } });
+    });
 
-    // Should show success message
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
+
     await waitFor(() => {
       expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
     }, { timeout: 3000 });
+
+    // Simulate closing the success modal
+    await act(async () => {
+      const closeButton = screen.getByRole('button', { name: /×/i });
+      fireEvent.click(closeButton);
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(3000); // Try a longer timer duration
+    });
+
+    await waitFor(() => {
+      expect(mockedNavigate).toHaveBeenCalledWith('/dashboard');
+    }, { timeout: 10000 });
   });
 
   test("handles error when fetching planner data", async () => {
-    // Mock a fetch error
-    supabase.from.mockImplementationOnce(() => {
-      const builder = {
-        select: jest.fn(() => builder),
-        eq: jest.fn(() => builder),
-        single: jest.fn(() => Promise.resolve({ 
-          data: null, 
-          error: new Error('Fetch error') 
+    supabase.from.mockImplementationOnce(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          single: jest.fn(() => Promise.resolve({ 
+            data: null, 
+            error: new Error('Fetch error') 
+          })),
         })),
-      };
-      return builder;
+      })),
+    }));
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
     });
 
-    render(
-      <MemoryRouter>
-        <EditPlannerProfile session={mockSession} />
-      </MemoryRouter>
-    );
-
-    // Should finish loading without displaying data
     await waitFor(() => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
+
+    expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
   });
 
   test("handles form submission error", async () => {
-    // Mock an update error
-    supabase.from.mockImplementation(() => {
-      const builder = {
-        select: jest.fn(() => builder),
-        eq: jest.fn(() => builder),
-        single: jest.fn(() => Promise.resolve({ data: mockPlannerData, error: null })),
-        update: jest.fn(() => ({
-          eq: jest.fn(() => Promise.resolve({ 
-            error: new Error('Update error') 
-          })), 
+    supabase.from.mockImplementation(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          single: jest.fn(() => Promise.resolve({ data: mockPlannerData, error: null })),
         })),
-      };
-      return builder;
+      })),
+      update: jest.fn(() => ({
+        eq: jest.fn(() => Promise.resolve({ 
+          error: new Error('Update error') 
+        })),
+      })),
+    }));
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
     });
 
-    render(
-      <MemoryRouter>
-        <EditPlannerProfile session={mockSession} />
-      </MemoryRouter>
-    );
-
-    // Wait for data to load
     await waitFor(() => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    await act(async () => {
+      fireEvent.change(screen.getByDisplayValue('test@example.com'), { target: { value: 'test@example.com' } });
+    });
 
-    // Should show error message
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
+
     await waitFor(() => {
       expect(screen.getByText(/Update error/i)).toBeInTheDocument();
     }, { timeout: 3000 });
   });
 
   test("handles no session user", async () => {
-    render(
-      <MemoryRouter>
-        <EditPlannerProfile session={{}} />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={{}} />
+        </MemoryRouter>
+      );
+    });
 
-    // Should finish loading without displaying data
     await waitFor(() => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
+
+    expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
   });
 });

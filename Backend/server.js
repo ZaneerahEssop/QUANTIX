@@ -61,12 +61,6 @@ app.use("/api/guests", guestRoutes);
 // Serve static files from the React build folder
 app.use(express.static(path.join(__dirname, 'client/build')));
 
-// The "catchall" handler: for any request that doesn't match an API route,
-// send back React's index.html file.
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-});
-
 // Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -83,9 +77,10 @@ app.get("/users", async (req, res) => {
   }
 });
 
-// 404 handler - CORRECT VERSION
-app.use((req, res) => {
-  res.status(404).json({ error: "Route not found" });
+// Serve React app for any other GET requests that don't match API routes
+// Using a more specific path pattern to avoid conflicts
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
 // Error handler

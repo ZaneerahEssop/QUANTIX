@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import React from 'react';
 
 process.env.REACT_APP_SUPABASE_URL = 'https://fake.supabase.url';
 process.env.REACT_APP_SUPABASE_ANON_KEY = 'fake-anon-key';
