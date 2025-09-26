@@ -9,7 +9,6 @@ const supabaseAnonKey = CONFIG.supabaseAnonKey;
 console.log('Supabase Config:', {
   supabaseUrl,
   supabaseAnonKey: supabaseAnonKey ? '*** Configured' : '✗ Missing',
-  baseUrl: CONFIG.baseUrl
 });
 
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -30,7 +29,7 @@ const authOptions = {
 };
 
 // Ensure proper redirect URL
-const baseUrl = CONFIG.baseUrl || window.location.origin;
+const baseUrl = `${window.location.protocol}//${window.location.host}`;
 authOptions.flowType = 'pkce';
 authOptions.redirectTo = `${baseUrl}/loading`;
 

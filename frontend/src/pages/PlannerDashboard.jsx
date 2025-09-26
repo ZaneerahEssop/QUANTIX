@@ -30,8 +30,6 @@ export default function PlannerDashboard({ session }) {
   const [currentConversation, setCurrentConversation] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  console.log("API URL:", process.env.REACT_APP_BASE_URL);
-
   // Load conversations for the planner
   const loadConversations = useCallback(async () => {
     if (!session?.user) return;
