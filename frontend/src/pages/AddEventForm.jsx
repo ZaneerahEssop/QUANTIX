@@ -174,10 +174,7 @@ export default function AddEventForm() {
         }
 
         // Use the same API URL as PlannerDashboard
-        const API_URL =
-          process.env.NODE_ENV === "production"
-            ? "https://quantix-production.up.railway.app"
-            : "http://localhost:5000";
+        const API_URL = process.env.REACT_APP_API_URL;
 
         const response = await fetch(`${API_URL}/api/vendors`, {
           headers: {
@@ -318,11 +315,7 @@ export default function AddEventForm() {
       const eventId = formData.event_id || `temp-${Date.now()}`;
 
       // API base URL
-      const API_URL =
-        process.env.REACT_APP_BASE_URL ||
-        (process.env.NODE_ENV === "production"
-          ? "https://quantix-production.up.railway.app"
-          : "http://localhost:5000");
+      const API_URL = process.env.REACT_APP_API_URL;
 
       const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -439,11 +432,7 @@ export default function AddEventForm() {
           throw new Error("No active session");
         }
 
-        const API_URL =
-          process.env.REACT_APP_BASE_URL ||
-          (process.env.NODE_ENV === "production"
-            ? "https://quantix-production.up.railway.app"
-            : "http://localhost:5000");
+        const API_URL = process.env.REACT_APP_API_URL;
 
         // In development, just simulate the deletion
         if (process.env.NODE_ENV === "development") {

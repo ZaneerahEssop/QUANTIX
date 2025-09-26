@@ -25,10 +25,7 @@ app.set("trust proxy", 1);
 
 const io = new Server(server, {
   cors: {
-    origin:
-      process.env.NODE_ENV === "production"
-        ? ["https://quantix-production.up.railway.app", "https://*.railway.app"]
-        : "http://localhost:3000",
+    origin: process.env.REACT_APP_API_URL,
     methods: ["GET", "POST"],
     credentials: true,
   },
