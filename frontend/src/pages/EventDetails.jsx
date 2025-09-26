@@ -407,10 +407,7 @@ const EventDetails = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [theme, setTheme] = useState({ name: "", colors: [], notes: "" });
 
-  const API_URL =
-    window.location.hostname === "production"
-      ? "https://soothing-manifestation-production.up.railway.app"
-      : "http://localhost:5000";
+  const API_URL = process.env.REACT_APP_API_URL;
 
   const formatGuestStatusForUI = (dbStatus) => {
     if (dbStatus === "Attending") return "attending";
@@ -548,7 +545,7 @@ const EventDetails = () => {
     fetchData();
   }, [eventId, navigate, API_URL]);
 
-  const API_BASE = process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+  const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
   const [vendorRequests, setVendorRequests] = useState([]);
 
   useEffect(() => {
@@ -1129,7 +1126,11 @@ const EventDetails = () => {
                         className="vendor-card"
                         onClick={(e) => {
                           // Only navigate if the click is not on the request button or its children
-                          if (!e.target.closest('.add-vendor-btn, .undo-request-btn')) {
+                          if (
+                            !e.target.closest(
+                              ".add-vendor-btn, .undo-request-btn"
+                            )
+                          ) {
                             handleVendorCardClick(vendor.vendor_id);
                           }
                         }}
@@ -1144,7 +1145,10 @@ const EventDetails = () => {
                               ? "Venue"
                               : vendor.service_type}
                           </span>
-                          <div className="vendor-description" style={{ textAlign: 'center' }}>
+                          <div
+                            className="vendor-description"
+                            style={{ textAlign: "center" }}
+                          >
                             {vendor.description || "No description available."}
                           </div>
                         </div>

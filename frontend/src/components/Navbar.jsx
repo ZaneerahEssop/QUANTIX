@@ -1,42 +1,44 @@
 // src/components/Navbar.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '../client';
-import { FaSearch, FaTimes } from 'react-icons/fa';
-import './Navbar.css'; // Import the new CSS file
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "../client";
+import { FaSearch, FaTimes } from "react-icons/fa";
+import "./Navbar.css"; // Import the new CSS file
 
 const Navbar = ({ session, showOnlyLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isPlannerDashboard = location.pathname === '/dashboard';
+  const isPlannerDashboard = location.pathname === "/dashboard";
 
   // All your state and useEffect hooks remain the same...
   const [showSearch, setShowSearch] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [vendors, setVendors] = useState([]);
   const [filteredVendors, setFilteredVendors] = useState([]);
   const searchRef = useRef(null);
 
   const fetchVendors = async () => {
     try {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
       if (!currentSession) return;
 
       // Use the same API URL as in other parts of your app
-      const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:5000'
-        : 'https://quantix-production.up.railway.app';
+      const API_URL = process.env.REACT_APP_API_URL;
 
       const response = await fetch(`${API_URL}/api/vendors`, {
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${currentSession.access_token}`
-        }
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${currentSession.access_token}`,
+        },
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch vendors: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch vendors: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -44,18 +46,38 @@ const Navbar = ({ session, showOnlyLogout }) => {
         setVendors(data);
         setFilteredVendors(data);
       } else {
-        throw new Error('Invalid vendor data format received');
+        throw new Error("Invalid vendor data format received");
       }
     } catch (error) {
-      console.error('Error fetching vendors:', error);
+      console.error("Error fetching vendors:", error);
       // Fallback to mock data in development only
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Using mock vendor data due to API error');
+      if (process.env.NODE_ENV === "development") {
+        console.warn("Using mock vendor data due to API error");
         const mockVendors = [
-          { vendor_id: 1, business_name: 'The Venue Collective', service_type: 'Venue', email: 'info@venuecollective.com' },
-          { vendor_id: 2, business_name: 'Gourmet Delights', service_type: 'Catering', email: 'info@gourmetdelights.com' },
-          { vendor_id: 3, business_name: 'Blooms & Petals', service_type: 'Florist', email: 'info@bloomsandpetals.com' },
-          { vendor_id: 4, business_name: 'Melody Makers', service_type: 'Music', email: 'info@melodymakers.com' }
+          {
+            vendor_id: 1,
+            business_name: "The Venue Collective",
+            service_type: "Venue",
+            email: "info@venuecollective.com",
+          },
+          {
+            vendor_id: 2,
+            business_name: "Gourmet Delights",
+            service_type: "Catering",
+            email: "info@gourmetdelights.com",
+          },
+          {
+            vendor_id: 3,
+            business_name: "Blooms & Petals",
+            service_type: "Florist",
+            email: "info@bloomsandpetals.com",
+          },
+          {
+            vendor_id: 4,
+            business_name: "Melody Makers",
+            service_type: "Music",
+            email: "info@melodymakers.com",
+          },
         ];
         setVendors(mockVendors);
         setFilteredVendors(mockVendors);
@@ -71,14 +93,17 @@ const Navbar = ({ session, showOnlyLogout }) => {
 
   useEffect(() => {
     const searchTimeout = setTimeout(() => {
-      if (!searchTerm || searchTerm.trim() === '') {
+      if (!searchTerm || searchTerm.trim() === "") {
         setFilteredVendors(vendors);
         return;
       }
       const searchTermLower = searchTerm.toLowerCase();
-      const filtered = vendors.filter(vendor => 
-        (vendor.business_name && vendor.business_name.toLowerCase().includes(searchTermLower)) ||
-        (vendor.service_type && vendor.service_type.toLowerCase().includes(searchTermLower))
+      const filtered = vendors.filter(
+        (vendor) =>
+          (vendor.business_name &&
+            vendor.business_name.toLowerCase().includes(searchTermLower)) ||
+          (vendor.service_type &&
+            vendor.service_type.toLowerCase().includes(searchTermLower))
       );
       setFilteredVendors(filtered);
     }, 300);
@@ -90,23 +115,23 @@ const Navbar = ({ session, showOnlyLogout }) => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSearch(false);
-        setSearchTerm('');
+        setSearchTerm("");
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const toggleSearch = () => {
     setShowSearch(!showSearch);
-    if (showSearch) setSearchTerm('');
+    if (showSearch) setSearchTerm("");
   };
 
   const handleVendorSelect = (vendor) => {
     // ✨ CHANGED: Navigate to the new public-facing services page
     navigate(`/vendors/${vendor.vendor_id}/services`);
     setShowSearch(false);
-    setSearchTerm('');
+    setSearchTerm("");
   };
 
   const handleLogout = async () => {
@@ -115,16 +140,15 @@ const Navbar = ({ session, showOnlyLogout }) => {
   };
 
   const getEditProfilePath = () => {
-    if (!session?.user) return '/login';
-    const isVendor = location.pathname.startsWith('/vendor-dashboard');
-    if (isVendor) return '/edit-vendor-profile';
-    return '/edit-planner-profile';
+    if (!session?.user) return "/login";
+    const isVendor = location.pathname.startsWith("/vendor-dashboard");
+    if (isVendor) return "/edit-vendor-profile";
+    return "/edit-planner-profile";
   };
-
 
   return (
     <nav className="navbar-container">
-      <div className="navbar-logo" onClick={() => navigate('/')}>
+      <div className="navbar-logo" onClick={() => navigate("/")}>
         <span className="gradient">Event-ually Perfect</span>
       </div>
 
@@ -146,33 +170,37 @@ const Navbar = ({ session, showOnlyLogout }) => {
                 {searchTerm && (
                   <div className="search-results">
                     {filteredVendors.length > 0 ? (
-                      filteredVendors.map(vendor => (
+                      filteredVendors.map((vendor) => (
                         <div
                           key={vendor.vendor_id}
                           onClick={() => handleVendorSelect(vendor)}
                           className="search-result-item"
                         >
                           <div className="result-item-header">
-                            {vendor.business_name || 'Unnamed Vendor'}
+                            {vendor.business_name || "Unnamed Vendor"}
                             <span className="result-item-tag">
-                              {vendor.service_type || 'Vendor'}
+                              {vendor.service_type || "Vendor"}
                             </span>
                           </div>
                           {vendor.email && (
-                            <div className="result-item-email">{vendor.email}</div>
+                            <div className="result-item-email">
+                              {vendor.email}
+                            </div>
                           )}
                         </div>
                       ))
                     ) : (
-                      <div className="search-no-results">
-                        No vendors found
-                      </div>
+                      <div className="search-no-results">No vendors found</div>
                     )}
                   </div>
                 )}
               </div>
             ) : (
-              <button onClick={toggleSearch} className="nav-button search-button" title="Search Vendors">
+              <button
+                onClick={toggleSearch}
+                className="nav-button search-button"
+                title="Search Vendors"
+              >
                 <FaSearch />
               </button>
             )}
@@ -181,11 +209,17 @@ const Navbar = ({ session, showOnlyLogout }) => {
 
         {!showOnlyLogout && session?.user && (
           <>
-            <button onClick={() => navigate(getEditProfilePath())} className="nav-button">
+            <button
+              onClick={() => navigate(getEditProfilePath())}
+              className="nav-button"
+            >
               Edit Profile
             </button>
-            {location.pathname.startsWith('/vendor-dashboard') && (
-              <button onClick={() => navigate('/vendor/services')} className="nav-button">
+            {location.pathname.startsWith("/vendor-dashboard") && (
+              <button
+                onClick={() => navigate("/vendor/services")}
+                className="nav-button"
+              >
                 My Services
               </button>
             )}

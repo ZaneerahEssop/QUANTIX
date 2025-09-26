@@ -174,10 +174,7 @@ export default function AddEventForm() {
         }
 
         // Use the same API URL as PlannerDashboard
-        const API_URL =
-          process.env.NODE_ENV === "production"
-            ? "https://quantix-production.up.railway.app"
-            : "http://localhost:5000";
+        const API_URL = process.env.REACT_APP_API_URL;
 
         const response = await fetch(`${API_URL}/api/vendors`, {
           headers: {
@@ -318,11 +315,7 @@ export default function AddEventForm() {
       const eventId = formData.event_id || `temp-${Date.now()}`;
 
       // API base URL
-      const API_URL =
-        process.env.REACT_APP_BASE_URL ||
-        (process.env.NODE_ENV === "production"
-          ? "https://quantix-production.up.railway.app"
-          : "http://localhost:5000");
+      const API_URL = process.env.REACT_APP_API_URL;
 
       const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -439,11 +432,7 @@ export default function AddEventForm() {
           throw new Error("No active session");
         }
 
-        const API_URL =
-          process.env.REACT_APP_BASE_URL ||
-          (process.env.NODE_ENV === "production"
-            ? "https://quantix-production.up.railway.app"
-            : "http://localhost:5000");
+        const API_URL = process.env.REACT_APP_API_URL;
 
         // In development, just simulate the deletion
         if (process.env.NODE_ENV === "development") {
@@ -544,100 +533,50 @@ export default function AddEventForm() {
     }
 
     try {
-      // 1️⃣ Create event in Supabase
-      const { data: eventData, error: eventError } = await supabase
-        .from("events")
-        .insert({
-          name: formData.name,
-          theme: formData.theme || null,
-          start_time: formData.time
-            ? `${formData.date}T${formData.time}`
-            : `${formData.date}T00:00:00`,
-          end_time: formData.end_time || null,
-          venue: formData.venue || null,
-          planner_id: user.id,
-        })
-        .select()
-        .single();
+      // Build the API URL
+      const API_URL = process.env.REACT_APP_API_URL;
 
-      if (eventError) throw eventError;
+      // Format documents BEFORE sending (upload separately if needed)
+      const formattedDocs = documents.map((docFile) => ({
+        name: docFile.name,
+        url: docFile.url || "", // if already uploaded
+        uploaded_by: user.id,
+      }));
 
-      setFormData((prev) => ({ ...prev, event_id: eventData.event_id }));
+      // Prepare request body
+      const requestBody = {
+        name: formData.name,
+        theme: formData.theme || null,
+        start_time: formData.time
+          ? `${formData.date}T${formData.time}`
+          : `${formData.date}T00:00:00`,
+        end_time: formData.end_time || null,
+        venue: formData.venue || null,
+        planner_id: user.id,
+        selectedVendors: selectedVendors.map((v) => ({
+          vendor_id: v.vendor_id,
+        })),
+        documents: formattedDocs,
+      };
 
-      // 2️⃣ Send vendor requests via backend API
-      const API_URL =
-        process.env.REACT_APP_BASE_URL ||
-        (process.env.NODE_ENV === "production"
-          ? "https://quantix-production.up.railway.app"
-          : "http://localhost:5000");
+      // Call backend API
+      const response = await fetch(`${API_URL}/api/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.id}`, // you can also pass access_token if backend verifies it
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-      for (const vendor of selectedVendors) {
-        const response = await fetch(`${API_URL}/api/vendor-requests`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user.id}`,
-          },
-          body: JSON.stringify({
-            event_id: eventData.event_id,
-            vendor_id: vendor.vendor_id,
-            requester_id: user.id,
-          }),
-        });
+      const data = await response.json();
 
-        const data = await response.json();
-        if (!response.ok) {
-          console.error("Failed to send vendor request:", data.error);
-          throw new Error(
-            data.error ||
-              `Failed to send request for vendor ${vendor.vendor_id}`
-          );
-        }
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create event");
       }
 
-      // 3️⃣ Upload documents to Supabase Storage
-      if (documents.length > 0) {
-        const uploadedDocuments = await Promise.all(
-          documents.map(async (docFile) => {
-            const safeEventName = formData.name
-              .replace(/\s+/g, "_")
-              .replace(/[^\w-]/g, "");
-            const filePath = `planners/${user.id}/${safeEventName}/${docFile.name}`;
-
-            const { error: uploadError } = await supabase.storage
-              .from("event-documents")
-              .upload(filePath, docFile);
-
-            if (uploadError) throw uploadError;
-
-            const {
-              data: { publicUrl },
-            } = supabase.storage.from("event-documents").getPublicUrl(filePath);
-
-            return {
-              name: docFile.name,
-              url: publicUrl,
-              file_type: docFile.type || "application/octet-stream",
-            };
-          })
-        );
-
-        // Insert file records into files table
-        const fileRecords = uploadedDocuments.map((doc) => ({
-          event_id: eventData.event_id,
-          uploaded_by: user.id,
-          file_name: doc.name,
-          file_type: doc.file_type,
-          file_url: doc.url,
-        }));
-
-        const { error: fileError } = await supabase
-          .from("files")
-          .insert(fileRecords);
-
-        if (fileError) throw fileError;
-      }
-
+      // Success 🎉
+      setFormData((prev) => ({ ...prev, event_id: data.event.event_id }));
       setSuccessMessage("Event created successfully!");
       setShowSuccess(true);
     } catch (error) {
@@ -1136,11 +1075,15 @@ export default function AddEventForm() {
                       className="vendor-card"
                       onClick={(e) => {
                         // Only navigate if the click is not on the request button or its children
-                        if (!e.target.closest('.add-vendor-btn, .undo-request-btn')) {
+                        if (
+                          !e.target.closest(
+                            ".add-vendor-btn, .undo-request-btn"
+                          )
+                        ) {
                           handleVendorCardClick(vendor.vendor_id);
                         }
                       }}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: "pointer" }}
                     >
                       <div className="vendor-info">
                         <h4>{vendor.business_name}</h4>
