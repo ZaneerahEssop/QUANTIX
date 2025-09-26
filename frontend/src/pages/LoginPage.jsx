@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../client";
 import { useNavigate, Link } from "react-router-dom";
-import { OAUTH_REDIRECT_URL } from "../config";
 import "../App.css";
 import "../AuthPages.css";
 
@@ -69,9 +68,7 @@ useEffect(() => {
 
   const handleGoogleSignIn = async () => {
     // Always use localhost for development
-    const redirectUrl = window.location.hostname === 'localhost' 
-      ? `${process.env.REACT_APP_BASE_URL}/loading`
-      : OAUTH_REDIRECT_URL;
+    const redirectUrl = `${window.location.protocol}//${window.location.host}/loading`;
       
     console.log('Initiating Google OAuth with redirect URL:', redirectUrl);
     
