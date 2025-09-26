@@ -198,8 +198,11 @@ io.on("connection", (socket) => {
 
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () =>
-  console.log(`Server running on port ${PORT}`)
-);
+// Only start server if not in Vercel
+if (!process.env.PRODUCTION) {
+  server.listen(PORT, () =>
+    console.log(`Server running on port ${PORT}`)
+  );
+}
 
 module.exports = app;
