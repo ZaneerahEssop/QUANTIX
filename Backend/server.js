@@ -23,22 +23,25 @@ const server = http.createServer(app);
 
 app.set("trust proxy", 1);
 
+app.use(
+  cors({
+    origin:
+      process.env.REACT_APP_BASE_URL,
+    credentials: true,
+  })
+);
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.REACT_APP_API_URL,
+    origin: process.env.REACT_APP_BASE_URL,
     methods: ["GET", "POST"],
     credentials: true,
   },
   transports: ["websocket", "polling"],
 });
 
-app.use(
-  cors({
-    origin:
-      process.env.NODE_ENV === "production" ? true : "http://localhost:3000",
-    credentials: true,
-  })
-);
+
+
 app.use(express.json());
 
 // Routes go here
@@ -52,15 +55,6 @@ app.use("/api/vendor-requests", vendorRequestRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/guests", guestRoutes);
-
-// Serve static files from the React build folder
-app.use(express.static(path.join(__dirname, "../frontend/build")));
-
-// The "catchall" handler: for any request that doesn't match an API route,
-// send back React's index.html file.
-app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/build", "index.html"));
-});
 
 // Supabase client
 const supabase = createClient(

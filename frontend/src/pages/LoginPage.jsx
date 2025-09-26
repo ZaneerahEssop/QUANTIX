@@ -70,7 +70,7 @@ useEffect(() => {
   const handleGoogleSignIn = async () => {
     // Always use localhost for development
     const redirectUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:3000/loading'
+      ? `${process.env.REACT_APP_BASE_URL}/loading`
       : OAUTH_REDIRECT_URL;
       
     console.log('Initiating Google OAuth with redirect URL:', redirectUrl);

@@ -9,15 +9,8 @@ class ChatService {
   }
 
   getApiUrl() {
-    if (process.env.REACT_APP_BASE_URL) {
-      return process.env.REACT_APP_BASE_URL;
-    }
-
-    if (
-      window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1"
-    ) {
-      return "http://localhost:5000";
+    if (process.env.REACT_APP_API_URL) {
+      return process.env.REACT_APP_API_URL;
     } else {
       return window.location.origin;
     }

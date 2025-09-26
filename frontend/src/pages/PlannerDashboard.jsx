@@ -61,10 +61,7 @@ export default function PlannerDashboard({ session }) {
   // Initialize chat service and set up real-time listeners
   useEffect(() => {
     if (session?.user) {
-      const WS_URL =
-        process.env.NODE_ENV === "development"
-          ? "http://localhost:5000"
-          : window.location.origin;
+      const WS_URL = process.env.REACT_APP_API_URL
       // Connect to chat service
       chatService.connect(session.user.id, WS_URL);
 
@@ -199,7 +196,7 @@ export default function PlannerDashboard({ session }) {
 
   const API_URL =
     process.env.NODE_ENV === "development"
-      ? "http://localhost:5000"
+      ? process.env.REACT_APP_API_URL
       : window.location.origin;
 
   console.log("Current URL:", window.location.href);
