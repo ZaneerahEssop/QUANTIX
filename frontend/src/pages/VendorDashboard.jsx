@@ -469,6 +469,17 @@ export default function VendorDashboard({ session }) {
     });
   };
 
+  // Filter out past events
+  const getUpcomingEvents = (events) => {
+    const now = new Date();
+    return events.filter(event => {
+      if (!event.eventDate) return false;
+      const eventDate = new Date(event.eventDate);
+      // Include events for today and future dates
+      return eventDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    });
+  };
+
   if (isLoading) {
     return (
       <div
@@ -743,8 +754,8 @@ export default function VendorDashboard({ session }) {
                   }}
                   className="custom-scrollbar"
                 >
-                  {acceptedEvents.length > 0 ? (
-                    acceptedEvents.map((event) => (
+                  {getUpcomingEvents(acceptedEvents).length > 0 ? (
+                    getUpcomingEvents(acceptedEvents).map((event) => (
                       <div key={`event-${event.id}`} className="event-card">
                         <h3
                           style={{
