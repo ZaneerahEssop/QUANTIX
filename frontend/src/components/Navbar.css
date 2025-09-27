@@ -3,7 +3,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 5%;
+  padding: 0.5rem 5%;
   background-color: white;
   box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
   position: fixed;
@@ -12,7 +12,9 @@
   right: 0;
   z-index: 1001;
   box-sizing: border-box;
-  min-height: 70px;
+  height: 70px; /* Fixed height for consistent alignment */
+  margin: 0;
+  line-height: 1.5;
 }
 
 /* Responsive adjustments */
@@ -24,8 +26,10 @@
 
 @media (max-width: 768px) {
   .navbar-container {
-    padding: 0.75rem 3%;
+    padding: 0.5rem 3%;
     flex-wrap: wrap;
+    height: auto;
+    min-height: 70px;
   }
   
   .navbar-logo {
@@ -69,18 +73,18 @@
   cursor: pointer;
   white-space: nowrap;
   transition: transform 0.2s ease;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  position: relative;
+  top: 0;
 }
 
 .navbar-logo:hover {
   transform: scale(1.02);
-}
-
-/* Gradient text for the logo */
-.gradient {
-  background: linear-gradient(30deg, #E5ACBF, #F6A28C);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 /* Container for all links, buttons, and search */
@@ -92,14 +96,39 @@
   justify-content: flex-end;
   flex: 1;
   margin-left: 1.5rem;
+  height: 100%;
+  padding: 0.5rem 0;
+  box-sizing: border-box;
+  position: relative;
+  top: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  align-self: center;
 }
 
 /* General Button Styling */
 .nav-button {
-  background-color: #E8B180; /* --peach color */
-  position: relative;
+  background-color: #E8B180;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 40px;
+  box-sizing: border-box;
+}
+
+.nav-button:hover {
+  background-color: #F6A28C;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .search-input {
