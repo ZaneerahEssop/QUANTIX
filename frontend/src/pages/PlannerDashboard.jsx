@@ -192,10 +192,7 @@ export default function PlannerDashboard({ session }) {
     }
   };
 
-  const API_URL =
-    process.env.NODE_ENV === "development"
-      ? process.env.REACT_APP_API_URL
-      : window.location.origin;
+  const API_URL = process.env.REACT_APP_API_URL;
 
   console.log("Current URL:", window.location.href);
   console.log("Using API_URL:", API_URL);
