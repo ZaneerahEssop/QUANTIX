@@ -369,8 +369,8 @@ const ChatUI = ({
                 </div>
               ) : (
                 messages.map((message, index) => (
-                  <MessageBubble 
-                    key={message.id || `msg-${index}`} 
+                  <MessageBubble
+                    key={message.id ? `msg-${message.id}` : `temp-${message.timestamp}-${index}`}
                     $isCurrentUser={message.isCurrentUser}
                   >
                     <MessageHeader $isCurrentUser={message.isCurrentUser}>
