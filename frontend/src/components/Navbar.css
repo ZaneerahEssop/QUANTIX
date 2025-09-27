@@ -1,9 +1,9 @@
 /* Main Navbar Container */
 .navbar-container {
   display: flex;
-  justify-content: space-between; /* Pushes logo and links to opposite ends */
-  align-items: center; /* Vertically aligns everything */
-  padding: 1rem 3rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 5%;
   background-color: white;
   box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
   position: fixed;
@@ -12,13 +12,67 @@
   right: 0;
   z-index: 1001;
   box-sizing: border-box;
+  min-height: 70px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .navbar-container {
+    padding: 0.75rem 4%;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-container {
+    padding: 0.75rem 3%;
+    flex-wrap: wrap;
+  }
+  
+  .navbar-logo {
+    font-size: 1.5rem;
+  }
+  
+  .nav-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-container {
+    padding: 0.5rem 2%;
+  }
+  
+  .navbar-logo {
+    font-size: 1.25rem;
+  }
+  
+  .navbar-links {
+    gap: 0.75rem;
+  }
+  
+  .nav-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .search-input {
+    width: 180px;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+  }
 }
 
 /* Logo Styling */
 .navbar-logo {
-  font-size: 1.75rem;
+  font-size: 1.6rem;
   font-weight: bold;
   cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.2s ease;
+}
+
+.navbar-logo:hover {
+  transform: scale(1.02);
 }
 
 /* Gradient text for the logo */
@@ -33,51 +87,30 @@
 .navbar-links {
   display: flex;
   align-items: center;
-  gap: 1.5rem; /* Space between each button/link */
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex: 1;
+  margin-left: 1.5rem;
 }
 
 /* General Button Styling */
 .nav-button {
   background-color: #E8B180; /* --peach color */
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.nav-button:hover {
-  background-color: #F6A28C; /* --coral color */
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Search specific styling */
-.search-wrapper {
-  position: relative;
-}
-
-.search-active {
   position: relative;
   display: flex;
   align-items: center;
 }
 
 .search-input {
-  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  padding: 0.6rem 2.2rem 0.6rem 1rem;
   border-radius: 50px;
   border: 2px solid #e2e8f0;
-  width: 250px;
-  font-size: 1rem;
+  width: 220px;
+  font-size: 0.95rem;
   outline: none;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .search-input:focus {
