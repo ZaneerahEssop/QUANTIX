@@ -841,6 +841,83 @@
     margin-bottom: 1rem;
     color: var(--text-dark);
 }
+/* Section header with edit buttons */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-section-btn,
+.save-section-btn,
+.cancel-section-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.edit-section-btn {
+  background-color: #d88fac;
+  color: white;
+}
+
+.save-section-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.cancel-section-btn {
+  background-color: #6c757d;
+  color: white;
+}
+
+.edit-section-btn:hover {
+  background-color: #a7647f;
+}
+
+.save-section-btn:hover {
+  background-color: #218838;
+}
+
+.cancel-section-btn:hover {
+  background-color: #545b62;
+}
+/* Global Edit Controls */
+.global-edit-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin: 1rem 0;
+  gap: 0.5rem;
+}
+
+/* Edit inputs for info boxes */
+.edit-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.info-box p {
+  margin: 0;
+  min-height: 1.5rem;
+}
+
+.info-box input.edit-input {
+  margin-top: 0.5rem;
+}
 /* Responsive Styles */
 @media (max-width: 768px) {
     .event-content {

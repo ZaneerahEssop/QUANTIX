@@ -1131,14 +1131,13 @@ export default function AddEventForm() {
                       className="vendor-card"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="vendor-info">
-                        <h4>{vendor.business_name}</h4>
-                        <span className="vendor-category">
+                      <div className="vendor-category">
                           {vendor.service_type}
-                        </span>
+                        </div>
+                        <h4>{vendor.business_name}</h4>
+                        
                         <div className="vendor-description">
                           {vendor.description || "No description available."}
-                        </div>
                       </div>
                       <div className="vendor-actions">
                         <button
