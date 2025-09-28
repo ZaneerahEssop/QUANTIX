@@ -1,4 +1,4 @@
-const supabase = require('../supabaseClient');
+const supabase = require('../Config/supabase');
 
 /**
  * Fetches a single vendor profile by querying both the 'vendors'
