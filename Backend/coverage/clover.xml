@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1759092073988" clover="3.2.0">
-  <project timestamp="1759092073988" name="All files">
-    <metrics statements="449" coveredstatements="402" conditionals="202" coveredconditionals="162" methods="33" coveredmethods="33" elements="684" coveredelements="597" complexity="0" loc="449" ncloc="449" packages="2" files="21" classes="21"/>
+<coverage generated="1759092854697" clover="3.2.0">
+  <project timestamp="1759092854698" name="All files">
+    <metrics statements="457" coveredstatements="410" conditionals="206" coveredconditionals="166" methods="33" coveredmethods="33" elements="696" coveredelements="609" complexity="0" loc="457" ncloc="457" packages="3" files="22" classes="22"/>
+    <package name="Config">
+      <metrics statements="8" coveredstatements="8" conditionals="4" coveredconditionals="4" methods="0" coveredmethods="0"/>
+      <file name="supabase.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Config\supabase.js">
+        <metrics statements="8" coveredstatements="8" conditionals="4" coveredconditionals="4" methods="0" coveredmethods="0"/>
+        <line num="1" count="3" type="stmt"/>
+        <line num="2" count="3" type="stmt"/>
+        <line num="4" count="3" type="stmt"/>
+        <line num="5" count="3" type="stmt"/>
+        <line num="7" count="3" type="cond" truecount="4" falsecount="0"/>
+        <line num="8" count="2" type="stmt"/>
+        <line num="11" count="1" type="stmt"/>
+        <line num="13" count="1" type="stmt"/>
+      </file>
+    </package>
     <package name="Controllers">
       <metrics statements="303" coveredstatements="257" conditionals="158" coveredconditionals="126" methods="25" coveredmethods="25"/>
       <file name="chat.controller.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Controllers\chat.controller.js">
