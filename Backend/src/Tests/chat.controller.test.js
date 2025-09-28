@@ -64,13 +64,33 @@ const {
         expect(res.status).toHaveBeenCalledWith(201);
         expect(res.json).toHaveBeenCalledWith(newConversation);
       });
-  
-      it('should return 400 if required IDs are missing', async () => {
-          const req = { body: { plannerId: 'p1' } };
-          const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
-          await getOrCreateConversation(req, res);
-          expect(res.status).toHaveBeenCalledWith(400);
+      
+      it('should return 500 if creating a conversation fails', async () => {
+        const dbError = { message: 'Insert failed' };
+        supabase.from.mockImplementation(tableName => {
+          if (tableName === 'conversations') {
+            if (supabase.from.mock.calls.length === 1) {
+              return {
+                select: jest.fn().mockReturnThis(),
+                eq: jest.fn().mockReturnThis(),
+                single: jest.fn().mockResolvedValue({ data: null, error: null }),
+              };
+            }
+            return {
+              insert: jest.fn().mockReturnThis(),
+              select: jest.fn().mockReturnThis(),
+              single: jest.fn().mockResolvedValue({ data: null, error: dbError }),
+            };
+          }
         });
+        const req = { body: { plannerId: 'p2', vendorId: 'v2' } };
+        const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+  
+        await getOrCreateConversation(req, res);
+        
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Failed to create conversation' });
+      });
     });
   
     // --- Tests for getUserConversations ---
@@ -91,6 +111,23 @@ const {
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith(mockConvos);
       });
+      
+      it('should return 500 if Supabase returns an error', async () => {
+        const dbError = { message: 'Query failed' };
+        supabase.from.mockReturnValue({
+            select: jest.fn().mockReturnThis(),
+            or: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({ data: null, error: dbError }),
+        });
+        const req = { params: { userId: 'u1' } };
+        const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+  
+        await getUserConversations(req, res);
+  
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch conversations' });
+      });
     });
   
     // --- Tests for getConversationMessages ---
@@ -110,6 +147,22 @@ const {
   
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith(mockMessages);
+      });
+  
+      it('should return 500 on a generic error', async () => {
+        supabase.from.mockReturnValue({
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            order: jest.fn().mockReturnThis(),
+            range: jest.fn().mockRejectedValue(new Error('Generic DB Error')),
+        });
+        const req = { params: { conversationId: 'c1' }, query: {} };
+        const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+    
+        await getConversationMessages(req, res);
+    
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
       });
     });
   
@@ -132,9 +185,7 @@ const {
               };
             }
             if (tableName === 'messages') {
-              return {
-                insert: jest.fn().mockReturnValue(mockInsertChain),
-              };
+              return { insert: jest.fn().mockReturnValue(mockInsertChain) };
             }
           });
           const req = { body: { conversationId: 'c1', senderId: 's1', messageText: 'Test' } };
@@ -144,9 +195,9 @@ const {
     
           expect(res.status).toHaveBeenCalledWith(201);
           expect(res.json).toHaveBeenCalledWith(mockMessage);
-        });
+      });
     
-        it('should return 403 if user is not in conversation', async () => {
+      it('should return 403 if user is not in conversation', async () => {
           supabase.from.mockReturnValue({
               select: jest.fn().mockReturnThis(),
               eq: jest.fn().mockReturnThis(),
@@ -159,18 +210,46 @@ const {
           await sendMessage(req, res);
     
           expect(res.status).toHaveBeenCalledWith(403);
-        });
+      });
+  
+      it('should return 500 if inserting the message fails', async () => {
+          const mockConversation = { id: 'c1', planner_id: 's1' };
+          const dbError = { message: 'Insert failed' };
+          
+          supabase.from.mockImplementation(tableName => {
+              if (tableName === 'conversations') {
+                  return {
+                      select: jest.fn().mockReturnThis(),
+                      eq: jest.fn().mockReturnThis(),
+                      or: jest.fn().mockReturnThis(),
+                      single: jest.fn().mockResolvedValue({ data: mockConversation, error: null }),
+                  };
+              }
+              if (tableName === 'messages') {
+                  return {
+                      insert: jest.fn().mockReturnThis(),
+                      select: jest.fn().mockReturnThis(),
+                      single: jest.fn().mockResolvedValue({ data: null, error: dbError }),
+                  };
+              }
+          });
+          const req = { body: { conversationId: 'c1', senderId: 's1', messageText: 'Test' } };
+          const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+  
+          await sendMessage(req, res);
+  
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({ error: 'Failed to send message' });
+      });
     });
   
     // --- Tests for markMessagesAsRead ---
     describe('markMessagesAsRead', () => {
       it('should mark messages as read and return success', async () => {
-        // ** FIX IS HERE: This nested mock correctly represents the .eq().neq().eq() chain **
         supabase.from.mockReturnValue({
           update: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnValue({ // This is the first .eq()
-            neq: jest.fn().mockReturnValue({ // This is the .neq()
-              // The object returned by .neq() has the final .eq() that resolves
+          eq: jest.fn().mockReturnValue({
+            neq: jest.fn().mockReturnValue({
               eq: jest.fn().mockResolvedValue({ error: null }),
             }),
           }),
@@ -183,6 +262,25 @@ const {
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({ success: true });
       });
+  
+      it('should return 500 if Supabase returns an error object', async () => {
+          const dbError = { message: 'Update failed' };
+          supabase.from.mockReturnValue({
+              update: jest.fn().mockReturnThis(),
+              eq: jest.fn().mockReturnValue({
+                  neq: jest.fn().mockReturnValue({
+                      eq: jest.fn().mockResolvedValue({ error: dbError }),
+                  }),
+              }),
+          });
+          const req = { body: { conversationId: 'c1', userId: 'u1' } };
+          const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+      
+          await markMessagesAsRead(req, res);
+      
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({ error: 'Failed to mark messages as read' });
+      });
     });
   
     // --- Tests for getUnreadCount ---
@@ -191,14 +289,14 @@ const {
         const mockConvos = [{ conversation_id: 'c1' }, { conversation_id: 'c2' }];
         supabase.from.mockImplementation(tableName => {
           if (tableName === 'conversations') {
-            return { // Chain for first DB call
+            return {
               select: jest.fn().mockReturnThis(),
               or: jest.fn().mockReturnThis(),
               eq: jest.fn().mockResolvedValue({ data: mockConvos, error: null }),
             };
           }
           if (tableName === 'messages') {
-            return { // Chain for second DB call
+            return {
               select: jest.fn().mockReturnThis(),
               in: jest.fn().mockReturnThis(),
               neq: jest.fn().mockReturnThis(),
@@ -232,6 +330,55 @@ const {
   
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({ unreadCount: 0 });
+      });
+  
+      it('should return 500 if fetching user conversations fails', async () => {
+          const dbError = { message: 'Failed to get conversations' };
+          supabase.from.mockImplementation(tableName => {
+              if (tableName === 'conversations') {
+                  return {
+                      select: jest.fn().mockReturnThis(),
+                      or: jest.fn().mockReturnThis(),
+                      eq: jest.fn().mockResolvedValue({ data: null, error: dbError }),
+                  };
+              }
+          });
+          const req = { params: { userId: 'u1' } };
+          const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+  
+          await getUnreadCount(req, res);
+  
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch user conversations' });
+      });
+  
+      it('should return 500 if counting unread messages fails', async () => {
+          const mockConvos = [{ conversation_id: 'c1' }];
+          const dbError = { message: 'Count failed' };
+          supabase.from.mockImplementation(tableName => {
+              if (tableName === 'conversations') {
+                  return {
+                      select: jest.fn().mockReturnThis(),
+                      or: jest.fn().mockReturnThis(),
+                      eq: jest.fn().mockResolvedValue({ data: mockConvos, error: null }),
+                  };
+              }
+              if (tableName === 'messages') {
+                  return {
+                      select: jest.fn().mockReturnThis(),
+                      in: jest.fn().mockReturnThis(),
+                      neq: jest.fn().mockReturnThis(),
+                      eq: jest.fn().mockResolvedValue({ count: null, error: dbError }),
+                  };
+              }
+          });
+          const req = { params: { userId: 'u1' } };
+          const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+  
+          await getUnreadCount(req, res);
+  
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch unread count' });
       });
     });
   });
