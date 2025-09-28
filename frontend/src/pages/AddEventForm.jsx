@@ -473,10 +473,8 @@ export default function AddEventForm() {
             <button
               onClick={() => {
                 setShowSuccess(false);
-                // ===== FIX #2: Only navigate if it's the event creation message =====
-                if (successMessage === "Event created successfully!") {
-                  navigate("/dashboard");
-                }
+                // Navigate to dashboard when closing the success message
+                navigate("/dashboard");
               }}
               style={{
                 position: "absolute",
