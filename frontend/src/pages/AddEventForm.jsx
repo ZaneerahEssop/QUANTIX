@@ -43,7 +43,6 @@ export default function AddEventForm() {
   const [allVendors, setAllVendors] = useState([]);
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [selectedVendors, setSelectedVendors] = useState([]);
-  const [vendorRequests, setVendorRequests] = useState({}); // Track vendor request statuses
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -287,214 +286,42 @@ export default function AddEventForm() {
     filterVendors();
   }, [searchTerm, selectedCategory, allVendors]);
 
-  const handleAddVendor = async (vendor) => {
-    // Don’t add if already selected or request already sent
-    if (
-      selectedVendors.some((v) => v.vendor_id === vendor.vendor_id) ||
-      vendorRequests[vendor.vendor_id]
-    ) {
+  const handleSelectVendor = (vendor) => {
+    if (selectedVendors.some((v) => v.vendor_id === vendor.vendor_id)) {
       return;
     }
 
-    try {
-      // Set request as pending in local state
-      setVendorRequests((prev) => ({
-        ...prev,
-        [vendor.vendor_id]: { status: "pending" },
-      }));
-
-      // Get current user session
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("No active session. Please log in.");
-      }
-
-      // Get the current event ID (or temporary one if not saved yet)
-      const eventId = formData.event_id || `temp-${Date.now()}`;
-
-      // API base URL
-      const API_URL = process.env.REACT_APP_API_URL;
-
-      const isDevelopment = process.env.NODE_ENV === "development";
-
-      // Request body – only fields that exist in vendor_requests
-      const requestBody = {
-        event_id: eventId,
-        vendor_id: vendor.vendor_id,
-        requester_id: session.user.id,
-        status: "pending",
-      };
-
-      console.log("Sending vendor request:", {
-        url: `${API_URL}/api/vendor-requests`,
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token?.substring(0, 10)}...`,
-        },
-        body: requestBody,
-      });
-
-      let responseData;
-
-      if (isDevelopment) {
-        console.log("Development mode: Using mock vendor request response");
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        responseData = {
-          success: true,
-          request: {
-            id: `mock-${Date.now()}`,
-            event_id: requestBody.event_id,
-            vendor_id: requestBody.vendor_id,
-            requester_id: requestBody.requester_id,
-            status: "pending",
-            created_at: new Date().toISOString(),
-          },
-        };
-      } else {
-        const response = await fetch(`${API_URL}/api/vendor-requests`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify(requestBody),
-        });
-
-        try {
-          responseData = await response.json();
-        } catch (err) {
-          const errorText = await response.text();
-          throw new Error(`Invalid JSON response: ${errorText}`);
-        }
-
-        if (!response.ok) {
-          const errorMessage =
-            responseData?.error ||
-            `Failed to send vendor request: ${response.status} ${response.statusText}`;
-          throw new Error(errorMessage);
-        }
-      }
-
-      // Update local state with actual request data
-      setVendorRequests((prev) => ({
-        ...prev,
-        [vendor.vendor_id]: {
-          status: responseData.request.status,
-          request_id: responseData.request.request_id,
-        },
-      }));
-
-      setSelectedVendors((prev) => [
-        ...prev,
-        {
-          ...vendor,
-          request_status: responseData.request.status,
-          request_id: responseData.request.request_id,
-        },
-      ]);
-
-      setSuccessMessage(`Request sent to ${vendor.business_name}`);
-      setShowSuccess(true);
-    } catch (error) {
-      console.error("Error sending vendor request:", error);
-
-      // Remove pending status on error
-      const { [vendor.vendor_id]: _, ...remainingRequests } = vendorRequests;
-      setVendorRequests(remainingRequests);
-
-      setShowWarning(true);
-      setWarningMessage(
-        `Failed to send request to ${vendor.business_name}. ${
-          error.message || "Unknown error occurred"
-        }. Please try again or contact support if the problem persists.`
-      );
-
-      if (error.message.includes("401")) {
-        setWarningMessage((prev) => prev + " You may need to log in again.");
-      }
-    }
+    setSelectedVendors((prev) => [
+      ...prev,
+      {
+        ...vendor,
+        request_status: "selected",
+      },
+    ]);
   };
 
-  const handleRemoveVendor = async (vendorToRemove) => {
+  const handleRemoveVendor = (vendorToRemove) => {
     const vendorName = vendorToRemove.business_name || "Vendor";
 
     try {
-      // If there's a pending/accepted request, we should cancel it
-      if (vendorToRemove.request_id) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session) {
-          throw new Error("No active session");
-        }
-
-        const API_URL = process.env.REACT_APP_API_URL;
-
-        // In development, just simulate the deletion
-        if (process.env.NODE_ENV === "development") {
-          console.log(
-            "Development mode: Simulating request cancellation for",
-            vendorToRemove.request_id
-          );
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        } else {
-          // Make the actual API call in production
-          const response = await fetch(
-            `${API_URL}/api/vendor-requests/${vendorToRemove.request_id}`,
-            {
-              method: "DELETE",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${session.access_token}`,
-              },
-            }
-          );
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(
-              errorData.message ||
-                `Failed to cancel request: ${response.status} ${response.statusText}`
-            );
-          }
-        }
-      }
-
-      // Remove from selected vendors
+      // Simply remove from selected vendors - no API call needed since
+      // requests haven't been sent yet
       setSelectedVendors((prev) =>
         prev.filter((vendor) => vendor.vendor_id !== vendorToRemove.vendor_id)
       );
 
-      // Remove from requests tracking
-      setVendorRequests((prev) => {
-        const { [vendorToRemove.vendor_id]: _, ...remaining } = prev;
-        return remaining;
-      });
-
       // Show success message
-      setSuccessMessage(`Request to ${vendorName} has been cancelled.`);
+      setSuccessMessage(`${vendorName} removed from selection.`);
       setShowSuccess(true);
-    } catch (error) {
-      console.error("Error cancelling vendor request:", error);
-      setWarningMessage(
-        `Failed to cancel request to ${vendorName}. ` +
-          `${error.message || "Please try again."}`
-      );
-      setShowWarning(true);
-    }
-  };
 
-  const getVendorStatus = (vendor) => {
-    if (vendor.request_id) {
-      return vendor.request_status;
-    } else if (vendorRequests[vendor.vendor_id]) {
-      return vendorRequests[vendor.vendor_id].status;
-    } else {
-      return null;
+      // Optional: Auto-hide after 1.5 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 1500);
+    } catch (error) {
+      console.error("Error removing vendor:", error);
+      setWarningMessage(`Failed to remove ${vendorName}. Please try again.`);
+      setShowWarning(true);
     }
   };
 
@@ -577,7 +404,13 @@ export default function AddEventForm() {
 
       // Success 🎉
       setFormData((prev) => ({ ...prev, event_id: data.event.event_id }));
-      setSuccessMessage("Event created successfully!");
+      setSuccessMessage(
+        `Event "${formData.name}" created successfully${
+          selectedVendors.length > 0
+            ? ` and ${selectedVendors.length} vendor request(s) sent!`
+            : "!"
+        }`
+      );
       setShowSuccess(true);
     } catch (error) {
       console.error("Error creating event:", error);
@@ -1069,91 +902,84 @@ export default function AddEventForm() {
                 </div>
               ) : (
                 <div className="vendor-grid">
-                  {filteredVendors.map((vendor) => (
-                    <div
-                      key={vendor.vendor_id}
-                      className="vendor-card"
-                      onClick={(e) => {
-                        // Only navigate if the click is not on the request button or its children
-                        if (
-                          !e.target.closest(
-                            ".add-vendor-btn, .undo-request-btn"
-                          )
-                        ) {
-                          handleVendorCardClick(vendor.vendor_id);
-                        }
-                      }}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <div className="vendor-info">
-                        <h4>{vendor.business_name}</h4>
-                        <div className="vendor-category">
-                          {vendor.service_type}
-                        </div>
-                        <div className="vendor-description">
-                          {vendor.description || "No description available."}
-                        </div>
-                      </div>
-                      <div className="vendor-actions">
-                        <button
-                          type="button"
-                          className={`add-vendor-btn ${
-                            getVendorStatus(vendor) ? "added" : ""
-                          } ${
-                            getVendorStatus(vendor) === "pending"
-                              ? "pending"
-                              : ""
-                          }`}
-                          onClick={() => handleAddVendor(vendor)}
-                          disabled={!!getVendorStatus(vendor)}
-                          title={
-                            getVendorStatus(vendor) === "pending"
-                              ? "Request pending"
-                              : ""
+                  {filteredVendors.map((vendor) => {
+                    const isSelected = selectedVendors.some(
+                      (v) => v.vendor_id === vendor.vendor_id
+                    );
+
+                    return (
+                      <div
+                        key={vendor.vendor_id}
+                        className="vendor-card"
+                        onClick={(e) => {
+                          // Only navigate if the click is not on the request button or its children
+                          if (
+                            !e.target.closest(
+                              ".add-vendor-btn, .undo-request-btn"
+                            )
+                          ) {
+                            handleVendorCardClick(vendor.vendor_id);
                           }
-                        >
-                          {getVendorStatus(vendor) === "pending" ? (
-                            <>
-                              <FaClock /> Requested
-                            </>
-                          ) : getVendorStatus(vendor) === "accepted" ? (
-                            <>
-                              <FaCheck /> Confirmed
-                            </>
-                          ) : getVendorStatus(vendor) === "rejected" ? (
-                            <>
-                              <FaTimes /> Declined
-                            </>
-                          ) : (
-                            <>
-                              <FaPlus /> Request Vendor
-                            </>
-                          )}
-                        </button>
-                        {getVendorStatus(vendor) === "pending" && (
+                        }}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <div className="vendor-info">
+                          <h4>{vendor.business_name}</h4>
+                          <div className="vendor-category">
+                            {vendor.service_type}
+                          </div>
+                          <div className="vendor-description">
+                            {vendor.description || "No description available."}
+                          </div>
+                        </div>
+                        <div className="vendor-actions">
                           <button
                             type="button"
-                            className="undo-request-btn"
+                            className={`add-vendor-btn ${
+                              isSelected ? "added" : ""
+                            } ${isSelected ? "selected" : ""}`}
                             onClick={(e) => {
                               e.stopPropagation();
-                              e.preventDefault();
-                              handleRemoveVendor(vendor);
+                              handleSelectVendor(vendor);
                             }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
+                            disabled={isSelected}
+                            title={isSelected ? "Vendor selected" : ""}
+                          >
+                            {isSelected ? (
+                              <>
+                                <FaCheck /> Selected
+                              </>
+                            ) : (
+                              <>
+                                <FaPlus /> Select Vendor
+                              </>
+                            )}
+                          </button>
+                          {isSelected && (
+                            <button
+                              type="button"
+                              className="undo-request-btn"
+                              onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
                                 handleRemoveVendor(vendor);
-                              }
-                            }}
-                            title="Cancel request"
-                          >
-                            Undo
-                          </button>
-                        )}
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleRemoveVendor(vendor);
+                                }
+                              }}
+                              title="Remove from selection"
+                            >
+                              Undo
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 

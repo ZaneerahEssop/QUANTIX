@@ -77,22 +77,27 @@ body {
   width: 100%;
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  padding-top: 1.5rem; /* UPDATED: Pushes content down */
-  padding-bottom: -0.5rem; /* UPDATED: Balances the padding */
+  align-items: center;
+  padding: 0.5rem 5%;
   padding-left: 5%;
   padding-right: 5%;
   background-color: white;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   z-index: 1000;
+  min-height: 70px;
 }
 
 .landing-page .logo {
+  display: flex;
+  align-items: center;  
+  margin: 0;
+  padding: 0;           
+  line-height: 1;      
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--blush);
-  /* Removed relative positioning */
 }
+
 
 .landing-page .nav-links {
   display: flex;

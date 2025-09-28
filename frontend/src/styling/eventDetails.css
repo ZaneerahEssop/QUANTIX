@@ -201,16 +201,42 @@
     font-weight: 500;
 }
 
+/* --- NEW: STYLING FOR INFO BOXES IN EDIT MODE --- */
+.info-box input[type="date"],
+.info-box input[type="time"],
+.info-box input[type="text"] {
+    width: 100%;
+    border: none;
+    background: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    box-sizing: border-box;
+    color: var(--text-primary);
+    border: 1px solid #ddd;
+}
+
+.info-box input:focus {
+    outline: none;
+    border-color: var(--blush);
+}
+/* --- END OF NEW STYLES --- */
+
+
 /* Color variations for each box */
 .date-box { border-left: 5px solid var(--peach); }
 .time-box { border-left: 5px solid var(--blush); }
 .venue-box { border-left: 5px solid var(--coral); }
 .theme-box { border-left: 5px solid var(--azalea); }
 
-.date-box p { color: var(--peach); }
-.time-box p { color: var(--blush); }
-.venue-box p { color: var(--coral); }
+.date-box p, .info-box input.date-input { color: var(--peach); }
+.time-box p, .info-box input.time-input { color: var(--blush); }
+.venue-box p, .info-box input.venue-input { color: var(--coral); }
 .theme-box p { color: var(--azalea); }
+
 
 /* Content Sections */
 .event-content {
@@ -393,7 +419,6 @@
 
 .vendor-description {
     font-size: 0.9rem;
-    color: var(--text-secondary);
     line-height: 1.4;
     margin: 0;
     word-wrap: break-word;
@@ -402,7 +427,9 @@
     text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
+    box-orient: vertical;
 }
 
 .vendor-actions {
@@ -596,6 +623,13 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
+.schedule-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
 .schedule-section h2 {
     font-size: 1.5rem;
     font-weight: 600;
@@ -623,6 +657,7 @@
 .schedule-item .schedule-time {
     font-weight: 600;
     color: var(--text-dark);
+    flex-shrink: 0;
 }
 
 .schedule-item .schedule-activity {
@@ -630,21 +665,34 @@
     color: var(--text-primary);
 }
 
+/* --- NEW: Schedule Edit Mode Styles --- */
 .schedule-item.editable {
     background-color: #fff;
     border: 1px solid #ddd;
     gap: 1rem;
+    padding: 0.5rem 1rem;
 }
 
 .schedule-item.editable input {
     border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 0.5rem;
-    font-size: 0.9rem;
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-size: 0.95rem;
+    font-family: 'Poppins', sans-serif;
 }
 
 .schedule-item.editable input[type="time"] {
-    width: 100px;
+    width: auto;
+    border-color: #ccc;
+}
+
+.schedule-item.editable input[type="text"] {
+    flex-grow: 1; /* Makes the activity input take up remaining space */
+}
+
+.schedule-item.editable input:focus {
+    outline: none;
+    border-color: var(--blush);
 }
 
 .remove-btn {
@@ -652,8 +700,14 @@
     border: none;
     color: #f44336;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    transition: color 0.2s;
 }
+.remove-btn:hover {
+    color: #d32f2f;
+}
+/* --- END OF NEW STYLES --- */
 
 .add-btn {
     background-color: #e2e2e2;
@@ -697,6 +751,13 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
+.theme-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
 .theme-section h2 {
     font-size: 1.5rem;
     font-weight: 600;
@@ -708,19 +769,20 @@
     gap: 0.75rem;
 }
 
-.theme-edit-form .form-group {
+/* --- NEW: Theme Edit Mode Styles --- */
+.theme-editor .form-group {
     margin-bottom: 1.5rem;
 }
 
-.theme-edit-form label {
+.theme-editor label {
     display: block;
     font-weight: 500;
     margin-bottom: 0.5rem;
     color: var(--text-dark);
 }
 
-.theme-edit-form input[type="text"],
-.theme-edit-form textarea {
+.theme-editor input[type="text"],
+.theme-editor textarea {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid #ddd;
@@ -731,8 +793,8 @@
     box-sizing: border-box;
 }
 
-.theme-edit-form input:focus,
-.theme-edit-form textarea:focus {
+.theme-editor input:focus,
+.theme-editor textarea:focus {
     outline: none;
     border-color: var(--blush);
 }
@@ -740,26 +802,64 @@
 .color-palette {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 1rem;
+    align-items: center;
 }
 
-.color-swatch {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 3px solid transparent;
+.color-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 35px;
+    height: 35px;
+    background-color: transparent;
+    border: none;
     cursor: pointer;
-    transition: transform 0.2s, border-color 0.2s;
+}
+input[type="color"]::-webkit-color-swatch {
+    border-radius: 50%;
+    border: 2px solid #ddd;
+}
+input[type="color"]::-moz-color-swatch {
+    border-radius: 50%;
+    border: 2px solid #ddd;
 }
 
-.color-swatch:hover {
-    transform: scale(1.1);
+.remove-color, .add-color {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.remove-color:hover {
+    color: #f44336;
 }
 
-.color-swatch.selected {
-    border-color: #333; /* Darker border for selected */
-    transform: scale(1.1);
+.add-color {
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
 }
+.add-color:hover {
+    background-color: #f1f1f1;
+    color: var(--text-primary);
+}
+/* --- END OF NEW STYLES --- */
+
 
 .save-theme-btn {
     background-color: var(--blush);
@@ -784,35 +884,33 @@
 .theme-display {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
-.theme-detail {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.theme-detail .detail-label {
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-.theme-detail p {
+.theme-display h3 {
     margin: 0;
-    font-size: 1rem;
-    color: var(--text-secondary);
+    font-size: 1.25rem;
 }
-
-.theme-colors {
+.theme-display .color-palette-display {
     display: flex;
-    gap: 8px;
+    gap: 0.75rem;
 }
-
-.color-swatch.display {
+.theme-display .color-swatch {
     width: 30px;
     height: 30px;
     border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.theme-display p {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    background-color: #f8f8f8;
+    border-left: 4px solid var(--azalea);
+    padding: 1rem;
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
 }
 
 .notes-display p {
@@ -825,25 +923,27 @@
 
 /* Highlight the active button */
 .new-button.active {
-    background-color: var(--blush); /* Or any color to show it's selected */
+    background-color: var(--blush);
     color: white;
     border-color: var(--blush);
 }
 
 .new-button.active:hover {
-    background-color: var(--blush); /* Keep the color on hover */
+    background-color: var(--blush);
     color: white;
 }
 
-/* New section classes to ensure proper spacing if not using event-sections wrapper */
-.vendors-section,
-.documents-section,
+/* --- GUEST MANAGEMENT SECTION STYLES (NEW) --- */
 .guests-section {
     background-color: var(--card-background);
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     margin-bottom: 2rem;
+}
+
+.guests-section .section-header {
+    margin-bottom: 1.5rem;
 }
 
 .guests-section h2 {
@@ -853,6 +953,144 @@
     margin-bottom: 1rem;
     color: var(--text-dark);
 }
+
+/* Add Guest Form (Edit Mode) */
+.add-guest-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.add-guest-form input {
+    flex: 1;
+    min-width: 180px;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+.add-guest-form input:focus {
+    outline: none;
+    border-color: var(--blush);
+}
+
+.add-guest-form button {
+    background-color: var(--coral);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.add-guest-form button:hover {
+    background-color: #e58771;
+}
+
+/* Guest List Styling */
+.guest-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.guest-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #fdfdfd;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.guest-info {
+    flex-grow: 1;
+}
+.guest-info strong {
+    color: var(--text-dark);
+}
+.guest-info small {
+    color: var(--text-secondary);
+}
+
+/* View Mode Actions (Send Invite & RSVP) */
+.guest-actions.view-mode {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.send-invite-btn {
+    background-color: var(--peach);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s;
+}
+.send-invite-btn:hover {
+    background-color: #d69e6b;
+}
+
+.rsvp-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.9rem;
+}
+.rsvp-controls span {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+.rsvp-controls label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    cursor: pointer;
+}
+.rsvp-controls input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* Edit Mode Actions (Delete) */
+.delete-guest {
+    background: transparent;
+    border: none;
+    color: #f44336;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+}
+.delete-guest:hover {
+    color: #c62828;
+}
+
+/* --- END OF GUEST MANAGEMENT STYLES --- */
+
+
 /* Responsive Styles */
 @media (max-width: 768px) {
     .event-content {
@@ -877,4 +1115,65 @@
         width: 100%;
         justify-content: center;
     }
+
+    .add-guest-form {
+        flex-direction: column;
+    }
+    .add-guest-form button {
+        width: 100%;
+        justify-content: center;
+    }
 }
+
+/* --- MODAL STYLES (UPDATED) --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 2.5rem; /* Increased padding to give the 'X' button space */
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+    border: 4px solid var(--blush);
+    position: relative; /* This is crucial for positioning the 'X' button */
+}
+
+.modal-content p {
+    font-size: 1.1rem;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+/* New style for the 'X' button */
+.modal-close-x-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    font-size: 2rem; /* Makes the 'X' larger and easier to click */
+    font-weight: 300;
+    line-height: 1;
+    color: #aaa;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+
+.modal-close-x-btn:hover {
+    color: var(--text-dark); /* Darkens the 'X' on hover */
+}
+/* --- END OF MODAL STYLES --- */
