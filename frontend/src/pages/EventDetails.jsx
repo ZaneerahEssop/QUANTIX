@@ -20,7 +20,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../client";
 import "../styling/eventDetails.css";
 
-// --- Sub-components (EventSchedule, EventTheme) are unchanged ---
+// --- Sub-components (EventSchedule, EventTheme, GuestManagement) are unchanged ---
 const EventSchedule = ({ schedule, onUpdate, isEditing }) => {
   const handleAddItem = () =>
     onUpdate([...(schedule || []), { time: "", activity: "" }]);
@@ -368,6 +368,20 @@ const GuestManagement = ({
   );
 };
 
+// --- Custom Modal Component with an 'X' button ---
+const SuccessModal = ({ message, onClose }) => {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="modal-close-x-btn">
+          &times;
+        </button>
+        <p>{message}</p>
+      </div>
+    </div>
+  );
+};
+
 // Main EventDetails component
 const EventDetails = () => {
   const { id } = useParams();
@@ -406,6 +420,10 @@ const EventDetails = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [theme, setTheme] = useState({ name: "", colors: [], notes: "" });
+
+  // --- State for the modal ---
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   const API_URL = process.env.REACT_APP_API_URL;
 
@@ -746,10 +764,14 @@ const EventDetails = () => {
         theme: theme,
       }));
 
-      alert("Event and guests updated successfully!");
+      // Show success modal instead of alert
+      setModalMessage("Event and guests updated successfully!");
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error updating event:", error);
-      alert(`Failed to update event: ${error.message}`);
+      // Show error modal instead of alert
+      setModalMessage(`Failed to update event: ${error.message}`);
+      setShowSuccessModal(true);
     }
   };
 
@@ -910,6 +932,14 @@ const EventDetails = () => {
 
   return (
     <div className="event-details">
+      {/* --- Conditionally render the modal --- */}
+      {showSuccessModal && (
+        <SuccessModal
+          message={modalMessage}
+          onClose={() => setShowSuccessModal(false)}
+        />
+      )}
+
       <div className="event-header">
         <button onClick={() => navigate(-1)} className="back-button">
           <FaArrowLeft /> Back to Dashboard
