@@ -247,14 +247,20 @@ export default function AddEventForm() {
       try {
         let result = [...allVendors];
 
+        // --- CHANGE START ---
         // Filter by category
         if (selectedCategory !== "All") {
           result = result.filter(
             (v) =>
               v.service_type &&
-              v.service_type.toLowerCase() === selectedCategory.toLowerCase()
+              v.service_type
+                .toLowerCase()
+                .split(',')
+                .map(s => s.trim())
+                .includes(selectedCategory.toLowerCase())
           );
         }
+        // --- CHANGE END ---
 
         // Filter by search term
         if (searchTerm) {
@@ -377,7 +383,9 @@ export default function AddEventForm() {
         start_time: formData.time
           ? `${formData.date}T${formData.time}`
           : `${formData.date}T00:00:00`,
-        end_time: formData.end_time || null,
+        end_time: formData.end_time
+          ? `${formData.date}T${formData.end_time}`
+          : null,
         venue: formData.venue || null,
         planner_id: user.id,
         selectedVendors: selectedVendors.map((v) => ({

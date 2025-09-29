@@ -203,7 +203,6 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
 };
 
 
-// --- CHANGE IS IN THIS COMPONENT ---
 const GuestManagement = ({
   guests,
   onUpdate,
@@ -244,8 +243,6 @@ const GuestManagement = ({
   const handleRemoveGuest = (guestId) =>
     onUpdate((guests || []).filter((g) => g.id !== guestId));
 
-  // --- MODIFIED FUNCTION ---
-  // This function now calls your backend API endpoint.
   const handleSendInvite = async (guest) => {
     // First, check if the guest has an email address
     if (!guest.contact) {
@@ -982,6 +979,21 @@ const EventDetails = () => {
   const rejectedRequests = vendorRequests.filter(
     (req) => req.status === "rejected"
   );
+  
+  // --- CHANGE START ---
+  // Create a clean, unique list of vendor categories
+  const uniqueVendorCategories = Array.from(
+    new Set(
+      allVendors
+        .flatMap((v) =>
+          v.service_type
+            ? v.service_type.split(",").map((s) => s.trim().toLowerCase())
+            : []
+        )
+        .filter(Boolean) // Remove any empty strings
+    )
+  ).sort();
+  // --- CHANGE END ---
 
   return (
     <div className="event-details">
@@ -1225,47 +1237,46 @@ const EventDetails = () => {
                                     </button>
                                     )}
                                 </div>
+                                {/* --- CHANGE START --- */}
                                 <select
                                     className="category-filter"
                                     value={selectedCategory}
                                     onChange={(e) => setSelectedCategory(e.target.value)}
                                 >
                                     <option value="All">All Categories</option>
-                                    {Array.from(
-                                    new Set(
-                                        [
-                                        ...allVendors.map((v) =>
-                                            v.service_type.trim().toLowerCase()
-                                        ),
-                                        "photography",
-                                        ].filter(Boolean)
-                                    )
-                                    )
-                                    .sort()
-                                    .map((category) => (
-                                        <option key={category} value={category}>
+                                    {uniqueVendorCategories.map((category) => (
+                                    <option key={category} value={category}>
                                         {category.charAt(0).toUpperCase() + category.slice(1)}
-                                        </option>
+                                    </option>
                                     ))}
                                 </select>
+                                {/* --- CHANGE END --- */}
                                 </div>
                                 <div className="vendor-selection">
                                 {allVendors
+                                    // --- CHANGE START ---
                                     .filter((vendor) => {
-                                    const matchesSearch =
+                                      const matchesSearch =
                                         !searchTerm ||
                                         vendor.business_name
-                                        .toLowerCase()
-                                        .includes(searchTerm.toLowerCase()) ||
+                                          .toLowerCase()
+                                          .includes(searchTerm.toLowerCase()) ||
                                         vendor.service_type
-                                        .toLowerCase()
-                                        .includes(searchTerm.toLowerCase());
-                                    const matchesCategory =
+                                          .toLowerCase()
+                                          .includes(searchTerm.toLowerCase());
+                                    
+                                      const matchesCategory =
                                         selectedCategory === "All" ||
-                                        vendor.service_type.trim().toLowerCase() ===
-                                        selectedCategory;
-                                    return matchesSearch && matchesCategory;
+                                        (vendor.service_type &&
+                                          vendor.service_type
+                                            .toLowerCase()
+                                            .split(',')
+                                            .map(s => s.trim())
+                                            .includes(selectedCategory));
+                                    
+                                      return matchesSearch && matchesCategory;
                                     })
+                                    // --- CHANGE END ---
                                     .map((vendor) => {
                                     const request = vendorRequests.find(
                                         (r) => r.vendor_id === vendor.vendor_id
