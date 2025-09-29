@@ -563,7 +563,7 @@ const EventDetails = () => {
     fetchData();
   }, [eventId, navigate, API_URL]);
 
-  const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
+  const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5001";
   const [vendorRequests, setVendorRequests] = useState([]);
 
   useEffect(() => {
