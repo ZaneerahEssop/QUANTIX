@@ -20,12 +20,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../client";
 import "../styling/eventDetails.css";
 
-
-
-
-
-// --- Sub-components (EventSchedule, EventTheme, GuestManagement) are unchanged ---
-const EventSchedule = ({ schedule, onUpdate, isEditing }) => {
+// --- Sub-components (EventSchedule, EventTheme, GuestManagement) with individual edit controls ---
+const EventSchedule = ({ schedule, onUpdate, isEditing, onToggleEdit }) => {
   const handleAddItem = () =>
     onUpdate([...(schedule || []), { time: "", activity: "" }]);
   const handleRemoveItem = (index) =>
@@ -35,10 +31,14 @@ const EventSchedule = ({ schedule, onUpdate, isEditing }) => {
     newSchedule[index][field] = value;
     onUpdate(newSchedule);
   };
+  
   return (
     <div className="schedule-section">
       <div className="section-header">
         <h2>Schedule</h2>
+        <button onClick={onToggleEdit} className="edit-button">
+          {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Schedule" : "Edit Schedule"}
+        </button>
       </div>
       {isEditing ? (
         <>
@@ -89,7 +89,7 @@ const EventSchedule = ({ schedule, onUpdate, isEditing }) => {
   );
 };
 
-const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
+const EventTheme = ({ theme, onUpdate, isEditing, onToggleEdit }) => {
   const safeTheme =
     typeof theme === "string"
       ? (() => {
@@ -129,6 +129,9 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
     <div className="theme-section">
       <div className="section-header">
         <h2>Event Theme</h2>
+        <button onClick={onToggleEdit} className="edit-button">
+          {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Theme" : "Edit Theme"}
+        </button>
       </div>
       {isEditing ? (
         <div className="theme-editor">
@@ -209,6 +212,7 @@ const GuestManagement = ({
   guests,
   onUpdate,
   isEditing,
+  onToggleEdit,
   eventData,
   API_URL,
 }) => {
@@ -253,6 +257,9 @@ const GuestManagement = ({
     <div className="guests-section">
       <div className="section-header">
         <h2>Guest Management</h2>
+        <button onClick={onToggleEdit} className="edit-button">
+          {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Guests" : "Edit Guests"}
+        </button>
       </div>
 
       {isEditing && (
@@ -394,17 +401,13 @@ const EventDetails = () => {
   const isReadOnly = searchParams.get("readonly") === "true";
   const eventId = id;
   const navigate = useNavigate();
+  
   // Function to handle vendor card click
   const handleVendorCardClick = (vendorId) => {
     navigate(`/vendors/${vendorId}/services?readonly=true`);
   };
+  
   const [eventData, setEventData] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  useEffect(() => {
-    if (isReadOnly) {
-      setIsEditing(false);
-    }
-  }, [isReadOnly]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState("overview");
   const [formData, setFormData] = useState({
@@ -414,6 +417,15 @@ const EventDetails = () => {
     venue: "",
     notes: "",
   });
+  
+  // Individual edit states for each section
+  const [isMainEditing, setIsMainEditing] = useState(false);
+  const [isScheduleEditing, setIsScheduleEditing] = useState(false);
+  const [isThemeEditing, setIsThemeEditing] = useState(false);
+  const [isGuestsEditing, setIsGuestsEditing] = useState(false);
+  const [isVendorsEditing, setIsVendorsEditing] = useState(false);
+  const [isDocumentsEditing, setIsDocumentsEditing] = useState(false);
+  
   const [vendors, setVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -431,6 +443,18 @@ const EventDetails = () => {
   const [modalMessage, setModalMessage] = useState("");
 
   const API_URL = process.env.REACT_APP_API_URL;
+
+  // Reset all edit states when read-only mode changes
+  useEffect(() => {
+    if (isReadOnly) {
+      setIsMainEditing(false);
+      setIsScheduleEditing(false);
+      setIsThemeEditing(false);
+      setIsGuestsEditing(false);
+      setIsVendorsEditing(false);
+      setIsDocumentsEditing(false);
+    }
+  }, [isReadOnly]);
 
   const formatGuestStatusForUI = (dbStatus) => {
     if (dbStatus === "Attending") return "attending";
@@ -708,15 +732,13 @@ const EventDetails = () => {
     };
   };
 
-  const handleSave = async () => {
+  const handleSaveMainDetails = async () => {
     if (isReadOnly) return;
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
-
-      await handleGuestUpdates();
 
       const cleanTheme = cleanThemeObject(theme);
 
@@ -747,7 +769,96 @@ const EventDetails = () => {
       const result = await response.json();
       console.log("Save response:", result);
 
-      setIsEditing(false);
+      setIsMainEditing(false);
+
+      setEventData((prev) => ({
+        ...prev,
+        name: formData.name,
+        start_time: startTime,
+        venue: formData.venue,
+        theme: theme,
+      }));
+
+      setModalMessage("Event details updated successfully!");
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Error updating event:", error);
+      setModalMessage(`Failed to update event: ${error.message}`);
+      setShowSuccessModal(true);
+    }
+  };
+
+  const handleSaveSchedule = async () => {
+    if (isReadOnly) return;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const response = await fetch(`${API_URL}/api/events/${eventId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          schedule: schedule,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update schedule");
+
+      setIsScheduleEditing(false);
+      setModalMessage("Schedule updated successfully!");
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Error updating schedule:", error);
+      setModalMessage(`Failed to update schedule: ${error.message}`);
+      setShowSuccessModal(true);
+    }
+  };
+
+  const handleSaveTheme = async () => {
+    if (isReadOnly) return;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const cleanTheme = cleanThemeObject(theme);
+
+      const response = await fetch(`${API_URL}/api/events/${eventId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          theme: cleanTheme,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update theme");
+
+      setIsThemeEditing(false);
+      setModalMessage("Theme updated successfully!");
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Error updating theme:", error);
+      setModalMessage(`Failed to update theme: ${error.message}`);
+      setShowSuccessModal(true);
+    }
+  };
+
+  const handleSaveGuests = async () => {
+    if (isReadOnly) return;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await handleGuestUpdates();
 
       const guestsResponse = await fetch(`${API_URL}/api/guests/${eventId}`);
       const guestsData = await guestsResponse.json();
@@ -761,21 +872,12 @@ const EventDetails = () => {
       setGuests(formattedGuests);
       initialGuestsRef.current = formattedGuests;
 
-      setEventData((prev) => ({
-        ...prev,
-        name: formData.name,
-        start_time: startTime,
-        venue: formData.venue,
-        theme: theme,
-      }));
-
-      // Show success modal instead of alert
-      setModalMessage("Event and guests updated successfully!");
+      setIsGuestsEditing(false);
+      setModalMessage("Guests updated successfully!");
       setShowSuccessModal(true);
     } catch (error) {
-      console.error("Error updating event:", error);
-      // Show error modal instead of alert
-      setModalMessage(`Failed to update event: ${error.message}`);
+      console.error("Error updating guests:", error);
+      setModalMessage(`Failed to update guests: ${error.message}`);
       setShowSuccessModal(true);
     }
   };
@@ -929,12 +1031,6 @@ const EventDetails = () => {
     });
   };
 
-  const toggleEdit = () => {
-    if (!isReadOnly) {
-      setIsEditing(!isEditing);
-    }
-  };
-
   return (
     <div className="event-details">
       {/* --- Conditionally render the modal --- */}
@@ -980,88 +1076,94 @@ const EventDetails = () => {
           </button>
         </div>
         <div className="header-actions">
-          {isEditing ? (
-            <button onClick={handleSave} className="save-button">
-              <FaSave /> Save Changes
-            </button>
-          ) : (
-            !isReadOnly && (
-              <button onClick={toggleEdit} className="edit-button">
-                <FaEdit /> Edit Event
-              </button>
-            )
-          )}
           <button onClick={handleExport} className="export-button">
             <FaUpload /> Export Event Data
           </button>
         </div>
       </div>
-     <div className="event-info-boxes" style={{
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: '0.8rem',
-  marginTop: '2rem',
-  marginBottom: '2rem'
-}}>
-        <div className="info-box date-box">
-          <h4>
-            <FaCalendarAlt /> Date
-          </h4>
-          <p>
-            {isEditing ? (
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleInputChange}
-              />
-            ) : (
-              formatDisplayDate(formData.date)
-            )}
-          </p>
+
+      {/* Main Event Details Section with Edit Button */}
+      <div className="event-main-details-section">
+        <div className="section-header">
+          <h2>Event Details</h2>
+          {!isReadOnly && (
+            <button 
+              onClick={() => isMainEditing ? handleSaveMainDetails() : setIsMainEditing(true)} 
+              className="edit-button"
+            >
+              {isMainEditing ? <FaSave /> : <FaEdit />} {isMainEditing ? "Save Details" : "Edit Details"}
+            </button>
+          )}
         </div>
-        <div className="info-box time-box">
-          <h4>
-            <FaClock /> Time
-          </h4>
-          <p>
-            {isEditing ? (
-              <input
-                type="time"
-                name="time"
-                value={formData.time}
-                onChange={handleInputChange}
-              />
-            ) : (
-              formData.time || "Not specified"
-            )}
-          </p>
-        </div>
-        <div className="info-box venue-box">
-          <h4>
-            <FaMapMarkerAlt /> Venue
-          </h4>
-          <p>
-            {isEditing ? (
-              <input
-                type="text"
-                name="venue"
-                value={formData.venue}
-                onChange={handleInputChange}
-                placeholder="Venue"
-              />
-            ) : (
-              eventData.venue || "Not specified"
-            )}
-          </p>
-        </div>
-        <div className="info-box theme-box">
-          <h4>
-            <FaStar /> Theme
-          </h4>
-          <p>{eventData.theme?.name || "Not specified"}</p>
+        
+        <div className="event-info-boxes" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '0.8rem',
+          marginTop: '1rem',
+          marginBottom: '2rem'
+        }}>
+          <div className="info-box date-box">
+            <h4>
+              <FaCalendarAlt /> Date
+            </h4>
+            <p>
+              {isMainEditing ? (
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleInputChange}
+                />
+              ) : (
+                formatDisplayDate(formData.date)
+              )}
+            </p>
+          </div>
+          <div className="info-box time-box">
+            <h4>
+              <FaClock /> Time
+            </h4>
+            <p>
+              {isMainEditing ? (
+                <input
+                  type="time"
+                  name="time"
+                  value={formData.time}
+                  onChange={handleInputChange}
+                />
+              ) : (
+                formData.time || "Not specified"
+              )}
+            </p>
+          </div>
+          <div className="info-box venue-box">
+            <h4>
+              <FaMapMarkerAlt /> Venue
+            </h4>
+            <p>
+              {isMainEditing ? (
+                <input
+                  type="text"
+                  name="venue"
+                  value={formData.venue}
+                  onChange={handleInputChange}
+                  placeholder="Venue"
+                />
+              ) : (
+                eventData.venue || "Not specified"
+              )}
+            </p>
+          </div>
+          <div className="info-box theme-box">
+            <h4>
+              <FaStar /> Theme
+            </h4>
+            <p>{eventData.theme?.name || "Not specified"}</p>
+          </div>
         </div>
       </div>
+
       <div className="event-sections">
         {activeView === "overview" && (
           <>
@@ -1069,14 +1171,16 @@ const EventDetails = () => {
               <EventSchedule
                 schedule={schedule}
                 onUpdate={setSchedule}
-                isEditing={isEditing}
+                isEditing={isScheduleEditing}
+                onToggleEdit={() => isScheduleEditing ? handleSaveSchedule() : setIsScheduleEditing(true)}
               />
             </section>
             <section>
               <EventTheme
                 theme={theme}
                 onUpdate={setTheme}
-                isEditing={isEditing}
+                isEditing={isThemeEditing}
+                onToggleEdit={() => isThemeEditing ? handleSaveTheme() : setIsThemeEditing(true)}
               />
             </section>
           </>
@@ -1085,7 +1189,8 @@ const EventDetails = () => {
           <GuestManagement
             guests={guests}
             onUpdate={setGuests}
-            isEditing={isEditing}
+            isEditing={isGuestsEditing}
+            onToggleEdit={() => isGuestsEditing ? handleSaveGuests() : setIsGuestsEditing(true)}
             eventData={eventData}
             API_URL={API_URL}
           />
@@ -1094,8 +1199,16 @@ const EventDetails = () => {
           <section className="vendors-section">
             <div className="section-header">
               <h2>Vendors</h2>
+              {!isReadOnly && (
+                <button 
+                  onClick={() => setIsVendorsEditing(!isVendorsEditing)} 
+                  className="edit-button"
+                >
+                  {isVendorsEditing ? <FaSave /> : <FaEdit />} {isVendorsEditing ? "Save Vendors" : "Edit Vendors"}
+                </button>
+              )}
             </div>
-            {isEditing ? (
+            {isVendorsEditing ? (
               <div>
                 <div className="vendor-search-container">
                   <div className="search-box">
@@ -1127,11 +1240,9 @@ const EventDetails = () => {
                     {Array.from(
                       new Set(
                         [
-                          // This gets all categories from your vendor data
                           ...vendors.map((v) =>
                             v.service_type.trim().toLowerCase()
                           ),
-                          // This line ensures 'photography' is always in the list
                           "photography",
                         ].filter(Boolean)
                       )
@@ -1166,7 +1277,6 @@ const EventDetails = () => {
                         key={vendor.vendor_id}
                         className="vendor-card"
                         onClick={(e) => {
-                          // Only navigate if the click is not on the request button or its children
                           if (
                             !e.target.closest(
                               ".add-vendor-btn, .undo-request-btn"
@@ -1202,7 +1312,7 @@ const EventDetails = () => {
                                 : ""
                             }`}
                             onClick={() => handleVendorToggle(vendor.vendor_id)}
-                            disabled={!isEditing}
+                            disabled={!isVendorsEditing}
                           >
                             {selectedVendors.includes(vendor.vendor_id) ? (
                               <>
@@ -1221,7 +1331,7 @@ const EventDetails = () => {
                               onClick={() =>
                                 handleVendorToggle(vendor.vendor_id)
                               }
-                              disabled={!isEditing}
+                              disabled={!isVendorsEditing}
                             >
                               <FaTimes /> Undo
                             </button>
@@ -1283,7 +1393,7 @@ const EventDetails = () => {
                                 </div>
                               </div>
                               <div className="vendor-request-actions">
-                                {request.status === "pending" && isEditing && (
+                                {request.status === "pending" && isVendorsEditing && (
                                   <div className="action-buttons">
                                     <button
                                       onClick={() =>
@@ -1333,10 +1443,18 @@ const EventDetails = () => {
         )}
         {activeView === "documents" && (
           <section className="documents-section">
-            <div className="documents-header">
+            <div className="section-header">
               <h2>Documents</h2>
+              {!isReadOnly && (
+                <button 
+                  onClick={() => setIsDocumentsEditing(!isDocumentsEditing)} 
+                  className="edit-button"
+                >
+                  {isDocumentsEditing ? <FaSave /> : <FaEdit />} {isDocumentsEditing ? "Save Documents" : "Edit Documents"}
+                </button>
+              )}
             </div>
-            {isEditing && (
+            {isDocumentsEditing && (
               <div className="upload-area">
                 <label className="upload-button">
                   <FaUpload /> Upload Documents
@@ -1368,7 +1486,7 @@ const EventDetails = () => {
                       >
                         <FaFilePdf /> {doc.name}
                       </a>
-                      {isEditing && (
+                      {isDocumentsEditing && (
                         <button
                           onClick={() => handleDeleteDocument(doc)}
                           className="delete-doc"
