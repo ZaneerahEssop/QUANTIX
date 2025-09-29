@@ -23,16 +23,28 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: |
           cd Backend
           npm install
 
-      - name: npm test
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Run backend tests
         run: |
           cd Backend
           chmod +x ./node_modules/.bin/jest
           npx jest --coverage --passWithNoTests
+
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          chmod +x ./node_modules/.bin/jest
+          npx jest --coverage --passWithNoTests
+
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
