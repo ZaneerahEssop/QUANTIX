@@ -1,6 +1,3 @@
-// This is the full, updated test file for your exportController.
-// It includes new tests to improve branch coverage.
-
 const { exportEventData } = require('../Controllers/exportController');
 const supabase = require('../Config/supabase');
 const archiver = require('archiver');
@@ -13,6 +10,7 @@ jest.mock('../Config/supabase', () => ({
   from: jest.fn().mockReturnThis(),
   select: jest.fn().mockReturnThis(),
   eq: jest.fn().mockReturnThis(),
+  in: jest.fn().mockReturnThis(), // <-- Added mock for the '.in()' method
   single: jest.fn(),
 }));
 
@@ -35,31 +33,46 @@ describe('exportEventData Controller', () => {
   // Before each test, reset all mocks to ensure tests are independent.
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset stringify to a default success implementation before each test
+    // Reset stringify to a default success implementation
     stringify.mockImplementation((data, options, callback) => {
-        callback(null, 'header1,header2\nvalue1,value2');
+      callback(null, 'header1,header2\nvalue1,value2');
     });
   });
 
-  // Test Case 1: Successful data export (Happy Path)
-  it('should create a ZIP archive with correct data on success', async () => {
+  // Test Case 1: Successful data export with vendors (Happy Path)
+  it('should create a ZIP archive with guests, event, and vendor data', async () => {
     // ---- 1. Arrange ----
     const mockGuests = [{ id: 1, name: 'John Doe' }];
     const mockEvent = { event_id: 'evt-123', name: 'Annual Gala' };
+    const mockVendorRequests = [{ vendor_id: 'ven-abc' }];
+    const mockVendors = [{ id: 'ven-abc', name: 'Super Catering' }];
 
+    // Mock the chained Supabase calls for each table
     supabase.from.mockImplementation((tableName) => {
-      if (tableName === 'guests') {
-        return {
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockResolvedValue({ data: mockGuests, error: null }),
-        };
-      }
-      if (tableName === 'events') {
-        return {
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnThis(),
-          single: jest.fn().mockResolvedValue({ data: mockEvent, error: null }),
-        };
+      switch (tableName) {
+        case 'guests':
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockResolvedValue({ data: mockGuests, error: null }),
+          };
+        case 'vendor_requests':
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockResolvedValue({ data: mockVendorRequests, error: null }),
+          };
+        case 'vendors':
+          return {
+            select: jest.fn().mockReturnThis(),
+            in: jest.fn().mockResolvedValue({ data: mockVendors, error: null }),
+          };
+        case 'events':
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({ data: mockEvent, error: null }),
+          };
+        default:
+          return { from: jest.fn() };
       }
     });
 
@@ -76,36 +89,54 @@ describe('exportEventData Controller', () => {
     // ---- 3. Assert ----
     expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/zip');
     expect(mockArchive.pipe).toHaveBeenCalledWith(res);
-    expect(mockArchive.append).toHaveBeenCalledTimes(4);
+    // Now expecting 6 files: guests(json+csv), vendors(json+csv), event(json+csv)
+    expect(mockArchive.append).toHaveBeenCalledTimes(6);
     expect(mockArchive.finalize).toHaveBeenCalled();
   });
 
-  // ** NEW TEST FOR BRANCH COVERAGE 1: Database Failure **
+  // Test Case 2: Successful export when NO vendors are found
+  it('should create a ZIP with 4 files if no accepted vendors are found', async () => {
+    // ---- 1. Arrange ----
+    const mockGuests = [{ id: 1, name: 'John Doe' }];
+    const mockEvent = { event_id: 'evt-123', name: 'Annual Gala' };
+
+    supabase.from.mockImplementation((tableName) => {
+      switch (tableName) {
+        case 'guests':
+          return { select: jest.fn().mockReturnThis(), eq: jest.fn().mockResolvedValue({ data: mockGuests, error: null }) };
+        case 'vendor_requests': // This time, it returns an empty array
+          return { select: jest.fn().mockReturnThis(), eq: jest.fn().mockResolvedValue({ data: [], error: null }) };
+        case 'events':
+          return { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), single: jest.fn().mockResolvedValue({ data: mockEvent, error: null }) };
+        default:
+          return { from: jest.fn() };
+      }
+    });
+
+    const req = { params: { eventId: 'evt-123' } };
+    const res = { setHeader: jest.fn(), status: jest.fn().mockReturnThis(), send: jest.fn() };
+
+    // ---- 2. Act ----
+    await exportEventData(req, res);
+
+    // ---- 3. Assert ----
+    expect(supabase.from).toHaveBeenCalledWith('vendors'); // The table is called
+    expect(mockArchive.append).toHaveBeenCalledTimes(6); // Still appends empty vendor files
+    expect(mockArchive.finalize).toHaveBeenCalled();
+  });
+
+  // Test Case 3: Database Failure
   it('should return a 500 error if fetching event data from Supabase fails', async () => {
     // ---- 1. Arrange ----
     const dbError = new Error('Database connection failed');
-    supabase.from.mockImplementation((tableName) => {
-        if (tableName === 'events') {
-            // Make the events query fail
-            return {
-                select: jest.fn().mockReturnThis(),
-                eq: jest.fn().mockReturnThis(),
-                single: jest.fn().mockResolvedValue({ data: null, error: dbError }),
-            };
-        }
-        // Let other calls succeed
-        return {
-            select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockResolvedValue({ data: [{ id: 1 }], error: null }),
-        }
+    // Mock a failure on the first database call to stop the process
+    supabase.from.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockResolvedValue({ data: null, error: dbError }),
     });
 
     const req = { params: { eventId: 'evt-404' } };
-    const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
-        setHeader: jest.fn(),
-    };
+    const res = { status: jest.fn().mockReturnThis(), send: jest.fn(), setHeader: jest.fn() };
 
     // ---- 2. Act ----
     await exportEventData(req, res);
@@ -115,27 +146,26 @@ describe('exportEventData Controller', () => {
     expect(res.send).toHaveBeenCalledWith('Failed to export event data.');
   });
 
-  // ** NEW TEST FOR BRANCH COVERAGE 2: CSV Failure **
+  // Test Case 4: CSV Failure
   it('should return a 500 error if CSV stringification fails', async () => {
     // ---- 1. Arrange ----
-    // Let the Supabase calls succeed
-    supabase.from.mockResolvedValue({ 
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: [{id: 1}], error: null }),
-        single: jest.fn().mockResolvedValue({ data: {id: 1}, error: null }),
+    // Mock successful Supabase calls
+    supabase.from.mockImplementation((tableName) => {
+        return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockResolvedValue({ data: [{ id: 1 }], error: null }),
+            in: jest.fn().mockResolvedValue({ data: [{ id: 1 }], error: null }),
+            single: jest.fn().mockResolvedValue({ data: { id: 1 }, error: null }),
+        };
     });
 
-    // Mock the 'csv-stringify' library to fail for this specific test
+    // Mock the 'csv-stringify' library to fail
     stringify.mockImplementation((data, options, callback) => {
-        callback(new Error('CSV conversion failed'), null);
+      callback(new Error('CSV conversion failed'), null);
     });
 
     const req = { params: { eventId: 'evt-123' } };
-    const res = {
-        status: jest.fn().mockReturnThis(),
-        send: jest.fn(),
-        setHeader: jest.fn(),
-    };
+    const res = { status: jest.fn().mockReturnThis(), send: jest.fn(), setHeader: jest.fn() };
 
     // ---- 2. Act ----
     await exportEventData(req, res);
