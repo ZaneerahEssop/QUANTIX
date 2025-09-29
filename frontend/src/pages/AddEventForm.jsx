@@ -377,7 +377,9 @@ export default function AddEventForm() {
         start_time: formData.time
           ? `${formData.date}T${formData.time}`
           : `${formData.date}T00:00:00`,
-        end_time: formData.end_time || null,
+        end_time: formData.end_time
+          ? `${formData.date}T${formData.end_time}`
+          : null,
         venue: formData.venue || null,
         planner_id: user.id,
         selectedVendors: selectedVendors.map((v) => ({
