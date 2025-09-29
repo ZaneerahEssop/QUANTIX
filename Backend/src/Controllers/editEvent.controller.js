@@ -8,9 +8,11 @@ const editEvent = async (req, res) => {
     console.log("Updating event:", id, "with data:", req.body);
 
     let finalStartTime = start_time;
-    if (date && time) {
-      finalStartTime = `${date}T${time}:00`;
-    } else if (date && !time) {
+    // --- FIX APPLIED HERE ---
+    // Changed the undefined 'time' variable to the correct 'start_time' variable.
+    if (date && start_time) {
+      finalStartTime = `${date}T${start_time}:00`;
+    } else if (date && !start_time) {
       finalStartTime = `${date}T00:00:00`;
     }
 

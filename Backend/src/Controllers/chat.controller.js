@@ -1,4 +1,5 @@
 const supabase = require("../Config/supabase");
+const axios = require('axios');
 
 // Get or create a conversation between planner and vendor
 const getOrCreateConversation = async (req, res) => {
@@ -19,7 +20,16 @@ const getOrCreateConversation = async (req, res) => {
       .eq("vendor_id", vendorId)
       .eq("event_id", eventId || null)
       .eq("is_active", true)
-      .single();
+      .maybeSingle(); // <-- FIX: Changed .single() to .maybeSingle()
+
+    if (findError) {
+        // Handle cases where multiple conversations might exist for the same pair
+        if (findError.code === 'PGRST116') {
+            console.error('Multiple active conversations found for this pair. Please check data integrity.');
+            return res.status(500).json({ error: 'Data integrity issue: Multiple conversations found.' });
+        }
+        throw findError;
+    }
 
     if (existingConversation) {
       return res.status(200).json(existingConversation);
@@ -136,6 +146,26 @@ const sendMessage = async (req, res) => {
         error: "Conversation ID, Sender ID, and message text are required",
       });
     }
+    
+    // --- Profanity Censoring Logic Starts Here ---
+    let textToSave = messageText;
+
+    try {
+      const response = await axios.post(
+        `${process.env.MODERATION_API_URL}/api/v1/check`,
+        { text: messageText },
+        {
+          headers: {
+            'X-Api-Key': process.env.MODERATION_API_KEY,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      textToSave = response.data.censored_text;
+    } catch (apiError) {
+      console.error("Moderation API call failed. Using original message.", apiError.message);
+    }
+    // --- Profanity Censoring Logic Ends Here ---
 
     // Verify conversation exists and user is participant
     const { data: conversation, error: convError } = await supabase
@@ -151,13 +181,13 @@ const sendMessage = async (req, res) => {
         .json({ error: "Unauthorized or conversation not found" });
     }
 
-    // Insert message
+    // Insert the (now censored) message into the database
     const { data: message, error: messageError } = await supabase
       .from("messages")
       .insert({
         conversation_id: conversationId,
         sender_id: senderId,
-        message_text: messageText,
+        message_text: textToSave,
         message_type: messageType,
       })
       .select(
@@ -220,7 +250,6 @@ const getUnreadCount = async (req, res) => {
       return res.status(400).json({ error: "User ID is required" });
     }
 
-    // First, get all conversation IDs where the user is a participant
     const { data: userConversations, error: convError } = await supabase
       .from("conversations")
       .select("conversation_id")
@@ -242,7 +271,6 @@ const getUnreadCount = async (req, res) => {
       (conv) => conv.conversation_id
     );
 
-    // Now get count of unread messages in those conversations
     const { count, error } = await supabase
       .from("messages")
       .select("*", { count: "exact", head: true })
@@ -257,7 +285,8 @@ const getUnreadCount = async (req, res) => {
 
     res.status(200).json({ unreadCount: count || 0 });
   } catch (error) {
-    console.error("Error in getUnreadCount:", error);
+    // FIX: Improved error logging to show full details
+    console.error("Full error in getUnreadCount:", JSON.stringify(error, null, 2));
     res.status(500).json({ error: "Internal server error" });
   }
 };

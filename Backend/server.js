@@ -12,6 +12,7 @@ const vendorRequestRoutes = require("./src/Routes/vendorRequest.routes");
 const chatRoutes = require("./src/Routes/chat.routes");
 const guestRoutes = require("./src/Routes/guests.routes");
 const emailRoutes = require("./src/Routes/email.routes");
+const contractRoutes = require("./src/Routes/contract.routes"); // <-- ADDED
 const path = require("path");
 
 dotenv.config();
@@ -28,8 +29,6 @@ app.use(
   })
 );
 
-
-
 app.use(express.json());
 
 // Routes go here
@@ -43,6 +42,7 @@ app.use("/api/vendor-requests", vendorRequestRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/guests", guestRoutes);
+app.use("/api/contracts", contractRoutes); // <-- ADDED
 
 // Supabase client
 const supabase = createClient(

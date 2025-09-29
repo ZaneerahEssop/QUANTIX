@@ -1,120 +1,71 @@
 const express = require("express");
-const { google } = require("googleapis");
+const nodemailer = require("nodemailer");
 const router = express.Router();
 
-/**
- * Creates a MIME message for the Gmail API.
- * @param {string} to Recipient's email address.
- * @param {string} from Sender's email address ('me' for the authenticated user).
- * @param {string} subject The subject of the email.
- * @param {string} message The HTML body of the email.
- * @returns {string} The base64url encoded email message.
- */
-function createMail(to, from, subject, message) {
-  const emailLines = [
-    `Content-Type: text/html; charset="UTF-8"`,
-    `MIME-Version: 1.0`,
-    `to: ${to}`,
-    `from: ${from}`,
-    `subject: ${subject}`,
-    ``,
-    message,
-  ];
-  const email = emailLines.join("\n");
-
-  // The email needs to be encoded in base64url format
-  return Buffer.from(email).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+// Check if Gmail credentials are configured
+if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+  // Gmail credentials not configured - will be handled in route
 }
 
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD, // This MUST be the 16-digit App Password
+  },
+});
 
-// --- Main Route to Send an Invitation Email ---
+// 2. Create the API endpoint for sending invitations
 router.post("/send-invite", async (req, res) => {
   try {
-    // 1. Destructure the necessary data from the request body
-    const { 
-        guestEmail, 
-        guestName, 
-        eventName, 
-        googleAccessToken, 
-        googleRefreshToken 
-    } = req.body;
-
-    // 2. Validate the incoming data
-    if (!guestEmail || !googleAccessToken || !googleRefreshToken) {
-      return res.status(400).json({ error: "Missing required information to send email." });
+    // Check if Gmail credentials are configured
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      return res.status(500).json({
+        error: "Email service not configured. Please contact administrator.",
+      });
     }
 
-    // 3. Set up the Google OAuth2 Client with your app's credentials
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET
-    );
+    // Destructure the required information from the request body sent by the frontend
+    const { guestEmail, guestName, eventName } = req.body;
 
-    // 4. Set the user's credentials using tokens from the frontend
-    oauth2Client.setCredentials({
-      access_token: googleAccessToken,
-      refresh_token: googleRefreshToken,
-    });
+    // Validate that all necessary information was received
+    if (!guestEmail || !guestName || !eventName) {
+      return res.status(400).json({
+        error: "Missing required fields: guestEmail, guestName, or eventName",
+      });
+    }
 
-    // 5. Create an authenticated Gmail API client
-    const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+    // Construct the email message
+    const mailOptions = {
+      from: `"Eventually Perfect" <${process.env.GMAIL_USER}>`, // Display name and sender email
+      to: guestEmail, // The recipient's email address
+      subject: `🎉 You're Invited to ${eventName}!`, // The subject of the email
+      html: `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2>Hi ${guestName},</h2>
+            <p>You have been formally invited to the event: <strong>${eventName}</strong>.</p>
+            <p>We're excited and look forward to seeing you there!</p>
+            <br/>
+            <p>Best regards,</p>
+            <p><strong>The Eventually Perfect Team</strong></p>
+          </body>
+        </html>
+      `,
+    };
 
-    // 6. Construct the email content
-    const emailSubject = `You're Invited to ${eventName}!`;
-    const emailBody = `
-      <html>
-        <body>
-          <h2>Hi ${guestName || 'there'},</h2>
-          <p>You have been formally invited to the event: <strong>${eventName || 'our upcoming event'}</strong>.</p>
-          <p>We're excited and look forward to seeing you there!</p>
-          <br/>
-          <p>Best regards,</p>
-          <p>The Event Planning Team</p>
-        </body>
-      </html>
-    `;
-    
-    // 7. Create the raw, encoded message for the API
-    const rawMessage = createMail(guestEmail, "me", emailSubject, emailBody);
+   
+    await transporter.sendMail(mailOptions);
 
-    // 8. Send the email via the Gmail API
-    await gmail.users.messages.send({
-      userId: "me", // 'me' refers to the authenticated user whose tokens are being used
-      requestBody: {
-        raw: rawMessage,
-      },
-    });
-
-    // 9. Send a success response
+    // Send a success response back to the frontend
     res.status(200).json({ message: "Invitation sent successfully!" });
-
   } catch (error) {
-    console.error("Failed to send email:", error);
-    console.error("Error details:", {
-      message: error.message,
-      code: error.code,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data
-    });
-    
-    // Handle specific authentication errors
-    if (error.code === 401 || (error.response && error.response.status === 401)) {
-        return res.status(401).json({ error: "Google authentication failed. The token may be invalid or expired. The user might need to log in again." });
-    }
-    
-    // Handle missing environment variables
-    if (error.message.includes("GOOGLE_CLIENT_ID") || error.message.includes("GOOGLE_CLIENT_SECRET")) {
-        return res.status(500).json({ error: "Google OAuth configuration is missing. Please check environment variables." });
-    }
-    
-    // Handle other errors
-    res.status(500).json({ 
-      error: "An unexpected error occurred while trying to send the email.",
-      details: error.message 
-    });
+    // If anything goes wrong, send a server error response
+    res
+      .status(500)
+      .json({ error: "Failed to send invitation. Please try again later." });
   }
 });
 
-
+// Make sure to export the router so your main server file can use it
 module.exports = router;
