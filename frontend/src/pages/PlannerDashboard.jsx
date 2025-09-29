@@ -13,6 +13,142 @@ import Navbar from "../components/Navbar";
 import ChatUI from "../components/ChatUI";
 import chatService from "../services/chatService";
 
+// Add this CSS to your stylesheet
+const responsiveStyles = `
+.dashboard-responsive-container {
+  width: 100%;
+  padding: 0 15px;
+  margin: 0 auto;
+}
+
+.planner-dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.dashboard-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.events-calendar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.welcome-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.tasks-section, .chat-section {
+  width: 100%;
+}
+
+/* Tablet (768px and up) */
+@media (min-width: 768px) {
+  .dashboard-responsive-container {
+    max-width: 720px;
+    padding: 0 2rem;
+  }
+  
+  .welcome-section {
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+  }
+  
+  .events-calendar-row {
+    flex-direction: row;
+  }
+  
+  .events-calendar-row > * {
+    flex: 1;
+  }
+}
+
+/* Desktop (1024px and up) */
+@media (min-width: 1024px) {
+  .dashboard-responsive-container {
+    max-width: 1200px;
+  }
+  
+  .planner-dashboard-content {
+    flex-direction: row;
+  }
+  
+  .dashboard-main {
+    flex: 3;
+  }
+  
+  .chat-section {
+    flex: 2;
+    margin-top: 0 !important;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 767px) {
+  .planner-dashboard {
+    padding: 60px 0 0 0 !important;
+  }
+  
+  .dashboard-responsive-container > div {
+    margin: 10px auto 0 !important;
+    padding: 1rem !important;
+    border-radius: 20px !important;
+  }
+  
+  .events-scroll-container {
+    max-height: 300px !important;
+    min-height: 200px !important;
+  }
+}
+
+/* Ensure images are responsive */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Improve scroll areas */
+.events-scroll-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Calendar responsive fixes */
+.react-calendar {
+  width: 100% !important;
+}
+
+/* Mobile first approach for all elements */
+@media (max-width: 480px) {
+  .welcome-section {
+    gap: 1rem;
+  }
+  
+  .welcome-section h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .welcome-section p {
+    font-size: 0.9rem !important;
+  }
+}
+`;
+
+// Add the styles to the document head
+const styleSheet = document.createElement("style");
+styleSheet.innerText = responsiveStyles;
+document.head.appendChild(styleSheet);
+
 export default function PlannerDashboard({ session }) {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("Planner");
@@ -525,326 +661,264 @@ export default function PlannerDashboard({ session }) {
         background: "radial-gradient(circle at 100% 0%, #FFE4C4, #FFB6C1)",
         padding: "80px 0 0 0",
         boxSizing: "border-box",
+        width: "100%",
+        overflowX: "hidden",
       }}
     >
       <Navbar session={session} />
-      <div
-        style={{
-          backgroundColor: "white",
-          minHeight: "calc(100vh - 100px)",
-          maxWidth: "1200px",
-          margin: "20px auto 0",
-          borderTopLeftRadius: "30px",
-          borderTopRightRadius: "30px",
-          padding: "2rem",
-          boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
-          boxSizing: "border-box",
-        }}
-      >
-        <div className="planner-dashboard-content">
-          <div className="dashboard-main">
-            {/* Welcome Section */}
-            <div
-              style={{
-                marginBottom: "2rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "1.5rem",
-              }}
-            >
-              <div
-                style={{
-                  width: "80px",
-                  height: "80px",
-                  borderRadius: "50%",
-                  backgroundColor: preview ? "transparent" : "#FFDAB9",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  border: "3px solid white",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                  cursor: "pointer",
-                  transition: "transform 0.2s",
-                }}
-                onClick={() => preview && setShowImageModal(true)}
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.transform = "scale(1.05)")
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.transform = "scale(1)")
-                }
-              >
-                {preview ? (
-                  <img
-                    src={preview}
-                    alt="Profile"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: "#FFDAB9",
-                    }}
-                  >
-                    <FaUser
+      
+      {/* Responsive Container */}
+      <div className="dashboard-responsive-container">
+        <div
+          style={{
+            backgroundColor: "white",
+            minHeight: "calc(100vh - 100px)",
+            margin: "20px auto 0",
+            borderTopLeftRadius: "30px",
+            borderTopRightRadius: "30px",
+            padding: "2rem",
+            boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
+            boxSizing: "border-box",
+            width: "100%",
+          }}
+        >
+          <div className="planner-dashboard-content">
+            <div className="dashboard-main">
+              {/* Welcome Section */}
+              <div className="welcome-section">
+                <div
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    backgroundColor: preview ? "transparent" : "#FFDAB9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                    border: "3px solid white",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    cursor: "pointer",
+                    transition: "transform 0.2s",
+                    flexShrink: 0,
+                  }}
+                  onClick={() => preview && setShowImageModal(true)}
+                  onMouseOver={(e) =>
+                    (e.currentTarget.style.transform = "scale(1.05)")
+                  }
+                  onMouseOut={(e) =>
+                    (e.currentTarget.style.transform = "scale(1)")
+                  }
+                >
+                  {preview ? (
+                    <img
+                      src={preview}
+                      alt="Profile"
                       style={{
-                        fontSize: "2.5rem",
-                        color: "#FFFFFF",
-                        filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))",
                         width: "100%",
                         height: "100%",
-                        padding: "0.5rem",
+                        objectFit: "cover",
                       }}
                     />
-                  </div>
-                )}
-              </div>
-              <div>
-                <h1
-                  style={{
-                    fontSize: "2rem",
-                    color: "#333",
-                    margin: "0 0 0.5rem 0",
-                  }}
-                >
-                  Welcome back, {userName}!
-                </h1>
-                <p
-                  style={{
-                    color: "#666",
-                    margin: 0,
-                    fontSize: "1rem",
-                  }}
-                >
-                  Here's what's happening with your plans today.
-                </p>
-              </div>
-            </div>
-
-            {/* Upcoming Events and Calendar Row */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "2rem",
-                marginBottom: "2rem",
-              }}
-            >
-              {/* Upcoming Events Section */}
-              <div
-                style={{
-                  backgroundColor: "#f8f9fa",
-                  borderRadius: "12px",
-                  padding: "1.5rem",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "1.5rem",
-                  }}
-                >
-                  <h2 style={{ margin: 0 }}>Upcoming Events</h2>
-                  <button
-                    onClick={handleAddEvent}
-                    style={{
-                      backgroundColor: "#E8B180",
-                      border: "none",
-                      color: "white",
-                      padding: "0.4rem 1rem",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontWeight: "500",
-                      transition: "all 0.2s",
-                      fontSize: "0.9rem",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = "#D89F73";
-                      e.currentTarget.style.transform = "translateY(-1px)";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = "#E8B180";
-                      e.currentTarget.style.transform = "translateY(0)";
-                    }}
-                  >
-                    <FaPlus size={14} />
-                    Add Event
-                  </button>
-                </div>
-
-                <div
-                  style={{
-                    maxHeight: "500px",
-                    minHeight: "400px",
-                    overflowY: "hidden",
-                    paddingRight: "0.5rem",
-                    transition: "all 0.3s ease",
-                    scrollbarWidth: "thin",
-                    scrollbarColor: "transparent transparent",
-                    msOverflowStyle: "none",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.overflowY = "auto";
-                    e.currentTarget.style.scrollbarColor =
-                      "#E8B180 transparent";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.overflowY = "hidden";
-                    e.currentTarget.style.scrollbarColor =
-                      "transparent transparent";
-                  }}
-                  className="events-scroll-container"
-                >
-                  {getUpcomingEvents().length === 0 ? (
-                    <div
-                      style={{
-                        textAlign: "center",
-                        padding: "2rem",
-                        color: "#666",
-                      }}
-                    >
-                      No upcoming events. Add one to get started!
-                    </div>
                   ) : (
                     <div
                       style={{
+                        width: "100%",
+                        height: "100%",
                         display: "flex",
-                        flexDirection: "column",
-                        gap: "1rem",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "#FFDAB9",
                       }}
                     >
-                      {getUpcomingEvents().map((event) => (
-                        <div
-                          key={event.id}
-                          style={{
-                            backgroundColor: "white",
-                            borderRadius: "8px",
-                            padding: "1rem",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                            transition: "transform 0.2s, box-shadow 0.2s",
-                          }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.transform =
-                              "translateY(-2px)";
-                            e.currentTarget.style.boxShadow =
-                              "0 4px 6px rgba(0,0,0,0.1)";
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.transform = "translateY(0)";
-                            e.currentTarget.style.boxShadow =
-                              "0 1px 3px rgba(0,0,0,0.1)";
-                          }}
-                        >
+                      <FaUser
+                        style={{
+                          fontSize: "2.5rem",
+                          color: "#FFFFFF",
+                          filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))",
+                          width: "100%",
+                          height: "100%",
+                          padding: "0.5rem",
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h1
+                    style={{
+                      fontSize: "2rem",
+                      color: "#333",
+                      margin: "0 0 0.5rem 0",
+                    }}
+                  >
+                    Welcome back, {userName}!
+                  </h1>
+                  <p
+                    style={{
+                      color: "#666",
+                      margin: 0,
+                      fontSize: "1rem",
+                    }}
+                  >
+                    Here's what's happening with your plans today.
+                  </p>
+                </div>
+              </div>
+
+              {/* Upcoming Events and Calendar Row */}
+              <div className="events-calendar-row">
+                {/* Upcoming Events Section */}
+                <div
+                  style={{
+                    backgroundColor: "#f8f9fa",
+                    borderRadius: "12px",
+                    padding: "1.5rem",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "1.5rem",
+                      flexWrap: "wrap",
+                      gap: "1rem",
+                    }}
+                  >
+                    <h2 style={{ margin: 0 }}>Upcoming Events</h2>
+                    <button
+                      onClick={handleAddEvent}
+                      style={{
+                        backgroundColor: "#E8B180",
+                        border: "none",
+                        color: "white",
+                        padding: "0.6rem 1.2rem",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontWeight: "500",
+                        transition: "all 0.2s",
+                        fontSize: "0.9rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        minHeight: "44px",
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = "#D89F73";
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = "#E8B180";
+                        e.currentTarget.style.transform = "translateY(0)";
+                      }}
+                    >
+                      <FaPlus size={14} />
+                      Add Event
+                    </button>
+                  </div>
+
+                  <div
+                    style={{
+                      maxHeight: "500px",
+                      minHeight: "400px",
+                      overflowY: "hidden",
+                      paddingRight: "0.5rem",
+                      transition: "all 0.3s ease",
+                    }}
+                    className="events-scroll-container"
+                  >
+                    {getUpcomingEvents().length === 0 ? (
+                      <div
+                        style={{
+                          textAlign: "center",
+                          padding: "2rem",
+                          color: "#666",
+                        }}
+                      >
+                        No upcoming events. Add one to get started!
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "1rem",
+                        }}
+                      >
+                        {getUpcomingEvents().map((event) => (
                           <div
+                            key={event.id}
                             style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                              marginBottom: "0.5rem",
+                              backgroundColor: "white",
+                              borderRadius: "8px",
+                              padding: "1rem",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                              transition: "transform 0.2s, box-shadow 0.2s",
                             }}
                           >
-                            <h3
+                            <div
                               style={{
-                                margin: 0,
-                                fontSize: "1rem",
-                                color: "#333",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
+                                marginBottom: "0.5rem",
+                                flexWrap: "wrap",
+                                gap: "0.5rem",
                               }}
                             >
-                              {event.name}
-                            </h3>
-                            <div style={{ display: "flex", gap: "0.5rem" }}>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/viewEvent/${event.event_id}`);
-                                }}
+                              <h3
                                 style={{
-                                  backgroundColor: "#FFB6C1",
-                                  border: "none",
-                                  color: "white",
-                                  padding: "0.25rem 0.75rem",
-                                  borderRadius: "4px",
-                                  cursor: "pointer",
-                                  fontSize: "0.8rem",
-                                  fontWeight: "500",
-                                  transition: "all 0.2s",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "0.25rem",
-                                }}
-                                onMouseOver={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#FF9EAF";
-                                  e.currentTarget.style.transform =
-                                    "translateY(-1px)";
-                                }}
-                                onMouseOut={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#FFB6C1";
-                                  e.currentTarget.style.transform =
-                                    "translateY(0)";
+                                  margin: 0,
+                                  fontSize: "1rem",
+                                  color: "#333",
+                                  flex: 1,
+                                  minWidth: "200px",
                                 }}
                               >
-                                <span>View Details</span>
-                                <span>→</span>
-                              </button>
-                              <button
-                                style={{
-                                  backgroundColor: "transparent",
-                                  border: "none",
-                                  padding: "0.25rem",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                }}
-                                title="Delete Event"
-                              >
-                                <FaTrash size={16} color="#ff6b6b" />
-                              </button>
+                                {event.name}
+                              </h3>
+                              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/viewEvent/${event.event_id}`);
+                                  }}
+                                  style={{
+                                    backgroundColor: "#FFB6C1",
+                                    border: "none",
+                                    color: "white",
+                                    padding: "0.5rem 1rem",
+                                    borderRadius: "4px",
+                                    cursor: "pointer",
+                                    fontSize: "0.8rem",
+                                    fontWeight: "500",
+                                    transition: "all 0.2s",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.25rem",
+                                    minHeight: "36px",
+                                  }}
+                                >
+                                  <span>View Details</span>
+                                  <span>→</span>
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              color: "#6c757d",
-                              fontSize: "0.8rem",
-                              marginBottom: "0.2rem",
-                            }}
-                          >
-                            <span style={{ marginRight: "0.5rem" }}>📅</span>
-                            {formatDate(event.start_time)}
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              color: "#6c757d",
-                              fontSize: "0.8rem",
-                              marginBottom: "0.2rem",
-                            }}
-                          >
-                            <span style={{ marginRight: "0.5rem" }}>🕒</span>
-                            {formatTime(event.start_time) || "TBD"}
-                          </div>
-                          {event.location && (
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                color: "#6c757d",
+                                fontSize: "0.8rem",
+                                marginBottom: "0.2rem",
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <span style={{ marginRight: "0.5rem" }}>📅</span>
+                              {formatDate(event.start_time)}
+                            </div>
                             <div
                               style={{
                                 display: "flex",
@@ -854,19 +928,354 @@ export default function PlannerDashboard({ session }) {
                                 marginBottom: "0.2rem",
                               }}
                             >
-                              <span style={{ marginRight: "0.5rem" }}>📍</span>
-                              {event.venue || "TBD"}
+                              <span style={{ marginRight: "0.5rem" }}>🕒</span>
+                              {formatTime(event.start_time) || "TBD"}
                             </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                            {event.location && (
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  color: "#6c757d",
+                                  fontSize: "0.8rem",
+                                  marginBottom: "0.2rem",
+                                }}
+                              >
+                                <span style={{ marginRight: "0.5rem" }}>📍</span>
+                                {event.venue || "TBD"}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Calendar Section */}
+                {/* Calendar Section */}
+<div
+  style={{
+    backgroundColor: "#f8f9fa",
+    borderRadius: "12px",
+    padding: "1.5rem",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+  }}
+>
+  <h2 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
+    Calendar
+  </h2>
+  <div
+    style={{
+      backgroundColor: "white",
+      borderRadius: "16px",
+      padding: "1rem",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+    }}
+  >
+    {/* Add the CSS styles directly here */}
+    <style>
+      {`
+      .dashboard-calendar {
+        width: 100%;
+        border: none;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+      .react-calendar__navigation {
+        display: flex;
+        margin-bottom: 1em;
+      }
+      .react-calendar__navigation button {
+        color: #ff6b8b;
+        background: none;
+        border: none;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 8px;
+        transition: all 0.2s;
+      }
+      .react-calendar__navigation button:hover {
+        background-color: #ffebee;
+      }
+      .react-calendar__navigation button:disabled {
+        background-color: transparent;
+        color: #ccc;
+      }
+      .react-calendar__month-view__weekdays {
+        text-align: center;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: #ff6b8b;
+        font-size: 0.75rem;
+        margin-bottom: 0.5rem;
+      }
+      .react-calendar__month-view__weekdays__weekday abbr {
+        text-decoration: none;
+      }
+      .react-calendar__month-view__weekdays__weekday--weekend abbr {
+        color: #ff6b8b;
+      }
+      .react-calendar__month-view__days__day--weekend {
+        color: #ff6b8b;
+      }
+      .react-calendar__tile {
+        max-width: 100%;
+        text-align: center;
+        padding: 0.75em 0.5em;
+        background: none;
+        border: 2px solid transparent;
+        border-radius: 50%;
+        color: #333;
+        font-weight: 500;
+        transition: all 0.2s;
+        position: relative;
+        overflow: visible;
+        height: 40px;
+      }
+      .react-calendar__tile > div {
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+      .react-calendar__tile:enabled:hover,
+      .react-calendar__tile:enabled:focus {
+        background-color: #ffebee;
+        border-color: #ffb6c1;
+        transform: scale(1.1);
+      }
+      .react-calendar__tile--now {
+        background: #ffebee;
+        border: 2px solid #ffb6c1;
+        color: #ff6b8b;
+        font-weight: 600;
+      }
+      .react-calendar__tile--now:enabled:hover,
+      .react-calendar__tile--now:enabled:focus {
+        background: #ffd6de;
+        border-color: #ff8fa3;
+      }
+      .react-calendar__tile--active {
+        background: #ffb6c1 !important;
+        color: white !important;
+        border-color: #ffb6c1 !important;
+        font-weight: 600;
+      }
+      .react-calendar__tile--active:enabled:hover,
+      .react-calendar__tile--active:enabled:focus {
+        background: #ffc0cb !important;
+        border-color: #ffc0cb !important;
+      }
+      .react-calendar__month-view__days__day--neighboringMonth {
+        color: #ccc;
+      }
+      
+      /* Fix for event dots - ensure they're positioned correctly */
+      .react-calendar__tile {
+        position: relative;
+      }
+      .event-dots-container {
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 2px;
+        opacity: 1;
+        visibility: visible;
+      }
+      .event-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+      `}
+    </style>
+    <Calendar
+      onChange={setDate}
+      value={date}
+      className="dashboard-calendar"
+      tileContent={({ date, view }) => {
+        const dateEvents = getEventsForDate(date);
+        if (dateEvents.length === 0) return null;
+        
+        return (
+          <div className="event-dots-container">
+            {[...Array(Math.min(3, dateEvents.length))].map(
+              (_, i) => (
+                <div
+                  key={i}
+                  className="event-dot"
+                  style={{
+                    backgroundColor: isFutureEvent(
+                      dateEvents[i]?.start_time
+                    )
+                      ? "#4caf50"
+                      : "#ff6b6b",
+                  }}
+                />
+              )
+            )}
+          </div>
+        );
+      }}
+      formatShortWeekday={(locale, date) =>
+        ["S", "M", "T", "W", "T", "F", "S"][date.getDay()]
+      }
+      next2Label={null}
+      prev2Label={null}
+      minDetail="month"
+      showNeighboringMonth={false}
+    />
+  </div>
+
+  <div style={{ marginTop: "1.5rem" }}>
+    <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>
+      Events on {date.toLocaleDateString()}
+    </h3>
+    {getEventsForDate(date).length === 0 ? (
+      <p style={{ color: "#6c757d", textAlign: "center" }}>
+        No events scheduled for this day.
+      </p>
+    ) : (
+      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+        {getEventsForDate(date).map((event) => {
+          const isPast = !isFutureEvent(event.start_time);
+          return (
+            <li
+              key={event.id}
+              style={{
+                backgroundColor: isPast ? "#f8f9fa" : "white",
+                padding: "0.75rem 1rem",
+                borderRadius: "6px",
+                marginBottom: "0.5rem",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                borderLeft: isPast
+                  ? "3px solid #ff6b6b"
+                  : "3px solid #4caf50",
+                opacity: isPast ? 0.8 : 1,
+              }}
+            >
+              <div style={{ width: "100%" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    marginBottom: "0.25rem",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {isPast && (
+                    <span
+                      style={{
+                        fontSize: "0.65rem",
+                        backgroundColor: "#ffebee",
+                        color: "#d32f2f",
+                        padding: "0.15rem 0.5rem",
+                        borderRadius: "10px",
+                        fontWeight: "500",
+                        flexShrink: 0,
+                      }}
+                    >
+                      Past Event
+                    </span>
+                  )}
+                  <div
+                    style={{
+                      fontWeight: "600",
+                      color: isPast ? "#6c757d" : "#333",
+                      flex: 1,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {event.name || event.title}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: "0.25rem",
+                    flexWrap: "wrap",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "0.8rem",
+                      color: isPast ? "#adb5bd" : "#6c757d",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      flex: 1,
+                    }}
+                  >
+                    <FaClock size={12} />
+                    {formatTime(event.start_time) ||
+                      "Time not set"}
+                  </div>
+
+                  {isPast && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(
+                          `/viewEvent/${
+                            event.event_id || event.id
+                          }?readonly=true`
+                        );
+                      }}
+                      style={{
+                        fontSize: "0.7rem",
+                        backgroundColor: "transparent",
+                        color: "#e91e63",
+                        border: "1px solid #e91e63",
+                        padding: "0.4rem 0.8rem",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.25rem",
+                        transition: "all 0.2s",
+                        minHeight: "32px",
+                      }}
+                    >
+                      View Details
+                    </button>
                   )}
                 </div>
+
+                {event.venue && (
+                  <div
+                    style={{
+                      fontSize: "0.8rem",
+                      color: isPast ? "#adb5bd" : "#6c757d",
+                      marginTop: "0.25rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <span>📍</span>
+                    {event.venue}
+                  </div>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    )}
+  </div>
+</div>
               </div>
 
-              {/* Calendar Section */}
-              <div
+              {/* Tasks Section */}
+              <div className="tasks-section"
                 style={{
                   backgroundColor: "#f8f9fa",
                   borderRadius: "12px",
@@ -875,493 +1284,171 @@ export default function PlannerDashboard({ session }) {
                 }}
               >
                 <h2 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
-                  Calendar
+                  My To-Do List
                 </h2>
+
+                <form onSubmit={handleAddTask} style={{ marginBottom: "1.5rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "0.5rem",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={newTask}
+                      onChange={(e) => setNewTask(e.target.value)}
+                      placeholder="Add a new task..."
+                      style={{
+                        flex: 1,
+                        padding: "0.75rem",
+                        border: "1px solid #ddd",
+                        borderRadius: "6px",
+                        fontSize: "1rem",
+                        minWidth: "200px",
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      style={{
+                        backgroundColor: "#E8B180",
+                        color: "white",
+                        border: "none",
+                        padding: "0 1.5rem",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontWeight: "500",
+                        transition: "background-color 0.2s",
+                        minHeight: "44px",
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </form>
+
                 <div
                   style={{
-                    backgroundColor: "white",
-                    borderRadius: "16px",
-                    padding: "1rem",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                    maxHeight: "400px",
+                    overflowY: "auto",
+                    paddingRight: "0.5rem",
                   }}
                 >
-                  <style>
-                    {`
-                    .dashboard-calendar {
-                      width: 100%;
-                      border: none;
-                      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    }
-                    .react-calendar__navigation {
-                      display: flex;
-                      margin-bottom: 1em;
-                    }
-                    .react-calendar__navigation button {
-                      color: #ff6b8b;
-                      background: none;
-                      border: none;
-                      font-size: 1rem;
-                      font-weight: 600;
-                      cursor: pointer;
-                      padding: 0.5rem;
-                      border-radius: 8px;
-                      transition: all 0.2s;
-                    }
-                    .react-calendar__navigation button:hover {
-                      background-color: #ffebee;
-                    }
-                    .react-calendar__navigation button:disabled {
-                      background-color: transparent;
-                      color: #ccc;
-                    }
-                    .react-calendar__month-view__weekdays {
-                      text-align: center;
-                      text-transform: uppercase;
-                      font-weight: 600;
-                      color: #ff6b8b;
-                      font-size: 0.75rem;
-                      margin-bottom: 0.5rem;
-                    }
-                    .react-calendar__month-view__weekdays__weekday abbr {
-                      text-decoration: none;
-                    }
-                    .react-calendar__month-view__weekdays__weekday--weekend abbr {
-                      color: #ff6b8b;
-                    }
-                    .react-calendar__month-view__days__day--weekend {
-                      color: #ff6b8b;
-                    }
-                    .react-calendar__tile {
-                      max-width: 100%;
-                      text-align: center;
-                      padding: 0.75em 0.5em;
-                      background: none;
-                      border: 2px solid transparent;
-                      border-radius: 50%;
-                      color: #333;
-                      font-weight: 500;
-                      transition: all 0.2s;
-                      position: relative;
-                      overflow: visible;
-                    }
-                    .react-calendar__tile > div {
-                      opacity: 1 !important;
-                      visibility: visible !important;
-                    }
-                    .react-calendar__tile:enabled:hover,
-                    .react-calendar__tile:enabled:focus {
-                      background-color: #ffebee;
-                      border-color: #ffb6c1;
-                      transform: scale(1.1);
-                    }
-                    .react-calendar__tile--now {
-                      background: #ffebee;
-                      border: 2px solid #ffb6c1;
-                      color: #ff6b8b;
-                      font-weight: 600;
-                    }
-                    .react-calendar__tile--now:enabled:hover,
-                    .react-calendar__tile--now:enabled:focus {
-                      background: #ffd6de;
-                      border-color: #ff8fa3;
-                    }
-                    .react-calendar__tile--active {
-                      background: #ffb6c1 !important;
-                      color: white !important;
-                      border-color: #ffb6c1 !important;
-                      font-weight: 600;
-                    }
-                    .react-calendar__tile--active:enabled:hover,
-                    .react-calendar__tile--active:enabled:focus {
-                      background: #ffc0cb !important;
-                      border-color: #ffc0cb !important;
-                    }
-                    .react-calendar__month-view__days__day--neighboringMonth {
-                      color: #ccc;
-                    }
-                    `}
-                  </style>
-                  <Calendar
-                    onChange={setDate}
-                    value={date}
-                    className="dashboard-calendar"
-                    tileContent={({ date, view }) => {
-                      const dateEvents = getEventsForDate(date);
-                      return (
-                        <div
-                          style={{
-                            position: "absolute",
-                            bottom: "4px",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            display: "flex",
-                            gap: "2px",
-                            opacity: 1,
-                            visibility: "visible",
-                          }}
-                        >
-                          {[...Array(Math.min(3, dateEvents.length))].map(
-                            (_, i) => (
-                              <div
-                                key={i}
-                                style={{
-                                  width: "6px",
-                                  height: "6px",
-                                  borderRadius: "50%",
-                                  backgroundColor: isFutureEvent(
-                                    dateEvents[i]?.start_time
-                                  )
-                                    ? "#4caf50"
-                                    : "#ff6b6b",
-                                }}
-                              />
-                            )
-                          )}
-                        </div>
-                      );
-                    }}
-                    formatShortWeekday={(locale, date) =>
-                      ["S", "M", "T", "W", "T", "F", "S"][date.getDay()]
-                    }
-                    next2Label={null}
-                    prev2Label={null}
-                    minDetail="month"
-                    showNeighboringMonth={false}
-                  />
-                </div>
-
-                <div style={{ marginTop: "1.5rem" }}>
-                  <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>
-                    Events on {date.toLocaleDateString()}
-                  </h3>
-                  {getEventsForDate(date).length === 0 ? (
-                    <p style={{ color: "#6c757d", textAlign: "center" }}>
-                      No events scheduled for this day.
+                  {tasks.length === 0 ? (
+                    <p
+                      style={{
+                        color: "#6c757d",
+                        textAlign: "center",
+                        margin: "2rem 0",
+                      }}
+                    >
+                      No tasks yet. Add one above!
                     </p>
                   ) : (
                     <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {getEventsForDate(date).map((event) => {
-                        const isPast = !isFutureEvent(event.start_time);
-                        return (
-                          <li
-                            key={event.id}
+                      {tasks.map((task) => (
+                        <li
+                          key={task.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            padding: "0.75rem",
+                            backgroundColor: task.completed ? "#e8f5e9" : "white",
+                            borderRadius: "6px",
+                            marginBottom: "0.5rem",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                          }}
+                        >
+                          <button
+                            onClick={() =>
+                              toggleTaskCompletion(task.id, task.completed)
+                            }
                             style={{
-                              backgroundColor: isPast ? "#f8f9fa" : "white",
-                              padding: "0.75rem 1rem",
-                              borderRadius: "6px",
-                              marginBottom: "0.5rem",
-                              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                              borderLeft: isPast
-                                ? "3px solid #ff6b6b"
-                                : "3px solid #4caf50",
-                              opacity: isPast ? 0.8 : 1,
+                              width: "24px",
+                              height: "24px",
+                              borderRadius: "50%",
+                              border: `2px solid ${
+                                task.completed ? "#4caf50" : "#ccc"
+                              }`,
+                              backgroundColor: task.completed
+                                ? "#4caf50"
+                                : "transparent",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginRight: "1rem",
+                              cursor: "pointer",
+                              flexShrink: 0,
                             }}
                           >
-                            <div style={{ width: "100%" }}>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "0.5rem",
-                                  marginBottom: "0.25rem",
-                                }}
-                              >
-                                {isPast && (
-                                  <span
-                                    style={{
-                                      fontSize: "0.65rem",
-                                      backgroundColor: "#ffebee",
-                                      color: "#d32f2f",
-                                      padding: "0.15rem 0.5rem",
-                                      borderRadius: "10px",
-                                      fontWeight: "500",
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    Past Event
-                                  </span>
-                                )}
-                                <div
-                                  style={{
-                                    fontWeight: "600",
-                                    color: isPast ? "#6c757d" : "#333",
-                                    flex: 1,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  {event.name || event.title}
-                                </div>
-                              </div>
-
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  marginTop: "0.25rem",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: "0.8rem",
-                                    color: isPast ? "#adb5bd" : "#6c757d",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.5rem",
-                                    flex: 1,
-                                  }}
-                                >
-                                  <FaClock size={12} />
-                                  {formatTime(event.start_time) ||
-                                    "Time not set"}
-                                </div>
-
-                                {isPast && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate(
-                                        `/viewEvent/${
-                                          event.event_id || event.id
-                                        }?readonly=true`
-                                      );
-                                    }}
-                                    style={{
-                                      fontSize: "0.7rem",
-                                      backgroundColor: "transparent",
-                                      color: "#e91e63",
-                                      border: "1px solid #e91e63",
-                                      padding: "0.15rem 0.5rem",
-                                      borderRadius: "4px",
-                                      cursor: "pointer",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "0.25rem",
-                                      transition: "all 0.2s",
-                                    }}
-                                    onMouseOver={(e) => {
-                                      e.currentTarget.style.backgroundColor =
-                                        "#fce4ec";
-                                    }}
-                                    onMouseOut={(e) => {
-                                      e.currentTarget.style.backgroundColor =
-                                        "transparent";
-                                    }}
-                                  >
-                                    View Details
-                                  </button>
-                                )}
-                              </div>
-
-                              {event.venue && (
-                                <div
-                                  style={{
-                                    fontSize: "0.8rem",
-                                    color: isPast ? "#adb5bd" : "#6c757d",
-                                    marginTop: "0.25rem",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.5rem",
-                                  }}
-                                >
-                                  <span>📍</span>
-                                  {event.venue}
-                                </div>
-                              )}
-                            </div>
-                          </li>
-                        );
-                      })}
+                            {task.completed && (
+                              <FaCheck color="white" size={12} />
+                            )}
+                          </button>
+                          <span
+                            style={{
+                              flex: 1,
+                              textDecoration: task.completed
+                                ? "line-through"
+                                : "none",
+                              color: task.completed ? "#6c757d" : "#212529",
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {task.text}
+                          </span>
+                          <button
+                            onClick={() => deleteTask(task.id)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "#dc3545",
+                              cursor: "pointer",
+                              marginLeft: "0.5rem",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: "0.5rem",
+                              borderRadius: "4px",
+                              transition: "background-color 0.2s",
+                              minWidth: "32px",
+                              minHeight: "32px",
+                            }}
+                          >
+                            <FaTrash size={14} />
+                          </button>
+                        </li>
+                      ))}
                     </ul>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Tasks Section */}
-            <div
+            {/* Chat Section */}
+            <div className="chat-section"
               style={{
                 backgroundColor: "#f8f9fa",
                 borderRadius: "12px",
                 padding: "1.5rem",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                marginTop: "2rem",
               }}
             >
-              <h2 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
-                My To-Do List
-              </h2>
-
-              <form onSubmit={handleAddTask} style={{ marginBottom: "1.5rem" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <input
-                    type="text"
-                    value={newTask}
-                    onChange={(e) => setNewTask(e.target.value)}
-                    placeholder="Add a new task..."
-                    style={{
-                      flex: 1,
-                      padding: "0.75rem",
-                      border: "1px solid #ddd",
-                      borderRadius: "6px",
-                      fontSize: "1rem",
-                    }}
-                  />
-                  <button
-                    type="submit"
-                    style={{
-                      backgroundColor: "#E8B180",
-                      color: "white",
-                      border: "none",
-                      padding: "0 1.5rem",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontWeight: "500",
-                      transition: "background-color 0.2s",
-                    }}
-                    onMouseOver={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#D89F73")
-                    }
-                    onMouseOut={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#E8B180")
-                    }
-                  >
-                    Add
-                  </button>
-                </div>
-              </form>
-
-              <div
-                style={{
-                  maxHeight: "400px",
-                  overflowY: "auto",
-                  paddingRight: "0.5rem",
-                }}
-              >
-                {tasks.length === 0 ? (
-                  <p
-                    style={{
-                      color: "#6c757d",
-                      textAlign: "center",
-                      margin: "2rem 0",
-                    }}
-                  >
-                    No tasks yet. Add one above!
-                  </p>
-                ) : (
-                  <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                    {tasks.map((task) => (
-                      <li
-                        key={task.id}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          padding: "0.75rem",
-                          backgroundColor: task.completed ? "#e8f5e9" : "white",
-                          borderRadius: "6px",
-                          marginBottom: "0.5rem",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                        }}
-                      >
-                        <button
-                          onClick={() =>
-                            toggleTaskCompletion(task.id, task.completed)
-                          }
-                          style={{
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "50%",
-                            border: `2px solid ${
-                              task.completed ? "#4caf50" : "#ccc"
-                            }`,
-                            backgroundColor: task.completed
-                              ? "#4caf50"
-                              : "transparent",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginRight: "1rem",
-                            cursor: "pointer",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {task.completed && (
-                            <FaCheck color="white" size={12} />
-                          )}
-                        </button>
-                        <span
-                          style={{
-                            flex: 1,
-                            textDecoration: task.completed
-                              ? "line-through"
-                              : "none",
-                            color: task.completed ? "#6c757d" : "#212529",
-                            wordBreak: "break-word",
-                          }}
-                        >
-                          {task.text}
-                        </span>
-                        <button
-                          onClick={() => deleteTask(task.id)}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "#dc3545",
-                            cursor: "pointer",
-                            marginLeft: "0.5rem",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: "0.25rem",
-                            borderRadius: "4px",
-                            transition: "background-color 0.2s",
-                          }}
-                          onMouseOver={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#f1f1f1")
-                          }
-                          onMouseOut={(e) =>
-                            (e.currentTarget.style.backgroundColor =
-                              "transparent")
-                          }
-                        >
-                          <FaTrash size={14} />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              <ChatUI
+                listTitle="Vendors"
+                onSendMessage={handleSendMessage}
+                onSelectVendor={handleSelectVendor}
+                selectedVendor={selectedVendor}
+                messages={
+                  currentConversation
+                    ? chatMessages[currentConversation.conversation_id] || []
+                    : []
+                }
+                unreadCount={unreadCount}
+              />
             </div>
-          </div>
-
-          {/* Chat Section */}
-          <div
-            style={{
-              backgroundColor: "#f8f9fa",
-              borderRadius: "12px",
-              padding: "1.5rem",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              marginTop: "2rem",
-            }}
-          >
-            <ChatUI
-              listTitle="Vendors"
-              onSendMessage={handleSendMessage}
-              onSelectVendor={handleSelectVendor}
-              selectedVendor={selectedVendor}
-              messages={
-                currentConversation
-                  ? chatMessages[currentConversation.conversation_id] || []
-                  : []
-              }
-              unreadCount={unreadCount}
-            />
           </div>
         </div>
       </div>

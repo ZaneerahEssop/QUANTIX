@@ -89,7 +89,7 @@
 }
 
 .back-button:hover {
-    color: var(--blush);
+    color: var(--card-background);
 }
 
 .header-actions {
