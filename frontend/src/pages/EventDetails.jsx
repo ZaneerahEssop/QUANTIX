@@ -202,7 +202,6 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
   );
 };
 
-// --- CHANGE IS IN THIS COMPONENT ---
 const GuestManagement = ({
   guests,
   onUpdate,
@@ -243,8 +242,6 @@ const GuestManagement = ({
   const handleRemoveGuest = (guestId) =>
     onUpdate((guests || []).filter((g) => g.id !== guestId));
 
-  // --- MODIFIED FUNCTION ---
-  // This function now calls your backend API endpoint.
   const handleSendInvite = async (guest) => {
     // First, check if the guest has an email address
     if (!guest.contact) {
@@ -1016,6 +1013,21 @@ const EventDetails = () => {
   const rejectedRequests = vendorRequests.filter(
     (req) => req.status === "rejected"
   );
+  
+  // --- CHANGE START ---
+  // Create a clean, unique list of vendor categories
+  const uniqueVendorCategories = Array.from(
+    new Set(
+      allVendors
+        .flatMap((v) =>
+          v.service_type
+            ? v.service_type.split(",").map((s) => s.trim().toLowerCase())
+            : []
+        )
+        .filter(Boolean) // Remove any empty strings
+    )
+  ).sort();
+  // --- CHANGE END ---
 
   return (
     <div className="event-details">
@@ -1456,7 +1468,7 @@ const EventDetails = () => {
                                     Service:{" "}
                                     {request.vendor?.service_type || "Unknown"}
                                   </small>
-                                </div>
+                  </div>
                               </div>
                               <div className="vendor-request-actions">
                                 <span className="status-label pending">
