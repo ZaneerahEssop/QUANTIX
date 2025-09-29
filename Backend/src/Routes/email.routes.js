@@ -1,97 +1,95 @@
 const express = require("express");
-const { google } = require("googleapis");
+const nodemailer = require("nodemailer");
 const router = express.Router();
 
-function createMail(to, from, subject, message) {
-  const emailLines = [
-    `Content-Type: text/html; charset="UTF-8"`,
-    `MIME-Version: 1.0`,
-    `to: ${to}`,
-    `from: ${from}`,
-    `subject: ${subject}`,
-    ``,
-    message,
-  ];
-  const email = emailLines.join("\n");
-  return Buffer.from(email).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+// 1. Configure Nodemailer Transporter
+// This transporter object uses your Gmail credentials to send emails.
+// It's configured once and can be reused for all email sending.
+
+// Check if Gmail credentials are configured
+console.log("=== ENVIRONMENT VARIABLES DEBUG ===");
+console.log("All env vars starting with GMAIL:", Object.keys(process.env).filter(key => key.startsWith('GMAIL')));
+console.log("GMAIL_USER:", process.env.GMAIL_USER);
+console.log("GMAIL_APP_PASSWORD:", process.env.GMAIL_APP_PASSWORD ? "SET (length: " + process.env.GMAIL_APP_PASSWORD.length + ")" : "NOT SET");
+console.log("=== END DEBUG ===");
+
+if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+  console.error("Gmail credentials not configured. Please set GMAIL_USER and GMAIL_APP_PASSWORD environment variables.");
 }
 
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD, // This MUST be the 16-digit App Password
+  },
+});
+
+// 2. Create the API endpoint for sending invitations
 router.post("/send-invite", async (req, res) => {
   try {
-    // --- FIX APPLIED HERE ---
-    // 1. Validate environment variables FIRST, before doing anything else.
-    // This is a much more reliable way to catch configuration issues.
-    const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
-    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-      console.error("Google OAuth credentials are not configured in environment variables.");
-      // This is a server configuration error, so we return 500 immediately.
-      return res.status(500).json({ error: "Email service is not configured correctly on the server." });
+    // Check if Gmail credentials are configured
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      return res.status(500).json({
+        error: "Email service not configured. Please contact administrator.",
+      });
     }
 
-    // 2. Destructure the necessary data from the request body
-    const { 
-        guestEmail, 
-        guestName, 
-        eventName, 
-        googleAccessToken, 
-        googleRefreshToken 
-    } = req.body;
+    // Destructure the required information from the request body sent by the frontend
+    const { guestEmail, guestName, eventName } = req.body;
 
-    // 3. Validate the incoming data
-    if (!guestEmail || !googleAccessToken || !googleRefreshToken) {
-      return res.status(400).json({ error: "Missing required information to send email." });
+    // Validate that all necessary information was received
+    if (!guestEmail || !guestName || !eventName) {
+      return res.status(400).json({
+        error: "Missing required fields: guestEmail, guestName, or eventName",
+      });
     }
 
-    // 4. Set up the Google OAuth2 Client
-    const oauth2Client = new google.auth.OAuth2(
-      GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET
-    );
+    // Construct the email message
+    const mailOptions = {
+      from: `"Eventually Perfect" <${process.env.GMAIL_USER}>`, // Display name and sender email
+      to: guestEmail, // The recipient's email address
+      subject: `🎉 You're Invited to ${eventName}!`, // The subject of the email
+      html: `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2>Hi ${guestName},</h2>
+            <p>You have been formally invited to the event: <strong>${eventName}</strong>.</p>
+            <p>We're excited and look forward to seeing you there!</p>
+            <br/>
+            <p>Best regards,</p>
+            <p><strong>The Eventually Perfect Team</strong></p>
+          </body>
+        </html>
+      `,
+    };
 
-    // 5. Set the user's credentials
-    oauth2Client.setCredentials({
-      access_token: googleAccessToken,
-      refresh_token: googleRefreshToken,
-    });
-
-    // 6. Create an authenticated Gmail API client
-    const gmail = google.gmail({ version: "v1", auth: oauth2Client });
-
-    // 7. Construct the email content
-    const emailSubject = `You're Invited to ${eventName}!`;
-    const emailBody = `
-      <html>
-        <body>
-          <h2>Hi ${guestName || 'there'},</h2>
-          <p>You have been formally invited to the event: <strong>${eventName || 'our upcoming event'}</strong>.</p>
-          <p>We're excited and look forward to seeing you there!</p>
-        </body>
-      </html>
-    `;
+    // Use the transporter to send the email
+    console.log("Attempting to send email to:", guestEmail);
+    console.log("Gmail user configured:", process.env.GMAIL_USER ? "Yes" : "No");
+    console.log("Gmail app password configured:", process.env.GMAIL_APP_PASSWORD ? "Yes" : "No");
+    console.log("Gmail user value:", process.env.GMAIL_USER);
+    console.log("Gmail app password length:", process.env.GMAIL_APP_PASSWORD ? process.env.GMAIL_APP_PASSWORD.length : "Not set");
+    console.log("Gmail app password first 4 chars:", process.env.GMAIL_APP_PASSWORD ? process.env.GMAIL_APP_PASSWORD.substring(0, 4) : "Not set");
     
-    // 8. Create and send the message
-    const rawMessage = createMail(guestEmail, "me", emailSubject, emailBody);
-    await gmail.users.messages.send({
-      userId: "me",
-      requestBody: { raw: rawMessage },
-    });
+    await transporter.sendMail(mailOptions);
 
-    // 9. Send a success response
+    // Send a success response back to the frontend
     res.status(200).json({ message: "Invitation sent successfully!" });
-
   } catch (error) {
-    console.error("Failed to send email:", error.message);
-    
-    // The catch block is now simpler because we handled the config error above.
-    // It only needs to handle runtime errors like invalid tokens.
-    if (error.code === 401 || (error.response && error.response.status === 401)) {
-        return res.status(401).json({ error: "Google authentication failed. The token may be invalid or expired." });
-    }
-    
-    res.status(500).json({ 
-      error: "An unexpected error occurred while trying to send the email.",
+    // If anything goes wrong, log the error and send a server error response
+    console.error("Error sending email:", error);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      response: error.response,
+      command: error.command
     });
+    res
+      .status(500)
+      .json({ error: "Failed to send invitation. Please check server logs." });
   }
 });
 
+// Make sure to export the router so your main server file can use it
 module.exports = router;
