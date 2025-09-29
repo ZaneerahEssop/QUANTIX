@@ -21,7 +21,6 @@ import { supabase } from "../client";
 import "../styling/eventDetails.css";
 import ContractManagement from "../components/ContractManagement";
 
-
 // --- Sub-components (EventSchedule, EventTheme, GuestManagement) with individual edit controls ---
 const EventSchedule = ({ schedule, onUpdate, isEditing, onToggleEdit }) => {
   const handleAddItem = () =>
@@ -217,7 +216,7 @@ const GuestManagement = ({
   onToggleEdit,
   eventData,
   API_URL,
-  // Add props to control the modal from the parent component
+  isReadOnly,
   setModalMessage,
   setShowSuccessModal,
 }) => {
@@ -251,7 +250,6 @@ const GuestManagement = ({
     onUpdate((guests || []).filter((g) => g.id !== guestId));
 
   const handleSendInvite = async (guest) => {
-    // First, check if the guest has an email address
     if (!guest.contact) {
       setModalMessage(
         `Cannot send invite: No email address for ${guest.name}.`
@@ -261,7 +259,6 @@ const GuestManagement = ({
     }
 
     try {
-      // Show a "sending" message in the modal
       setModalMessage(`Sending invitation to ${guest.name}...`);
       setShowSuccessModal(true);
 
@@ -271,7 +268,6 @@ const GuestManagement = ({
         eventName: eventData.name,
       };
 
-      // Call your backend API (make sure the route is correct)
       const response = await fetch(`${API_URL}/api/emails/send-invite`, {
         method: "POST",
         headers: {
@@ -283,16 +279,12 @@ const GuestManagement = ({
       const result = await response.json();
 
       if (!response.ok) {
-        // If the server returns an error, throw it to be caught by the catch block
         throw new Error(result.error || "An unknown error occurred.");
       }
 
-      // On success, update the modal with a success message
       setModalMessage(`Invitation successfully sent to ${guest.name}!`);
-      // The modal is already open, so no need to call setShowSuccessModal(true) again.
     } catch (error) {
       console.error("Failed to send invitation:", error);
-      // On failure, update the modal with the error message
       setModalMessage(`Failed to send invitation: ${error.message}`);
       setShowSuccessModal(true);
     }
@@ -444,9 +436,6 @@ const EventDetails = () => {
   const isReadOnly = searchParams.get("readonly") === "true";
   const eventId = id;
   const navigate = useNavigate();
-  const handleVendorCardClick = (vendorId) => {
-    navigate(`/vendors/${vendorId}/services?readonly=true`);
-  };
   
   const [eventData, setEventData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -459,7 +448,6 @@ const EventDetails = () => {
     notes: "",
   });
 
-  
   // Individual edit states for each section
   const [isMainEditing, setIsMainEditing] = useState(false);
   const [isScheduleEditing, setIsScheduleEditing] = useState(false);
@@ -468,10 +456,7 @@ const EventDetails = () => {
   const [isVendorsEditing, setIsVendorsEditing] = useState(false);
   const [isDocumentsEditing, setIsDocumentsEditing] = useState(false);
   
-  const [vendors, setVendors] = useState([]);
-
   const [allVendors, setAllVendors] = useState([]);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedVendors, setSelectedVendors] = useState([]);
@@ -482,14 +467,14 @@ const EventDetails = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [theme, setTheme] = useState({ name: "", colors: [], notes: "" });
-
   const [viewingVendor, setViewingVendor] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
   const API_URL = process.env.REACT_APP_API_URL;
+  const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
+  const [vendorRequests, setVendorRequests] = useState([]);
 
   // Reset all edit states when read-only mode changes
   useEffect(() => {
@@ -502,6 +487,19 @@ const EventDetails = () => {
       setIsDocumentsEditing(false);
     }
   }, [isReadOnly]);
+
+  // Add the missing handleVendorToggle function
+  const handleVendorToggle = (vendorId) => {
+    setSelectedVendors(prev => 
+      prev.some(v => v.vendor_id === vendorId)
+        ? prev.filter(v => v.vendor_id !== vendorId)
+        : [...prev, allVendors.find(v => v.vendor_id === vendorId)]
+    );
+  };
+
+  const handleVendorCardClick = (vendorId) => {
+    navigate(`/vendors/${vendorId}/services?readonly=true`);
+  };
 
   const formatGuestStatusForUI = (dbStatus) => {
     if (dbStatus === "Attending") return "attending";
@@ -546,6 +544,27 @@ const EventDetails = () => {
   useEffect(() => {
     fetchVendors();
   }, [fetchVendors]);
+
+  useEffect(() => {
+    const fetchVendorRequests = async () => {
+      try {
+        if (!eventId) return;
+
+        const response = await fetch(
+          `${API_BASE}/api/vendor-requests/event/${eventId}`
+        );
+
+        if (response.ok) {
+          const requestsData = await response.json();
+          setVendorRequests(requestsData || []);
+        }
+      } catch (error) {
+        console.error("Error fetching vendor requests:", error);
+      }
+    };
+
+    fetchVendorRequests();
+  }, [eventId, API_BASE]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -643,30 +662,6 @@ const EventDetails = () => {
 
     fetchData();
   }, [eventId, navigate, API_URL, isReadOnly]);
-
-  const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
-  const [vendorRequests, setVendorRequests] = useState([]);
-
-  useEffect(() => {
-    const fetchVendorRequests = async () => {
-      try {
-        if (!eventId) return;
-
-        const response = await fetch(
-          `${API_BASE}/api/vendor-requests/event/${eventId}`
-        );
-
-        if (response.ok) {
-          const requestsData = await response.json();
-          setVendorRequests(requestsData || []);
-        }
-      } catch (error) {
-        console.error("Error fetching vendor requests:", error);
-      }
-    };
-
-    fetchVendorRequests();
-  }, [eventId, API_BASE]);
 
   const handleSelectVendor = (vendor) => {
     if (selectedVendors.some((v) => v.vendor_id === vendor.vendor_id)) return;
@@ -828,7 +823,6 @@ const EventDetails = () => {
       const result = await response.json();
       console.log("Save response:", result);
 
-
       setIsMainEditing(false);
 
       setEventData((prev) => ({
@@ -951,31 +945,12 @@ const EventDetails = () => {
       setGuests(formattedGuests);
       initialGuestsRef.current = formattedGuests;
 
-
       setIsGuestsEditing(false);
       setModalMessage("Guests updated successfully!");
       setShowSuccessModal(true);
-      setEventData((prev) => ({
-        ...prev,
-        name: formData.name,
-        start_time: startTime,
-        venue: formData.venue,
-        theme: theme,
-      }));
-
-      setIsEditing(false);
-
-      setModalMessage(
-        `Event updated successfully${
-          selectedVendors.length
-            ? ` and ${selectedVendors.length} vendor request(s) sent!`
-            : "!"
-        }`
-      );
-      setShowSuccessModal(true);
     } catch (error) {
-      console.error("Error updating event:", error);
-      setModalMessage(`Failed to update event: ${error.message}`);
+      console.error("Error updating guests:", error);
+      setModalMessage(`Failed to update guests: ${error.message}`);
       setShowSuccessModal(true);
     }
   };
@@ -1120,13 +1095,6 @@ const EventDetails = () => {
     });
   };
 
-
-  const toggleEdit = () => {
-    if (!isReadOnly) {
-      setIsEditing(!isEditing);
-    }
-  };
-
   const acceptedVendorsInfo = vendorRequests
     .filter((req) => req.status === "accepted")
     .map((req) => allVendors.find((v) => v.vendor_id === req.vendor_id))
@@ -1139,8 +1107,7 @@ const EventDetails = () => {
   const rejectedRequests = vendorRequests.filter(
     (req) => req.status === "rejected"
   );
-  
-  // --- CHANGE START ---
+
   // Create a clean, unique list of vendor categories
   const uniqueVendorCategories = Array.from(
     new Set(
@@ -1150,10 +1117,9 @@ const EventDetails = () => {
             ? v.service_type.split(",").map((s) => s.trim().toLowerCase())
             : []
         )
-        .filter(Boolean) // Remove any empty strings
+        .filter(Boolean)
     )
   ).sort();
-  // --- CHANGE END ---
 
   return (
     <div className="event-details">
@@ -1309,16 +1275,12 @@ const EventDetails = () => {
           </>
         )}
         {activeView === "guests" && (
-          // --- PASS PROPS TO GUESTMANAGEMENT ---
           <GuestManagement
             guests={guests}
             onUpdate={setGuests}
-
             isEditing={isGuestsEditing}
             onToggleEdit={() => isGuestsEditing ? handleSaveGuests() : setIsGuestsEditing(true)}
-
             isReadOnly={isReadOnly}
-
             eventData={eventData}
             API_URL={API_URL}
             setModalMessage={setModalMessage}
@@ -1327,7 +1289,6 @@ const EventDetails = () => {
         )}
         {activeView === "vendors" && (
           <section className="vendors-section">
-
             <div className="section-header">
               <h2>Vendors</h2>
               {!isReadOnly && (
@@ -1339,139 +1300,6 @@ const EventDetails = () => {
                 </button>
               )}
             </div>
-            {isVendorsEditing ? (
-              <div>
-                <div className="vendor-search-container">
-                  <div className="search-box">
-                    <FaSearch className="search-icon" />
-                    <input
-                      type="text"
-                      placeholder="Search for vendors by name or category"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="search-input"
-                    />
-                    {searchTerm && (
-                      <button
-                        type="button"
-                        onClick={() => setSearchTerm("")}
-                        className="clear-search"
-                        aria-label="Clear search"
-                      >
-                        <FaTimes />
-                      </button>
-                    )}
-                  </div>
-                  <select
-                    className="category-filter"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                  >
-                    <option value="All">All Categories</option>
-                    {Array.from(
-                      new Set(
-                        [
-                          ...vendors.map((v) =>
-                            v.service_type.trim().toLowerCase()
-                          ),
-                          "photography",
-                        ].filter(Boolean)
-                      )
-                    )
-                      .sort()
-                      .map((category) => (
-                        <option key={category} value={category}>
-                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-                <div className="vendor-selection">
-                  {vendors
-                    .filter((vendor) => {
-                      const matchesSearch =
-                        !searchTerm ||
-                        vendor.business_name
-                          .toLowerCase()
-                          .includes(searchTerm.toLowerCase()) ||
-                        vendor.service_type
-                          .toLowerCase()
-                          .includes(searchTerm.toLowerCase());
-                      const matchesCategory =
-                        selectedCategory === "All" ||
-                        vendor.service_type.trim().toLowerCase() ===
-                          selectedCategory;
-                      return matchesSearch && matchesCategory;
-                    })
-                    .map((vendor) => (
-                      <div
-                        key={vendor.vendor_id}
-                        className="vendor-card"
-                        onClick={(e) => {
-                          if (
-                            !e.target.closest(
-                              ".add-vendor-btn, .undo-request-btn"
-                            )
-                          ) {
-                            handleVendorCardClick(vendor.vendor_id);
-                          }
-                        }}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <div className="vendor-card-content">
-                          <div className="vendor-info">
-                            <h4>{vendor.business_name}</h4>
-                          </div>
-                          <span className="vendor-category">
-                            {vendor.service_type.toLowerCase() === "venue"
-                              ? "Venue"
-                              : vendor.service_type}
-                          </span>
-                          <div
-                            className="vendor-description"
-                            style={{ textAlign: "center" }}
-                          >
-                            {vendor.description || "No description available."}
-                          </div>
-                        </div>
-                        <div className="vendor-actions">
-                          <button
-                            type="button"
-                            className={`add-vendor-btn ${
-                              selectedVendors.includes(vendor.vendor_id)
-                                ? "added"
-                                : ""
-                            }`}
-                            onClick={() => handleVendorToggle(vendor.vendor_id)}
-                            disabled={!isVendorsEditing}
-                          >
-                            {selectedVendors.includes(vendor.vendor_id) ? (
-                              <>
-                                <FaCheck /> Requested
-                              </>
-                            ) : (
-                              <>
-                                <FaPlus /> Request Vendor
-                              </>
-                            )}
-                          </button>
-                          {selectedVendors.includes(vendor.vendor_id) && (
-                            <button
-                              type="button"
-                              className="undo-request-btn"
-                              onClick={() =>
-                                handleVendorToggle(vendor.vendor_id)
-                              }
-                              disabled={!isVendorsEditing}
-                            >
-                              <FaTimes /> Undo
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
 
             {viewingVendor ? (
               <ContractManagement
@@ -1481,14 +1309,9 @@ const EventDetails = () => {
                 isVendorAccepted={true}
                 onBack={() => setViewingVendor(null)}
               />
-
             ) : (
               <>
-                <div className="section-header">
-                  <h2>Vendor Management</h2>
-                </div>
-
-                {isEditing ? (
+                {isVendorsEditing ? (
                   <div className="add-vendors-tool">
                     {pendingRequests.length > 0 && (
                       <div className="pending-vendors-container">
@@ -1511,33 +1334,32 @@ const EventDetails = () => {
                                 </div>
                               </div>
                               <div className="vendor-request-actions">
-
                                 {request.status === "pending" && isVendorsEditing && (
-
-                                <div className="action-buttons">
-                                  <button
-                                    onClick={() =>
-                                      handleVendorRequestResponse(
-                                        request.request_id,
-                                        "accepted"
-                                      )
-                                    }
-                                    className="accept-btn"
-                                  >
-                                    Accept
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleVendorRequestResponse(
-                                        request.request_id,
-                                        "rejected"
-                                      )
-                                    }
-                                    className="reject-btn"
-                                  >
-                                    Reject
-                                  </button>
-                                </div>
+                                  <div className="action-buttons">
+                                    <button
+                                      onClick={() =>
+                                        handleVendorRequestResponse(
+                                          request.request_id,
+                                          "accepted"
+                                        )
+                                      }
+                                      className="accept-btn"
+                                    >
+                                      Accept
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleVendorRequestResponse(
+                                          request.request_id,
+                                          "rejected"
+                                        )
+                                      }
+                                      className="reject-btn"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -1571,23 +1393,11 @@ const EventDetails = () => {
                         onChange={(e) => setSelectedCategory(e.target.value)}
                       >
                         <option value="All">All Categories</option>
-                        {Array.from(
-                          new Set(
-                            [
-                              ...allVendors.map((v) =>
-                                v.service_type.trim().toLowerCase()
-                              ),
-                              "photography",
-                            ].filter(Boolean)
-                          )
-                        )
-                          .sort()
-                          .map((category) => (
-                            <option key={category} value={category}>
-                              {category.charAt(0).toUpperCase() +
-                                category.slice(1)}
-                            </option>
-                          ))}
+                        {uniqueVendorCategories.map((category) => (
+                          <option key={category} value={category}>
+                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div className="vendor-selection">
@@ -1666,7 +1476,6 @@ const EventDetails = () => {
                                     (v) => v.vendor_id === vendor.vendor_id
                                   ) ? (
                                   <>
-
                                     <button
                                       type="button"
                                       className="add-vendor-btn added selected"
@@ -1720,7 +1529,6 @@ const EventDetails = () => {
                               </div>
                               <div className="vendor-actions">
                                 {currentUser?.role === "planner" ? (
-                                  // If user is a planner, show "View Contract" button for all vendors
                                   <button
                                     onClick={() => setViewingVendor(vendor)}
                                     className="view-contract-btn"
@@ -1728,8 +1536,7 @@ const EventDetails = () => {
                                     View Contract
                                   </button>
                                 ) : (
-                                  // If user is a vendor, only show the button if their ID matches
-                                  currentUser.id === vendor.vendor_id && (
+                                  currentUser?.id === vendor.vendor_id && (
                                     <button
                                       onClick={() => setViewingVendor(vendor)}
                                       className="view-contract-btn"
@@ -1763,7 +1570,7 @@ const EventDetails = () => {
                                     Service:{" "}
                                     {request.vendor?.service_type || "Unknown"}
                                   </small>
-                  </div>
+                                </div>
                               </div>
                               <div className="vendor-request-actions">
                                 <span className="status-label pending">
