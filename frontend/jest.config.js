@@ -3,7 +3,7 @@ module.exports = {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(your-module-to-transform|another-module)/)'
+    'node_modules/(?!(your-module-to-transform|another-module)/)',
   ],
   moduleFileExtensions: ["js", "jsx", "ts", "tsx", "json", "node"],
   testEnvironment: "jsdom",
@@ -15,10 +15,14 @@ module.exports = {
     '!src/index.js',
     '!src/reportWebVitals.js',
     '!src/setupTests.js',
+    "!src/client.js",   // ignore supabase client setup
+    "!src/config.js",   // ignore config
+
   ],
 
   moduleNameMapper: {
     '\\.(css|less|scss)$': 'identity-obj-proxy',
+    '^react-markdown$': '<rootDir>/src/__mocks__/react_markdown.js',
   
   },
 

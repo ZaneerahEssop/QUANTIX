@@ -1308,6 +1308,7 @@ export default function PlannerDashboard({ session }) {
                           {task.text}
                         </span>
                         <button
+                          data-testid={`delete-task-${task.id}`}
                           onClick={() => deleteTask(task.id)}
                           style={{
                             background: "none",
