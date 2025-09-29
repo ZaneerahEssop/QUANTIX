@@ -1295,4 +1295,9 @@ input[type="color"]::-moz-color-swatch {
     width: 100% !important;
     justify-content: center !important;
   }
+  .schedule-item.editable {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
 }

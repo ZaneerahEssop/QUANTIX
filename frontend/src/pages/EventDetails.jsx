@@ -1043,7 +1043,7 @@ const EventDetails = () => {
 
       <div className="event-header">
         <button onClick={() => navigate(-1)} className="back-button">
-          <FaArrowLeft /> Back to Dashboard
+          <FaArrowLeft /> Back
         </button>
         <div className="button-group">
           <button
