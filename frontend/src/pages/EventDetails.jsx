@@ -202,7 +202,6 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
   );
 };
 
-
 // --- CHANGE IS IN THIS COMPONENT ---
 const GuestManagement = ({
   guests,
@@ -249,7 +248,9 @@ const GuestManagement = ({
   const handleSendInvite = async (guest) => {
     // First, check if the guest has an email address
     if (!guest.contact) {
-      setModalMessage(`Cannot send invite: No email address for ${guest.name}.`);
+      setModalMessage(
+        `Cannot send invite: No email address for ${guest.name}.`
+      );
       setShowSuccessModal(true);
       return;
     }
@@ -291,7 +292,6 @@ const GuestManagement = ({
       setShowSuccessModal(true);
     }
   };
-
 
   return (
     <div className="guests-section">
@@ -466,7 +466,7 @@ const EventDetails = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [theme, setTheme] = useState({ name: "", colors: [], notes: "" });
-  
+
   const [viewingVendor, setViewingVendor] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -530,12 +530,12 @@ const EventDetails = () => {
           navigate("/login");
           return;
         }
-        
+
         const isVendorUser = isReadOnly;
         setCurrentUser({
-            id: user.id,
-            name: user.user_metadata?.full_name || user.email,
-            role: isVendorUser ? 'vendor' : 'planner'
+          id: user.id,
+          name: user.user_metadata?.full_name || user.email,
+          role: isVendorUser ? "vendor" : "planner",
         });
 
         const eventResponse = await fetch(
@@ -639,6 +639,24 @@ const EventDetails = () => {
 
     fetchVendorRequests();
   }, [eventId, API_BASE]);
+
+  const handleSelectVendor = (vendor) => {
+    if (selectedVendors.some((v) => v.vendor_id === vendor.vendor_id)) return;
+
+    setSelectedVendors((prev) => [
+      ...prev,
+      {
+        ...vendor,
+        request_status: "selected",
+      },
+    ]);
+  };
+
+  const handleRemoveVendor = (vendorToRemove) => {
+    setSelectedVendors((prev) =>
+      prev.filter((v) => v.vendor_id !== vendorToRemove.vendor_id)
+    );
+  };
 
   const handleVendorRequestResponse = async (requestId, status) => {
     try {
@@ -784,7 +802,24 @@ const EventDetails = () => {
       const result = await response.json();
       console.log("Save response:", result);
 
-      setIsEditing(false);
+      for (const vendor of selectedVendors) {
+        const vendorResp = await fetch(`${API_URL}/api/vendor-requests`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event_id: eventId,
+            vendor_id: vendor.vendor_id,
+            requester_id: user.id,
+          }),
+        });
+
+        if (!vendorResp.ok) {
+          const vendorError = await vendorResp.json();
+          throw new Error(
+            vendorError.error || `Failed to request vendor ${vendor.vendor_id}`
+          );
+        }
+      }
 
       const guestsResponse = await fetch(`${API_URL}/api/guests/${eventId}`);
       const guestsData = await guestsResponse.json();
@@ -806,22 +841,21 @@ const EventDetails = () => {
         theme: theme,
       }));
 
-      setModalMessage("Event and guests updated successfully!");
+      setIsEditing(false);
+
+      setModalMessage(
+        `Event updated successfully${
+          selectedVendors.length
+            ? ` and ${selectedVendors.length} vendor request(s) sent!`
+            : "!"
+        }`
+      );
       setShowSuccessModal(true);
     } catch (error) {
       console.error("Error updating event:", error);
       setModalMessage(`Failed to update event: ${error.message}`);
       setShowSuccessModal(true);
     }
-  };
-
-  const handleVendorToggle = (vendorId) => {
-    if (isReadOnly) return;
-    setSelectedVendors((prev) =>
-      prev.includes(vendorId)
-        ? prev.filter((id) => id !== vendorId)
-        : [...prev, vendorId]
-    );
   };
 
   const handleExport = async () => {
@@ -978,7 +1012,7 @@ const EventDetails = () => {
   const pendingRequests = vendorRequests.filter(
     (req) => req.status === "pending"
   );
-  
+
   const rejectedRequests = vendorRequests.filter(
     (req) => req.status === "rejected"
   );
@@ -1136,314 +1170,342 @@ const EventDetails = () => {
           />
         )}
         {activeView === "vendors" && (
-            <section className="vendors-section">
-                {viewingVendor ? (
-                    <ContractManagement 
-                      eventData={eventData}
-                      currentUser={currentUser}
-                      vendor={viewingVendor}
-                      isVendorAccepted={true}
-                      onBack={() => setViewingVendor(null)}
-                    />
-                ) : (
-                    <>
-                        <div className="section-header">
-                            <h2>Vendor Management</h2>
+          <section className="vendors-section">
+            {viewingVendor ? (
+              <ContractManagement
+                eventData={eventData}
+                currentUser={currentUser}
+                vendor={viewingVendor}
+                isVendorAccepted={true}
+                onBack={() => setViewingVendor(null)}
+              />
+            ) : (
+              <>
+                <div className="section-header">
+                  <h2>Vendor Management</h2>
+                </div>
+
+                {isEditing ? (
+                  <div className="add-vendors-tool">
+                    {pendingRequests.length > 0 && (
+                      <div className="pending-vendors-container">
+                        <h4>Pending Requests</h4>
+                        <div className="vendor-requests-list">
+                          {pendingRequests.map((request) => (
+                            <div
+                              key={request.request_id}
+                              className="vendor-request-item"
+                            >
+                              <div className="vendor-request-info">
+                                <strong>
+                                  {request.vendor?.business_name || "Vendor"}
+                                </strong>
+                                <div className="vendor-details">
+                                  <small>
+                                    Service:{" "}
+                                    {request.vendor?.service_type || "Unknown"}
+                                  </small>
+                                </div>
+                              </div>
+                              <div className="vendor-request-actions">
+                                <div className="action-buttons">
+                                  <button
+                                    onClick={() =>
+                                      handleVendorRequestResponse(
+                                        request.request_id,
+                                        "accepted"
+                                      )
+                                    }
+                                    className="accept-btn"
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleVendorRequestResponse(
+                                        request.request_id,
+                                        "rejected"
+                                      )
+                                    }
+                                    className="reject-btn"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        
-                        {isEditing ? (
-                            <div className="add-vendors-tool">
-                                {pendingRequests.length > 0 && (
-                                <div className="pending-vendors-container">
-                                    <h4>Pending Requests</h4>
-                                    <div className="vendor-requests-list">
-                                    {pendingRequests.map((request) => (
-                                        <div
-                                        key={request.request_id}
-                                        className="vendor-request-item"
-                                        >
-                                        <div className="vendor-request-info">
-                                            <strong>
-                                            {request.vendor?.business_name || "Vendor"}
-                                            </strong>
-                                            <div className="vendor-details">
-                                            <small>
-                                                Service:{" "}
-                                                {request.vendor?.service_type || "Unknown"}
-                                            </small>
-                                            </div>
-                                        </div>
-                                        <div className="vendor-request-actions">
-                                            <div className="action-buttons">
-                                            <button
-                                                onClick={() =>
-                                                handleVendorRequestResponse(
-                                                    request.request_id,
-                                                    "accepted"
-                                                )
-                                                }
-                                                className="accept-btn"
-                                            >
-                                                Accept
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                handleVendorRequestResponse(
-                                                    request.request_id,
-                                                    "rejected"
-                                                )
-                                                }
-                                                className="reject-btn"
-                                            >
-                                                Reject
-                                            </button>
-                                            </div>
-                                        </div>
-                                        </div>
-                                    ))}
-                                    </div>
-                                </div>
-                                )}
-                                <div className="vendor-search-container">
-                                <div className="search-box">
-                                    <FaSearch className="search-icon" />
-                                    <input
-                                    type="text"
-                                    placeholder="Search to add new vendors"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="search-input"
-                                    />
-                                    {searchTerm && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSearchTerm("")}
-                                        className="clear-search"
-                                        aria-label="Clear search"
-                                    >
-                                        <FaTimes />
-                                    </button>
-                                    )}
-                                </div>
-                                <select
-                                    className="category-filter"
-                                    value={selectedCategory}
-                                    onChange={(e) => setSelectedCategory(e.target.value)}
-                                >
-                                    <option value="All">All Categories</option>
-                                    {Array.from(
-                                    new Set(
-                                        [
-                                        ...allVendors.map((v) =>
-                                            v.service_type.trim().toLowerCase()
-                                        ),
-                                        "photography",
-                                        ].filter(Boolean)
-                                    )
-                                    )
-                                    .sort()
-                                    .map((category) => (
-                                        <option key={category} value={category}>
-                                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                                        </option>
-                                    ))}
-                                </select>
-                                </div>
-                                <div className="vendor-selection">
-                                {allVendors
-                                    .filter((vendor) => {
-                                    const matchesSearch =
-                                        !searchTerm ||
-                                        vendor.business_name
-                                        .toLowerCase()
-                                        .includes(searchTerm.toLowerCase()) ||
-                                        vendor.service_type
-                                        .toLowerCase()
-                                        .includes(searchTerm.toLowerCase());
-                                    const matchesCategory =
-                                        selectedCategory === "All" ||
-                                        vendor.service_type.trim().toLowerCase() ===
-                                        selectedCategory;
-                                    return matchesSearch && matchesCategory;
-                                    })
-                                    .map((vendor) => {
-                                    const request = vendorRequests.find(
-                                        (r) => r.vendor_id === vendor.vendor_id
-                                    );
-                                    const status = request ? request.status : null;
-                                    const isNewlyRequested = selectedVendors.includes(
-                                        vendor.vendor_id
-                                    );
-
-                                    return (
-                                        <div
-                                        key={vendor.vendor_id}
-                                        className="vendor-card"
-                                        onClick={(e) => {
-                                            if (
-                                            !e.target.closest(
-                                                ".add-vendor-btn, .undo-request-btn"
-                                            )
-                                            ) {
-                                            handleVendorCardClick(vendor.vendor_id);
-                                            }
-                                        }}
-                                        style={{ cursor: "pointer" }}
-                                        >
-                                        <div className="vendor-card-content">
-                                            <div className="vendor-info">
-                                            <h4>{vendor.business_name}</h4>
-                                            </div>
-                                            <span className="vendor-category">
-                                            {vendor.service_type.toLowerCase() === "venue"
-                                                ? "Venue"
-                                                : vendor.service_type}
-                                            </span>
-                                            <div
-                                            className="vendor-description"
-                                            style={{ textAlign: "center" }}
-                                            >
-                                            {vendor.description ||
-                                                "No description available."}
-                                            </div>
-                                        </div>
-                                        <div className="vendor-actions">
-                                            {status === "accepted" ? (
-                                            <button
-                                                type="button"
-                                                className="add-vendor-btn accepted"
-                                                disabled
-                                            >
-                                                <FaCheck /> Accepted
-                                            </button>
-                                            ) : status === "pending" ||
-                                            (isNewlyRequested && !status) ? (
-                                            <>
-                                                <button
-                                                type="button"
-                                                className="add-vendor-btn added"
-                                                disabled
-                                                >
-                                                <FaCheck /> Requested
-                                                </button>
-                                                <button
-                                                type="button"
-                                                className="undo-request-btn"
-                                                onClick={() =>
-                                                    handleVendorToggle(vendor.vendor_id)
-                                                }
-                                                >
-                                                <FaTimes /> Undo
-                                                </button>
-                                            </>
-                                            ) : (
-                                            <button
-                                                type="button"
-                                                className="add-vendor-btn"
-                                                onClick={() =>
-                                                handleVendorToggle(vendor.vendor_id)
-                                                }
-                                            >
-                                                <FaPlus /> Request Vendor
-                                            </button>
-                                            )}
-                                        </div>
-                                        </div>
-                                    );
-                                    })}
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                {acceptedVendorsInfo.length > 0 && (
-                                    <div className="confirmed-vendors-container">
-                                        <h4>Confirmed Vendors</h4>
-                                        <ul className="vendors-list-with-actions">
-                                            {acceptedVendorsInfo.map((vendor) => (
-                                                <li key={vendor.vendor_id} className="vendor-list-item">
-                                                    <div className="vendor-info">
-                                                        <strong>{vendor.business_name}</strong>
-                                                        <span>- {vendor.service_type}</span>
-                                                    </div>
-                                                    <div className="vendor-actions">
-                                                      {currentUser?.role === 'planner' ? (
-                                                          // If user is a planner, show "View Contract" button for all vendors
-                                                          <button onClick={() => setViewingVendor(vendor)} className="view-contract-btn">
-                                                              View Contract
-                                                          </button>
-                                                      ) : (
-                                                          // If user is a vendor, only show the button if their ID matches
-                                                          currentUser.id === vendor.vendor_id && (
-                                                              <button onClick={() => setViewingVendor(vendor)} className="view-contract-btn">
-                                                                  Manage Contract
-                                                              </button>
-                                                          )
-                                                      )}
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-
-                                {pendingRequests.length > 0 && (
-                                    <div className="pending-vendors-container">
-                                        <h4>Pending Vendors</h4>
-                                        <div className="vendor-requests-list">
-                                            {pendingRequests.map((request) => (
-                                            <div
-                                                key={request.request_id}
-                                                className="vendor-request-item"
-                                            >
-                                                <div className="vendor-request-info">
-                                                <strong>
-                                                    {request.vendor?.business_name || "Vendor"}
-                                                </strong>
-                                                <div className="vendor-details">
-                                                    <small>
-                                                    Service:{" "}
-                                                    {request.vendor?.service_type || "Unknown"}
-                                                    </small>
-                                                </div>
-                                                </div>
-                                                <div className="vendor-request-actions">
-                                                <span className="status-label pending">
-                                                    Pending Approval
-                                                </span>
-                                                </div>
-                                            </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {rejectedRequests.length > 0 && (
-                                    <div className="vendor-requests-container">
-                                        <h4>Other Requests</h4>
-                                        <div className="vendor-requests-list">
-                                            {rejectedRequests.map((request) => (
-                                                <div key={request.request_id} className="vendor-request-item">
-                                                    <div className="vendor-request-info">
-                                                        <strong>{request.vendor?.business_name || "Vendor"}</strong>
-                                                    </div>
-                                                    <div className="vendor-request-actions">
-                                                        <span className="status-label rejected">✗ Rejected</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {acceptedVendorsInfo.length === 0 &&
-                                    pendingRequests.length === 0 && (
-                                    <p>No vendors have been added or requested for this event.</p>
-                                    )}
-                            </div>
+                      </div>
+                    )}
+                    <div className="vendor-search-container">
+                      <div className="search-box">
+                        <FaSearch className="search-icon" />
+                        <input
+                          type="text"
+                          placeholder="Search to add new vendors"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="search-input"
+                        />
+                        {searchTerm && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchTerm("")}
+                            className="clear-search"
+                            aria-label="Clear search"
+                          >
+                            <FaTimes />
+                          </button>
                         )}
-                    </>
+                      </div>
+                      <select
+                        className="category-filter"
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                      >
+                        <option value="All">All Categories</option>
+                        {Array.from(
+                          new Set(
+                            [
+                              ...allVendors.map((v) =>
+                                v.service_type.trim().toLowerCase()
+                              ),
+                              "photography",
+                            ].filter(Boolean)
+                          )
+                        )
+                          .sort()
+                          .map((category) => (
+                            <option key={category} value={category}>
+                              {category.charAt(0).toUpperCase() +
+                                category.slice(1)}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="vendor-selection">
+                      {allVendors
+                        .filter((vendor) => {
+                          const matchesSearch =
+                            !searchTerm ||
+                            vendor.business_name
+                              .toLowerCase()
+                              .includes(searchTerm.toLowerCase()) ||
+                            vendor.service_type
+                              .toLowerCase()
+                              .includes(searchTerm.toLowerCase());
+                          const matchesCategory =
+                            selectedCategory === "All" ||
+                            vendor.service_type.trim().toLowerCase() ===
+                              selectedCategory;
+                          return matchesSearch && matchesCategory;
+                        })
+                        .map((vendor) => {
+                          const request = vendorRequests.find(
+                            (r) => r.vendor_id === vendor.vendor_id
+                          );
+                          const status = request ? request.status : null;
+
+                          return (
+                            <div
+                              key={vendor.vendor_id}
+                              className="vendor-card"
+                              onClick={(e) => {
+                                if (
+                                  !e.target.closest(
+                                    ".add-vendor-btn, .undo-request-btn"
+                                  )
+                                ) {
+                                  handleVendorCardClick(vendor.vendor_id);
+                                }
+                              }}
+                              style={{ cursor: "pointer" }}
+                            >
+                              <div className="vendor-card-content">
+                                <div className="vendor-info">
+                                  <h4>{vendor.business_name}</h4>
+                                </div>
+                                <span className="vendor-category">
+                                  {vendor.service_type.toLowerCase() === "venue"
+                                    ? "Venue"
+                                    : vendor.service_type}
+                                </span>
+                                <div
+                                  className="vendor-description"
+                                  style={{ textAlign: "center" }}
+                                >
+                                  {vendor.description ||
+                                    "No description available."}
+                                </div>
+                              </div>
+                              <div className="vendor-actions">
+                                {status === "accepted" ? (
+                                  <button
+                                    type="button"
+                                    className="add-vendor-btn accepted"
+                                    disabled
+                                  >
+                                    <FaCheck /> Accepted
+                                  </button>
+                                ) : status === "pending" ? (
+                                  <button
+                                    type="button"
+                                    className="add-vendor-btn added"
+                                    disabled
+                                  >
+                                    <FaCheck /> Requested
+                                  </button>
+                                ) : selectedVendors.some(
+                                    (v) => v.vendor_id === vendor.vendor_id
+                                  ) ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="add-vendor-btn added selected"
+                                      disabled
+                                    >
+                                      <FaCheck /> Selected
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="undo-request-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRemoveVendor(vendor);
+                                      }}
+                                    >
+                                      <FaTimes /> Undo
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="add-vendor-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSelectVendor(vendor);
+                                    }}
+                                  >
+                                    <FaPlus /> Select Vendor
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {acceptedVendorsInfo.length > 0 && (
+                      <div className="confirmed-vendors-container">
+                        <h4>Confirmed Vendors</h4>
+                        <ul className="vendors-list-with-actions">
+                          {acceptedVendorsInfo.map((vendor) => (
+                            <li
+                              key={vendor.vendor_id}
+                              className="vendor-list-item"
+                            >
+                              <div className="vendor-info">
+                                <strong>{vendor.business_name}</strong>
+                                <span>- {vendor.service_type}</span>
+                              </div>
+                              <div className="vendor-actions">
+                                {currentUser?.role === "planner" ? (
+                                  // If user is a planner, show "View Contract" button for all vendors
+                                  <button
+                                    onClick={() => setViewingVendor(vendor)}
+                                    className="view-contract-btn"
+                                  >
+                                    View Contract
+                                  </button>
+                                ) : (
+                                  // If user is a vendor, only show the button if their ID matches
+                                  currentUser.id === vendor.vendor_id && (
+                                    <button
+                                      onClick={() => setViewingVendor(vendor)}
+                                      className="view-contract-btn"
+                                    >
+                                      Manage Contract
+                                    </button>
+                                  )
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {pendingRequests.length > 0 && (
+                      <div className="pending-vendors-container">
+                        <h4>Pending Vendors</h4>
+                        <div className="vendor-requests-list">
+                          {pendingRequests.map((request) => (
+                            <div
+                              key={request.request_id}
+                              className="vendor-request-item"
+                            >
+                              <div className="vendor-request-info">
+                                <strong>
+                                  {request.vendor?.business_name || "Vendor"}
+                                </strong>
+                                <div className="vendor-details">
+                                  <small>
+                                    Service:{" "}
+                                    {request.vendor?.service_type || "Unknown"}
+                                  </small>
+                                </div>
+                              </div>
+                              <div className="vendor-request-actions">
+                                <span className="status-label pending">
+                                  Pending Approval
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {rejectedRequests.length > 0 && (
+                      <div className="vendor-requests-container">
+                        <h4>Other Requests</h4>
+                        <div className="vendor-requests-list">
+                          {rejectedRequests.map((request) => (
+                            <div
+                              key={request.request_id}
+                              className="vendor-request-item"
+                            >
+                              <div className="vendor-request-info">
+                                <strong>
+                                  {request.vendor?.business_name || "Vendor"}
+                                </strong>
+                              </div>
+                              <div className="vendor-request-actions">
+                                <span className="status-label rejected">
+                                  ✗ Rejected
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {acceptedVendorsInfo.length === 0 &&
+                      pendingRequests.length === 0 && (
+                        <p>
+                          No vendors have been added or requested for this
+                          event.
+                        </p>
+                      )}
+                  </div>
                 )}
-            </section>
+              </>
+            )}
+          </section>
         )}
         {activeView === "documents" && (
           <section className="documents-section">
