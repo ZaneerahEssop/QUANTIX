@@ -19,8 +19,9 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../client";
 import "../styling/eventDetails.css";
+import ContractManagement from "../components/ContractManagement";
 
-// --- Sub-components (EventSchedule, EventTheme, GuestManagement) are unchanged ---
+// --- Sub-components ---
 const EventSchedule = ({ schedule, onUpdate, isEditing }) => {
   const handleAddItem = () =>
     onUpdate([...(schedule || []), { time: "", activity: "" }]);
@@ -200,10 +201,12 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
     </div>
   );
 };
+
 const GuestManagement = ({
   guests,
   onUpdate,
   isEditing,
+  isReadOnly,
   eventData,
   API_URL,
 }) => {
@@ -295,7 +298,7 @@ const GuestManagement = ({
                   </div>
                 </div>
 
-                {!isEditing && (
+                {!isEditing && !isReadOnly && (
                   <div className="guest-actions view-mode">
                     <button
                       onClick={() => handleSendInvite(guest)}
@@ -368,7 +371,6 @@ const GuestManagement = ({
   );
 };
 
-// --- Custom Modal Component with an 'X' button ---
 const SuccessModal = ({ message, onClose }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -382,14 +384,12 @@ const SuccessModal = ({ message, onClose }) => {
   );
 };
 
-// Main EventDetails component
 const EventDetails = () => {
   const { id } = useParams();
   const searchParams = new URLSearchParams(window.location.search);
   const isReadOnly = searchParams.get("readonly") === "true";
   const eventId = id;
   const navigate = useNavigate();
-  // Function to handle vendor card click
   const handleVendorCardClick = (vendorId) => {
     navigate(`/vendors/${vendorId}/services?readonly=true`);
   };
@@ -409,7 +409,7 @@ const EventDetails = () => {
     venue: "",
     notes: "",
   });
-  const [vendors, setVendors] = useState([]);
+  const [allVendors, setAllVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedVendors, setSelectedVendors] = useState([]);
@@ -420,8 +420,10 @@ const EventDetails = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [theme, setTheme] = useState({ name: "", colors: [], notes: "" });
+  
+  const [viewingVendor, setViewingVendor] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
-  // --- State for the modal ---
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
@@ -460,7 +462,7 @@ const EventDetails = () => {
 
       const data = await response.json();
       if (Array.isArray(data)) {
-        setVendors(data);
+        setAllVendors(data);
       }
     } catch (error) {
       console.error("Error fetching vendors:", error);
@@ -482,6 +484,13 @@ const EventDetails = () => {
           navigate("/login");
           return;
         }
+        
+        const isVendorUser = isReadOnly;
+        setCurrentUser({
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email,
+            role: isVendorUser ? 'vendor' : 'planner'
+        });
 
         const eventResponse = await fetch(
           `${API_URL}/api/events/id/${eventId}`
@@ -514,7 +523,6 @@ const EventDetails = () => {
         setSchedule(fetchedEventData.schedule || []);
         let themeData = fetchedEventData.theme;
 
-        // If theme is a string, parse it
         if (typeof themeData === "string") {
           try {
             themeData = JSON.parse(themeData);
@@ -524,7 +532,6 @@ const EventDetails = () => {
           }
         }
 
-        // If theme is an object but corrupted, clean it
         if (themeData && typeof themeData === "object") {
           const hasCorruptedProperties = Object.keys(themeData).some(
             (key) => !isNaN(parseInt(key)) && themeData[key] !== undefined
@@ -561,7 +568,7 @@ const EventDetails = () => {
     };
 
     fetchData();
-  }, [eventId, navigate, API_URL]);
+  }, [eventId, navigate, API_URL, isReadOnly]);
 
   const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
   const [vendorRequests, setVendorRequests] = useState([]);
@@ -606,16 +613,6 @@ const EventDetails = () => {
             req.request_id === requestId ? { ...req, status } : req
           )
         );
-
-        if (status === "accepted") {
-          const request = vendorRequests.find(
-            (req) => req.request_id === requestId
-          );
-          if (request && request.vendor_id) {
-            setSelectedVendors((prev) => [...prev, request.vendor_id]);
-          }
-        }
-
         alert(`Vendor request ${status} successfully!`);
       }
     } catch (error) {
@@ -688,7 +685,6 @@ const EventDetails = () => {
     );
 
     if (hasCorruptedProperties) {
-      // Reconstruct a clean theme object
       return {
         name: theme.name || "",
         colors: Array.isArray(theme.colors) ? theme.colors : [],
@@ -764,12 +760,10 @@ const EventDetails = () => {
         theme: theme,
       }));
 
-      // Show success modal instead of alert
       setModalMessage("Event and guests updated successfully!");
       setShowSuccessModal(true);
     } catch (error) {
       console.error("Error updating event:", error);
-      // Show error modal instead of alert
       setModalMessage(`Failed to update event: ${error.message}`);
       setShowSuccessModal(true);
     }
@@ -930,9 +924,21 @@ const EventDetails = () => {
     }
   };
 
+  const acceptedVendorsInfo = vendorRequests
+    .filter((req) => req.status === "accepted")
+    .map((req) => allVendors.find((v) => v.vendor_id === req.vendor_id))
+    .filter(Boolean);
+
+  const pendingRequests = vendorRequests.filter(
+    (req) => req.status === "pending"
+  );
+  
+  const rejectedRequests = vendorRequests.filter(
+    (req) => req.status === "rejected"
+  );
+
   return (
     <div className="event-details">
-      {/* --- Conditionally render the modal --- */}
       {showSuccessModal && (
         <SuccessModal
           message={modalMessage}
@@ -1075,250 +1081,320 @@ const EventDetails = () => {
             guests={guests}
             onUpdate={setGuests}
             isEditing={isEditing}
+            isReadOnly={isReadOnly}
             eventData={eventData}
             API_URL={API_URL}
           />
         )}
         {activeView === "vendors" && (
-          <section className="vendors-section">
-            <div className="section-header">
-              <h2>Vendors</h2>
-            </div>
-            {isEditing ? (
-              <div>
-                <div className="vendor-search-container">
-                  <div className="search-box">
-                    <FaSearch className="search-icon" />
-                    <input
-                      type="text"
-                      placeholder="Search for vendors by name or category"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="search-input"
+            <section className="vendors-section">
+                {viewingVendor ? (
+                    <ContractManagement 
+                      eventData={eventData}
+                      currentUser={currentUser}
+                      vendor={viewingVendor}
+                      isVendorAccepted={true}
+                      onBack={() => setViewingVendor(null)}
                     />
-                    {searchTerm && (
-                      <button
-                        type="button"
-                        onClick={() => setSearchTerm("")}
-                        className="clear-search"
-                        aria-label="Clear search"
-                      >
-                        <FaTimes />
-                      </button>
-                    )}
-                  </div>
-                  <select
-                    className="category-filter"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                  >
-                    <option value="All">All Categories</option>
-                    {Array.from(
-                      new Set(
-                        [
-                          // This gets all categories from your vendor data
-                          ...vendors.map((v) =>
-                            v.service_type.trim().toLowerCase()
-                          ),
-                          // This line ensures 'photography' is always in the list
-                          "photography",
-                        ].filter(Boolean)
-                      )
-                    )
-                      .sort()
-                      .map((category) => (
-                        <option key={category} value={category}>
-                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-                <div className="vendor-selection">
-                  {vendors
-                    .filter((vendor) => {
-                      const matchesSearch =
-                        !searchTerm ||
-                        vendor.business_name
-                          .toLowerCase()
-                          .includes(searchTerm.toLowerCase()) ||
-                        vendor.service_type
-                          .toLowerCase()
-                          .includes(searchTerm.toLowerCase());
-                      const matchesCategory =
-                        selectedCategory === "All" ||
-                        vendor.service_type.trim().toLowerCase() ===
-                          selectedCategory;
-                      return matchesSearch && matchesCategory;
-                    })
-                    .map((vendor) => (
-                      <div
-                        key={vendor.vendor_id}
-                        className="vendor-card"
-                        onClick={(e) => {
-                          // Only navigate if the click is not on the request button or its children
-                          if (
-                            !e.target.closest(
-                              ".add-vendor-btn, .undo-request-btn"
-                            )
-                          ) {
-                            handleVendorCardClick(vendor.vendor_id);
-                          }
-                        }}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <div className="vendor-card-content">
-                          <div className="vendor-info">
-                            <h4>{vendor.business_name}</h4>
-                          </div>
-                          <span className="vendor-category">
-                            {vendor.service_type.toLowerCase() === "venue"
-                              ? "Venue"
-                              : vendor.service_type}
-                          </span>
-                          <div
-                            className="vendor-description"
-                            style={{ textAlign: "center" }}
-                          >
-                            {vendor.description || "No description available."}
-                          </div>
-                        </div>
-                        <div className="vendor-actions">
-                          <button
-                            type="button"
-                            className={`add-vendor-btn ${
-                              selectedVendors.includes(vendor.vendor_id)
-                                ? "added"
-                                : ""
-                            }`}
-                            onClick={() => handleVendorToggle(vendor.vendor_id)}
-                            disabled={!isEditing}
-                          >
-                            {selectedVendors.includes(vendor.vendor_id) ? (
-                              <>
-                                <FaCheck /> Requested
-                              </>
-                            ) : (
-                              <>
-                                <FaPlus /> Request Vendor
-                              </>
-                            )}
-                          </button>
-                          {selectedVendors.includes(vendor.vendor_id) && (
-                            <button
-                              type="button"
-                              className="undo-request-btn"
-                              onClick={() =>
-                                handleVendorToggle(vendor.vendor_id)
-                              }
-                              disabled={!isEditing}
-                            >
-                              <FaTimes /> Undo
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            ) : (
-              <div className="vendors-list">
-                {selectedVendors.length > 0 ? (
-                  <ul>
-                    {selectedVendors.map((vendorId) => {
-                      const vendor = vendors.find(
-                        (v) => v.vendor_id === vendorId
-                      );
-                      return vendor ? (
-                        <li key={vendorId}>
-                          <strong>{vendor.business_name}</strong> -{" "}
-                          {vendor.service_type}
-                          <br />
-                          <small>{vendor.contact_number}</small>
-                        </li>
-                      ) : null;
-                    })}
-                  </ul>
                 ) : (
-                  <div className="no-vendors-section">
-                    <p>No vendors selected</p>
-                    {vendorRequests && vendorRequests.length > 0 && (
-                      <div className="vendor-requests-container">
-                        <h4>Vendor Requests</h4>
-                        <div className="vendor-requests-list">
-                          {vendorRequests.map((request) => (
-                            <div
-                              key={request.request_id}
-                              className="vendor-request-item"
-                            >
-                              <div className="vendor-request-info">
-                                <strong>
-                                  {request.vendor?.business_name || "Vendor"}
-                                </strong>
-                                <span
-                                  className={`status-badge status-${request.status}`}
-                                >
-                                  {request.status}
-                                </span>
-                                <div className="vendor-details">
-                                  <small>
-                                    Service:{" "}
-                                    {request.vendor?.service_type || "Unknown"}
-                                  </small>
-                                  <small>
-                                    Contact:{" "}
-                                    {request.vendor?.contact_number ||
-                                      "Not provided"}
-                                  </small>
-                                </div>
-                              </div>
-                              <div className="vendor-request-actions">
-                                {request.status === "pending" && isEditing && (
-                                  <div className="action-buttons">
-                                    <button
-                                      onClick={() =>
-                                        handleVendorRequestResponse(
-                                          request.request_id,
-                                          "accepted"
-                                        )
-                                      }
-                                      className="accept-btn"
-                                    >
-                                      Accept
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleVendorRequestResponse(
-                                          request.request_id,
-                                          "rejected"
-                                        )
-                                      }
-                                      className="reject-btn"
-                                    >
-                                      Reject
-                                    </button>
-                                  </div>
-                                )}
-                                {request.status === "accepted" && (
-                                  <span className="status-label accepted">
-                                    ✓ Accepted
-                                  </span>
-                                )}
-                                {request.status === "rejected" && (
-                                  <span className="status-label rejected">
-                                    ✗ Rejected
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                    <>
+                        <div className="section-header">
+                            <h2>Vendor Management</h2>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                        
+                        {isEditing ? (
+                            <div className="add-vendors-tool">
+                                {pendingRequests.length > 0 && (
+                                <div className="pending-vendors-container">
+                                    <h4>Pending Requests</h4>
+                                    <div className="vendor-requests-list">
+                                    {pendingRequests.map((request) => (
+                                        <div
+                                        key={request.request_id}
+                                        className="vendor-request-item"
+                                        >
+                                        <div className="vendor-request-info">
+                                            <strong>
+                                            {request.vendor?.business_name || "Vendor"}
+                                            </strong>
+                                            <div className="vendor-details">
+                                            <small>
+                                                Service:{" "}
+                                                {request.vendor?.service_type || "Unknown"}
+                                            </small>
+                                            </div>
+                                        </div>
+                                        <div className="vendor-request-actions">
+                                            <div className="action-buttons">
+                                            <button
+                                                onClick={() =>
+                                                handleVendorRequestResponse(
+                                                    request.request_id,
+                                                    "accepted"
+                                                )
+                                                }
+                                                className="accept-btn"
+                                            >
+                                                Accept
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                handleVendorRequestResponse(
+                                                    request.request_id,
+                                                    "rejected"
+                                                )
+                                                }
+                                                className="reject-btn"
+                                            >
+                                                Reject
+                                            </button>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    ))}
+                                    </div>
+                                </div>
+                                )}
+                                <div className="vendor-search-container">
+                                <div className="search-box">
+                                    <FaSearch className="search-icon" />
+                                    <input
+                                    type="text"
+                                    placeholder="Search to add new vendors"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="search-input"
+                                    />
+                                    {searchTerm && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchTerm("")}
+                                        className="clear-search"
+                                        aria-label="Clear search"
+                                    >
+                                        <FaTimes />
+                                    </button>
+                                    )}
+                                </div>
+                                <select
+                                    className="category-filter"
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                >
+                                    <option value="All">All Categories</option>
+                                    {Array.from(
+                                    new Set(
+                                        [
+                                        ...allVendors.map((v) =>
+                                            v.service_type.trim().toLowerCase()
+                                        ),
+                                        "photography",
+                                        ].filter(Boolean)
+                                    )
+                                    )
+                                    .sort()
+                                    .map((category) => (
+                                        <option key={category} value={category}>
+                                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                                        </option>
+                                    ))}
+                                </select>
+                                </div>
+                                <div className="vendor-selection">
+                                {allVendors
+                                    .filter((vendor) => {
+                                    const matchesSearch =
+                                        !searchTerm ||
+                                        vendor.business_name
+                                        .toLowerCase()
+                                        .includes(searchTerm.toLowerCase()) ||
+                                        vendor.service_type
+                                        .toLowerCase()
+                                        .includes(searchTerm.toLowerCase());
+                                    const matchesCategory =
+                                        selectedCategory === "All" ||
+                                        vendor.service_type.trim().toLowerCase() ===
+                                        selectedCategory;
+                                    return matchesSearch && matchesCategory;
+                                    })
+                                    .map((vendor) => {
+                                    const request = vendorRequests.find(
+                                        (r) => r.vendor_id === vendor.vendor_id
+                                    );
+                                    const status = request ? request.status : null;
+                                    const isNewlyRequested = selectedVendors.includes(
+                                        vendor.vendor_id
+                                    );
+
+                                    return (
+                                        <div
+                                        key={vendor.vendor_id}
+                                        className="vendor-card"
+                                        onClick={(e) => {
+                                            if (
+                                            !e.target.closest(
+                                                ".add-vendor-btn, .undo-request-btn"
+                                            )
+                                            ) {
+                                            handleVendorCardClick(vendor.vendor_id);
+                                            }
+                                        }}
+                                        style={{ cursor: "pointer" }}
+                                        >
+                                        <div className="vendor-card-content">
+                                            <div className="vendor-info">
+                                            <h4>{vendor.business_name}</h4>
+                                            </div>
+                                            <span className="vendor-category">
+                                            {vendor.service_type.toLowerCase() === "venue"
+                                                ? "Venue"
+                                                : vendor.service_type}
+                                            </span>
+                                            <div
+                                            className="vendor-description"
+                                            style={{ textAlign: "center" }}
+                                            >
+                                            {vendor.description ||
+                                                "No description available."}
+                                            </div>
+                                        </div>
+                                        <div className="vendor-actions">
+                                            {status === "accepted" ? (
+                                            <button
+                                                type="button"
+                                                className="add-vendor-btn accepted"
+                                                disabled
+                                            >
+                                                <FaCheck /> Accepted
+                                            </button>
+                                            ) : status === "pending" ||
+                                            (isNewlyRequested && !status) ? (
+                                            <>
+                                                <button
+                                                type="button"
+                                                className="add-vendor-btn added"
+                                                disabled
+                                                >
+                                                <FaCheck /> Requested
+                                                </button>
+                                                <button
+                                                type="button"
+                                                className="undo-request-btn"
+                                                onClick={() =>
+                                                    handleVendorToggle(vendor.vendor_id)
+                                                }
+                                                >
+                                                <FaTimes /> Undo
+                                                </button>
+                                            </>
+                                            ) : (
+                                            <button
+                                                type="button"
+                                                className="add-vendor-btn"
+                                                onClick={() =>
+                                                handleVendorToggle(vendor.vendor_id)
+                                                }
+                                            >
+                                                <FaPlus /> Request Vendor
+                                            </button>
+                                            )}
+                                        </div>
+                                        </div>
+                                    );
+                                    })}
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                {acceptedVendorsInfo.length > 0 && (
+                                    <div className="confirmed-vendors-container">
+                                        <h4>Confirmed Vendors</h4>
+                                        <ul className="vendors-list-with-actions">
+                                            {acceptedVendorsInfo.map((vendor) => (
+                                                <li key={vendor.vendor_id} className="vendor-list-item">
+                                                    <div className="vendor-info">
+                                                        <strong>{vendor.business_name}</strong>
+                                                        <span>- {vendor.service_type}</span>
+                                                    </div>
+                                                    <div className="vendor-actions">
+                                                      {currentUser?.role === 'planner' ? (
+                                                          // If user is a planner, show "View Contract" button for all vendors
+                                                          <button onClick={() => setViewingVendor(vendor)} className="view-contract-btn">
+                                                              View Contract
+                                                          </button>
+                                                      ) : (
+                                                          // If user is a vendor, only show the button if their ID matches
+                                                          currentUser.id === vendor.vendor_id && (
+                                                              <button onClick={() => setViewingVendor(vendor)} className="view-contract-btn">
+                                                                  Manage Contract
+                                                              </button>
+                                                          )
+                                                      )}
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {pendingRequests.length > 0 && (
+                                    <div className="pending-vendors-container">
+                                        <h4>Pending Vendors</h4>
+                                        <div className="vendor-requests-list">
+                                            {pendingRequests.map((request) => (
+                                            <div
+                                                key={request.request_id}
+                                                className="vendor-request-item"
+                                            >
+                                                <div className="vendor-request-info">
+                                                <strong>
+                                                    {request.vendor?.business_name || "Vendor"}
+                                                </strong>
+                                                <div className="vendor-details">
+                                                    <small>
+                                                    Service:{" "}
+                                                    {request.vendor?.service_type || "Unknown"}
+                                                    </small>
+                                                </div>
+                                                </div>
+                                                <div className="vendor-request-actions">
+                                                <span className="status-label pending">
+                                                    Pending Approval
+                                                </span>
+                                                </div>
+                                            </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {rejectedRequests.length > 0 && (
+                                    <div className="vendor-requests-container">
+                                        <h4>Other Requests</h4>
+                                        <div className="vendor-requests-list">
+                                            {rejectedRequests.map((request) => (
+                                                <div key={request.request_id} className="vendor-request-item">
+                                                    <div className="vendor-request-info">
+                                                        <strong>{request.vendor?.business_name || "Vendor"}</strong>
+                                                    </div>
+                                                    <div className="vendor-request-actions">
+                                                        <span className="status-label rejected">✗ Rejected</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {acceptedVendorsInfo.length === 0 &&
+                                    pendingRequests.length === 0 && (
+                                    <p>No vendors have been added or requested for this event.</p>
+                                    )}
+                            </div>
+                        )}
+                    </>
                 )}
-              </div>
-            )}
-          </section>
+            </section>
         )}
         {activeView === "documents" && (
           <section className="documents-section">
