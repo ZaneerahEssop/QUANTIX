@@ -1177,3 +1177,518 @@ input[type="color"]::-moz-color-swatch {
     color: var(--text-dark); /* Darkens the 'X' on hover */
 }
 /* --- END OF MODAL STYLES --- */
+/* --- NEW: Vendor Request Styling (Read-Only View) --- */
+.vendor-requests-container {
+    margin-top: 2rem;
+    border-top: 1px solid #eee;
+    padding-top: 1.5rem;
+}
+
+.vendor-requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.vendor-request-item {
+    background-color: #fdfdfd;
+    border: 1px solid #eee;
+    border-left: 4px solid var(--peach); /* Use a theme color for consistency */
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap; /* For responsiveness */
+}
+
+.vendor-request-info {
+    flex-grow: 1;
+}
+
+.vendor-request-info > strong {
+    font-size: 1.1rem;
+    color: var(--text-dark);
+}
+
+/* Hide the redundant status badge that appears next to the vendor name */
+.vendor-request-item .status-badge {
+    display: none;
+}
+
+.vendor-details {
+    margin-top: 0.5rem;
+}
+
+.vendor-details small {
+    display: block; /* Stack Service and Contact info vertically */
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.vendor-request-actions {
+    flex-shrink: 0; /* Prevent the status label from shrinking */
+}
+
+.status-label {
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+}
+
+.status-label.accepted {
+    color: #388e3c; /* Green text for accepted */
+    background-color: #e8f5e9; /* Light green background */
+}
+
+.status-label.rejected {
+    color: #d32f2f; /* Red text for rejected */
+    background-color: #ffebee; /* Light red background */
+}
+
+/* --- Style for Accepted Vendor Button --- */
+.add-vendor-btn.accepted {
+    background-color: #e8f5e9; /* Light green */
+    color: #388e3c;
+    cursor: default;
+}
+
+.add-vendor-btn.accepted:hover {
+    background-color: #e8f5e9;
+}
+
+/* --- Styling for Confirmed/Pending Vendor Lists --- */
+.confirmed-vendors-container,
+.pending-vendors-container {
+    margin-top: 1rem;
+    padding: 0;
+    width: 100%;
+}
+
+.confirmed-vendors-container h4,
+.pending-vendors-container h4 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+    color: var(--text-dark);
+}
+
+/* New style for the Pending status label */
+.status-label.pending {
+    color: #f57c00; /* Orange text for pending */
+    background-color: #fff3e0; /* Light orange background */
+    font-style: italic;
+}
+
+/* --- Add these styles to the end of your eventDetails.css file --- */
+
+/* --- CONTRACT MANAGEMENT STYLES --- */
+.contract-section {
+    background-color: var(--card-background);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.contract-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.contract-section .info-message {
+    background-color: #fff3e0;
+    color: #f57c00;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #f57c00;
+}
+
+/* Status Banners */
+.status-banner {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.status-banner.revisions {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+.status-banner.active {
+    background-color: #e8f5e9;
+    color: #388e3c;
+}
+
+/* Contract Editor & View */
+.contract-editor {
+    width: 100%;
+    min-height: 600px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    resize: vertical;
+}
+.contract-editor:focus {
+    outline: none;
+    border-color: var(--blush);
+}
+.edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.floating-edit-btn {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+}
+.contract-view {
+    border: 1px solid #eee;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    background-color: #fdfdfd;
+    min-height: 200px;
+}
+/* Markdown Content Styling */
+.markdown-content {
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+.markdown-content h1, .markdown-content h3 {
+    color: var(--text-dark);
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+.markdown-content ul {
+    padding-left: 1.5rem;
+}
+.markdown-content blockquote {
+    border-left: 4px solid #ccc;
+    padding-left: 1rem;
+    margin-left: 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Signatures & Revisions Layout */
+.signatures-and-revisions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+.signatures-section, .revisions-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.signatures-section h3, .revisions-section h3, .revisions-history h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-dark);
+}
+.signature-box {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+}
+.signature-box strong {
+    color: var(--text-dark);
+}
+.signature-box .signed {
+    color: #388e3c;
+    font-weight: 500;
+    margin: 0.5rem 0 0 0;
+}
+.sign-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+.sign-form input {
+    flex-grow: 1;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 0.5rem;
+}
+.sign-form button {
+    background-color: var(--blush);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+/* Revisions Form & History */
+.revision-form textarea {
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-family: inherit;
+    resize: vertical;
+}
+.revision-form button {
+    background-color: var(--peach);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem;
+    cursor: pointer;
+    width: 100%;
+}
+.revisions-history {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed #ddd;
+}
+.revisions-history ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.revisions-history li {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--peach);
+}
+
+.vendors-list.clickable-list li {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.vendors-list.clickable-list li:hover {
+    background-color: #f8f8f8;
+}
+
+.back-button.small-back {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+.back-button.small-back:hover {
+    background-color: #f1f1f1;
+    color: var(--text-dark);
+}
+
+  /* --- CONTRACT FORM EDITOR STYLES --- */
+
+.contract-form-editor {
+    background-color: #fdfdfd;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .contract-form-editor h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+    color: var(--text-dark);
+  }
+  
+  .form-field-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-field-group label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+  
+  .form-field-group input[type="text"],
+  .form-field-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+    box-sizing: border-box;
+  }
+  
+  .form-field-group input[type="text"]:focus,
+  .form-field-group textarea:focus {
+    outline: none;
+    border-color: var(--blush);
+    box-shadow: 0 0 0 2px rgba(229, 172, 191, 0.3);
+  }
+  
+  .form-field-group textarea {
+      min-height: 100px;
+      resize: vertical;
+  }
+  
+  /* Remove the old floating button style */
+  .floating-edit-btn {
+    display: none;
+  }
+
+  /* Add these styles to the end of eventDetails.css */
+
+.custom-fields-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed #ddd;
+  }
+  
+  .custom-fields-section h4 {
+    margin-bottom: 1rem;
+    color: var(--text-dark);
+  }
+  
+  .custom-field-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+  
+  .custom-field-header {
+    flex: 1;
+    min-width: 150px;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  
+  .custom-field-value {
+    flex: 2;
+    min-width: 250px;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    resize: vertical;
+  }
+  
+  .remove-custom-field-btn {
+    background: transparent;
+    border: none;
+    color: #f44336;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0.75rem;
+    margin-top: 0;
+    transition: color 0.2s;
+  }
+  .remove-custom-field-btn:hover {
+    color: #d32f2f;
+  }
+  
+  .add-custom-field-btn {
+    background-color: #e8f5e9;
+    color: #388e3c;
+    border: 1px dashed #388e3c;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s ease;
+  }
+  
+  .add-custom-field-btn:hover {
+    background-color: #dcf0df;
+  }
+
+  .vendors-list-with-actions {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+    width: 100%;
+    }
+    
+    .vendor-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem; /* Increased padding slightly for better spacing */
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-left: 4px solid var(--blush);
+    margin: 0 0 0.5rem 0;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 1rem; /* Added a gap for spacing */
+    }
+    
+    .vendor-list-item .vendor-actions {
+    flex-shrink: 0; /* This is correct, prevents the button from shrinking */
+    }
+    
+    .vendor-list-item .vendor-info {
+    display: flex;
+    align-items: baseline; /* Aligns text better than 'center' */
+    flex-grow: 1;  /* Let this container grow */
+    min-width: 0;   /* This is the key fix: allows the container to shrink and truncate its content */
+    }
+    
+    .vendor-list-item .vendor-info strong {
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 0.75rem;
+    }
+    
+    .vendor-list-item .vendor-info span {
+    color: #666;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    flex-shrink: 0; /* Ensures the category text is less likely to be cut off */
+    }
+    
+    .view-contract-btn {
+    background: var(--peach);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+    }
+    
+    .view-contract-btn:hover {
+    background-color: #d69e6b;
+    }
