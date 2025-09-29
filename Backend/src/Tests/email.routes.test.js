@@ -1,121 +1,110 @@
-// This is the fully corrected test file for your email router.
-
 const request = require('supertest');
 const express = require('express');
 
-// --- Mock the googleapis Library ---
-const mockGmailSend = jest.fn();
-const mockSetCredentials = jest.fn();
-
-jest.mock('googleapis', () => ({
-  google: {
-    auth: {
-      OAuth2: jest.fn().mockImplementation(() => ({
-        setCredentials: mockSetCredentials,
-      })),
-    },
-    gmail: jest.fn(() => ({
-      users: {
-        messages: {
-          send: mockGmailSend,
-        },
-      },
-    })),
-  },
+// --- Mock the nodemailer Library ---
+// We tell Jest that whenever 'nodemailer' is required, it should
+// return our custom mock implementation instead of the real one.
+const mockSendMail = jest.fn();
+jest.mock('nodemailer', () => ({
+  createTransport: jest.fn().mockReturnValue({
+    sendMail: mockSendMail,
+  }),
 }));
+
+const emailRouter = require('../Routes/email.routes'); // Adjust path to your route file
 
 // --- Setup a Test App ---
 const app = express();
 app.use(express.json());
-const emailRouter = require('../Routes/email.routes');
-app.use('/api/email', emailRouter);
+// Mount the router you want to test
+app.use('/api', emailRouter);
 
 // --- The Tests ---
-describe('POST /api/email/send-invite', () => {
+describe('POST /api/send-invite', () => {
   const originalEnv = process.env;
 
+  // Before each test, we clear all mock history and reset the environment
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...originalEnv };
   });
 
+  // After all tests are done, restore the original environment
   afterAll(() => {
     process.env = originalEnv;
   });
 
   it('should send an email and return 200 on a successful request', async () => {
-    mockGmailSend.mockResolvedValue({ data: { id: 'test-message-id' } });
+    // Arrange: Set up environment variables and a valid request body
+    process.env.GMAIL_USER = 'test@gmail.com';
+    process.env.GMAIL_APP_PASSWORD = 'test-password';
     const requestBody = {
-      guestEmail: 'test@example.com',
-      guestName: 'John Doe',
-      eventName: 'Annual Gala',
-      googleAccessToken: 'fake-access-token',
-      googleRefreshToken: 'fake-refresh-token',
+      guestEmail: 'recipient@example.com',
+      guestName: 'Jane Doe',
+      eventName: 'The Grand Event',
     };
-    process.env.GOOGLE_CLIENT_ID = 'test-client-id';
-    process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
 
-    const response = await request(app).post('/api/email/send-invite').send(requestBody);
+    // Mock a successful response from sendMail
+    mockSendMail.mockResolvedValue({ messageId: 'mock-message-id' });
 
+    // Act: Send the request to the endpoint
+    const response = await request(app).post('/api/send-invite').send(requestBody);
+
+    // Assert: Check the results
     expect(response.statusCode).toBe(200);
     expect(response.body.message).toBe('Invitation sent successfully!');
-    expect(mockSetCredentials).toHaveBeenCalledWith({
-      access_token: 'fake-access-token',
-      refresh_token: 'fake-refresh-token',
-    });
-    expect(mockGmailSend).toHaveBeenCalledTimes(1);
+    expect(mockSendMail).toHaveBeenCalledTimes(1);
+    // You can also check if it was called with the correct details
+    expect(mockSendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'recipient@example.com',
+        subject: "🎉 You're Invited to The Grand Event!",
+        html: expect.stringContaining('Hi Jane Doe,'),
+      })
+    );
   });
 
-  it('should return 400 if required fields are missing', async () => {
-    // ---- FIX IS HERE ----
-    // We must provide the environment variables so the code can get past
-    // the first check and test the request body validation.
-    process.env.GOOGLE_CLIENT_ID = 'test-client-id';
-    process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
-
+  it('should return 400 if required fields are missing from the body', async () => {
+    // Arrange: Set up environment, but the body is missing 'eventName'
+    process.env.GMAIL_USER = 'test@gmail.com';
+    process.env.GMAIL_APP_PASSWORD = 'test-password';
     const requestBody = {
-      guestEmail: 'test@example.com',
-      googleRefreshToken: 'fake-refresh-token',
+      guestEmail: 'recipient@example.com',
+      guestName: 'Jane Doe',
+      // eventName is missing
     };
 
-    const response = await request(app).post('/api/email/send-invite').send(requestBody);
+    // Act
+    const response = await request(app).post('/api/send-invite').send(requestBody);
 
+    // Assert
     expect(response.statusCode).toBe(400);
-    expect(response.body.error).toBe('Missing required information to send email.');
-    expect(mockGmailSend).not.toHaveBeenCalled();
+    expect(response.body.error).toBe(
+      'Missing required fields: guestEmail, guestName, or eventName'
+    );
+    expect(mockSendMail).not.toHaveBeenCalled();
   });
 
-  it('should return 401 if the Google API call fails with an auth error', async () => {
-    const authError = new Error('Invalid Credentials');
-    authError.code = 401;
-    mockGmailSend.mockRejectedValue(authError);
+  it('should return 500 if nodemailer fails to send the email', async () => {
+    // Arrange: Set up a valid request
+    process.env.GMAIL_USER = 'test@gmail.com';
+    process.env.GMAIL_APP_PASSWORD = 'test-password';
     const requestBody = {
-      guestEmail: 'test@example.com',
-      googleAccessToken: 'invalid-token',
-      googleRefreshToken: 'invalid-token',
+      guestEmail: 'recipient@example.com',
+      guestName: 'Jane Doe',
+      eventName: 'The Grand Event',
     };
-    process.env.GOOGLE_CLIENT_ID = 'test-client-id';
-    process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
 
-    const response = await request(app).post('/api/email/send-invite').send(requestBody);
+    // Mock a failure (rejection) from sendMail
+    const smtpError = new Error('SMTP Connection Failed');
+    mockSendMail.mockRejectedValue(smtpError);
 
-    expect(response.statusCode).toBe(401);
-    expect(response.body.error).toContain('Google authentication failed');
-  });
-  
-  it('should return 500 if Google OAuth environment variables are missing', async () => {
-    delete process.env.GOOGLE_CLIENT_ID;
-    const requestBody = {
-        guestEmail: 'test@example.com',
-        googleAccessToken: 'fake-access-token',
-        googleRefreshToken: 'fake-refresh-token',
-      };
+    // Act
+    const response = await request(app).post('/api/send-invite').send(requestBody);
 
-    const response = await request(app).post('/api/email/send-invite').send(requestBody);
-
+    // Assert
     expect(response.statusCode).toBe(500);
-    // ---- FIX IS HERE ----
-    // Updated the expected error message to match the new one in the controller.
-    expect(response.body.error).toBe('Email service is not configured correctly on the server.');
+    expect(response.body.error).toBe('Failed to send invitation. Please try again later.');
+    expect(mockSendMail).toHaveBeenCalledTimes(1);
   });
 });

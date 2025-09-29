@@ -21,7 +21,7 @@ import { supabase } from "../client";
 import "../styling/eventDetails.css";
 import ContractManagement from "../components/ContractManagement";
 
-// --- Sub-components ---
+// --- Sub-components (EventSchedule, EventTheme) are unchanged ---
 const EventSchedule = ({ schedule, onUpdate, isEditing }) => {
   const handleAddItem = () =>
     onUpdate([...(schedule || []), { time: "", activity: "" }]);
@@ -202,6 +202,8 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
   );
 };
 
+
+// --- CHANGE IS IN THIS COMPONENT ---
 const GuestManagement = ({
   guests,
   onUpdate,
@@ -209,6 +211,9 @@ const GuestManagement = ({
   isReadOnly,
   eventData,
   API_URL,
+  // Add props to control the modal from the parent component
+  setModalMessage,
+  setShowSuccessModal,
 }) => {
   const [newGuest, setNewGuest] = useState({
     name: "",
@@ -239,13 +244,54 @@ const GuestManagement = ({
   const handleRemoveGuest = (guestId) =>
     onUpdate((guests || []).filter((g) => g.id !== guestId));
 
+  // --- MODIFIED FUNCTION ---
+  // This function now calls your backend API endpoint.
   const handleSendInvite = async (guest) => {
-    alert(
-      `Email functionality is temporarily disabled. Guest ${guest.name} (${
-        guest.contact
-      }) would receive an invitation to ${eventData?.name || "the event"}.`
-    );
+    // First, check if the guest has an email address
+    if (!guest.contact) {
+      setModalMessage(`Cannot send invite: No email address for ${guest.name}.`);
+      setShowSuccessModal(true);
+      return;
+    }
+
+    try {
+      // Show a "sending" message in the modal
+      setModalMessage(`Sending invitation to ${guest.name}...`);
+      setShowSuccessModal(true);
+
+      const payload = {
+        guestEmail: guest.contact,
+        guestName: guest.name,
+        eventName: eventData.name,
+      };
+
+      // Call your backend API (make sure the route is correct)
+      const response = await fetch(`${API_URL}/api/emails/send-invite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // If the server returns an error, throw it to be caught by the catch block
+        throw new Error(result.error || "An unknown error occurred.");
+      }
+
+      // On success, update the modal with a success message
+      setModalMessage(`Invitation successfully sent to ${guest.name}!`);
+      // The modal is already open, so no need to call setShowSuccessModal(true) again.
+    } catch (error) {
+      console.error("Failed to send invitation:", error);
+      // On failure, update the modal with the error message
+      setModalMessage(`Failed to send invitation: ${error.message}`);
+      setShowSuccessModal(true);
+    }
   };
+
 
   return (
     <div className="guests-section">
@@ -1077,6 +1123,7 @@ const EventDetails = () => {
           </>
         )}
         {activeView === "guests" && (
+          // --- PASS PROPS TO GUESTMANAGEMENT ---
           <GuestManagement
             guests={guests}
             onUpdate={setGuests}
@@ -1084,6 +1131,8 @@ const EventDetails = () => {
             isReadOnly={isReadOnly}
             eventData={eventData}
             API_URL={API_URL}
+            setModalMessage={setModalMessage}
+            setShowSuccessModal={setShowSuccessModal}
           />
         )}
         {activeView === "vendors" && (
