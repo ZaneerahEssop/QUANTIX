@@ -2,19 +2,9 @@ const express = require("express");
 const nodemailer = require("nodemailer");
 const router = express.Router();
 
-// 1. Configure Nodemailer Transporter
-// This transporter object uses your Gmail credentials to send emails.
-// It's configured once and can be reused for all email sending.
-
 // Check if Gmail credentials are configured
-console.log("=== ENVIRONMENT VARIABLES DEBUG ===");
-console.log("All env vars starting with GMAIL:", Object.keys(process.env).filter(key => key.startsWith('GMAIL')));
-console.log("GMAIL_USER:", process.env.GMAIL_USER);
-console.log("GMAIL_APP_PASSWORD:", process.env.GMAIL_APP_PASSWORD ? "SET (length: " + process.env.GMAIL_APP_PASSWORD.length + ")" : "NOT SET");
-console.log("=== END DEBUG ===");
-
 if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-  console.error("Gmail credentials not configured. Please set GMAIL_USER and GMAIL_APP_PASSWORD environment variables.");
+  // Gmail credentials not configured - will be handled in route
 }
 
 const transporter = nodemailer.createTransport({
@@ -64,30 +54,16 @@ router.post("/send-invite", async (req, res) => {
       `,
     };
 
-    // Use the transporter to send the email
-    console.log("Attempting to send email to:", guestEmail);
-    console.log("Gmail user configured:", process.env.GMAIL_USER ? "Yes" : "No");
-    console.log("Gmail app password configured:", process.env.GMAIL_APP_PASSWORD ? "Yes" : "No");
-    console.log("Gmail user value:", process.env.GMAIL_USER);
-    console.log("Gmail app password length:", process.env.GMAIL_APP_PASSWORD ? process.env.GMAIL_APP_PASSWORD.length : "Not set");
-    console.log("Gmail app password first 4 chars:", process.env.GMAIL_APP_PASSWORD ? process.env.GMAIL_APP_PASSWORD.substring(0, 4) : "Not set");
-    
+   
     await transporter.sendMail(mailOptions);
 
     // Send a success response back to the frontend
     res.status(200).json({ message: "Invitation sent successfully!" });
   } catch (error) {
-    // If anything goes wrong, log the error and send a server error response
-    console.error("Error sending email:", error);
-    console.error("Error details:", {
-      message: error.message,
-      code: error.code,
-      response: error.response,
-      command: error.command
-    });
+    // If anything goes wrong, send a server error response
     res
       .status(500)
-      .json({ error: "Failed to send invitation. Please check server logs." });
+      .json({ error: "Failed to send invitation. Please try again later." });
   }
 });
 
