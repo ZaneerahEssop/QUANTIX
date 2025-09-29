@@ -20,6 +20,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../client";
 import "../styling/eventDetails.css";
 
+
+
+
+
 // --- Sub-components (EventSchedule, EventTheme, GuestManagement) are unchanged ---
 const EventSchedule = ({ schedule, onUpdate, isEditing }) => {
   const handleAddItem = () =>
@@ -200,6 +204,7 @@ const EventTheme = ({ theme, onUpdate, isEditing = true }) => {
     </div>
   );
 };
+
 const GuestManagement = ({
   guests,
   onUpdate,
@@ -991,7 +996,13 @@ const EventDetails = () => {
           </button>
         </div>
       </div>
-      <div className="event-info-boxes">
+     <div className="event-info-boxes" style={{
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, 1fr)',
+  gap: '0.8rem',
+  marginTop: '2rem',
+  marginBottom: '2rem'
+}}>
         <div className="info-box date-box">
           <h4>
             <FaCalendarAlt /> Date
