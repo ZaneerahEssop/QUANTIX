@@ -247,14 +247,20 @@ export default function AddEventForm() {
       try {
         let result = [...allVendors];
 
+        // --- CHANGE START ---
         // Filter by category
         if (selectedCategory !== "All") {
           result = result.filter(
             (v) =>
               v.service_type &&
-              v.service_type.toLowerCase() === selectedCategory.toLowerCase()
+              v.service_type
+                .toLowerCase()
+                .split(',')
+                .map(s => s.trim())
+                .includes(selectedCategory.toLowerCase())
           );
         }
+        // --- CHANGE END ---
 
         // Filter by search term
         if (searchTerm) {
