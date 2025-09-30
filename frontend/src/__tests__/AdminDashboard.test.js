@@ -1,14 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import AdminDashboard from '../pages/AdminDashboard.jsx'; // Explicit .jsx extension
-// Debug import
-console.log('AdminDashboard import:', AdminDashboard);
-try {
-  console.log('Resolved path:', require.resolve('../pages/AdminDashboard.jsx'));
-} catch (e) {
-  console.error('Failed to resolve AdminDashboard:', e.message);
-}
+import AdminDashboard from '../pages/AdminDashboard.jsx';
 import { supabase } from '../client';
 
 // Mock dependencies
@@ -118,8 +111,17 @@ describe('AdminDashboard', () => {
     console.error.mockRestore();
   });
 
-  test('renders loading state initially', async () => {
-    // Mock vendors to return empty array to avoid filter error
+  test('shows loading state during data fetch', async () => {
+    // Create a promise that we can control for vendors fetch
+    let resolveVendorsFetch;
+    const vendorsPromise = new Promise((resolve) => {
+      resolveVendorsFetch = () => resolve({ 
+        data: [], 
+        error: null 
+      });
+    });
+
+    // Mock vendors to return the controlled promise
     supabase.from.mockImplementation((table) => {
       if (table === 'users') {
         return {
@@ -133,10 +135,7 @@ describe('AdminDashboard', () => {
       if (table === 'vendors') {
         return {
           select: jest.fn().mockReturnValue({
-            order: jest.fn().mockResolvedValue({
-              data: [],
-              error: null,
-            }),
+            order: jest.fn().mockReturnValue(vendorsPromise),
           }),
         };
       }
@@ -151,7 +150,17 @@ describe('AdminDashboard', () => {
       );
     });
 
+    // The loading state should be visible while the promise is pending
     expect(screen.getByText('Loading...')).toBeInTheDocument();
+
+    // Now resolve the promise and wait for loading to complete
+    await act(async () => {
+      resolveVendorsFetch();
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    });
   });
 
   test('redirects to login if no user session', async () => {
@@ -230,10 +239,22 @@ describe('AdminDashboard', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('pending-count')).toHaveTextContent('1');
-      expect(screen.getByTestId('accepted-count')).toHaveTextContent('1');
-      expect(screen.getByTestId('rejected-count')).toHaveTextContent('1');
-      expect(screen.getByTestId('total-count')).toHaveTextContent('3');
+      // Find the stats by looking for the numbers in the card headings
+      const pendingCard = screen.getByText('Pending Vendors').closest('.card');
+      const acceptedCard = screen.getByText('Approved Vendors').closest('.card');
+      const rejectedCard = screen.getByText('Rejected Vendors').closest('.card');
+      const totalCard = screen.getByText('Total Vendors').closest('.card');
+      
+      // Get the h3 elements within each card which contain the numbers
+      const pendingCount = pendingCard.querySelector('h3').textContent;
+      const acceptedCount = acceptedCard.querySelector('h3').textContent;
+      const rejectedCount = rejectedCard.querySelector('h3').textContent;
+      const totalCount = totalCard.querySelector('h3').textContent;
+      
+      expect(pendingCount).toBe('1');
+      expect(acceptedCount).toBe('1');
+      expect(rejectedCount).toBe('1');
+      expect(totalCount).toBe('3');
     });
   });
 

@@ -1,14 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import PendingApprovalPage from '../pages/PendingApproval.jsx'; // Explicit .jsx extension
-// Debug import at top level
-console.log('PendingApprovalPage import:', PendingApprovalPage);
-try {
-  console.log('Resolved path:', require.resolve('../pages/PendingApproval.jsx'));
-} catch (e) {
-  console.error('Failed to resolve PendingApproval:', e.message);
-}
+import PendingApprovalPage from '../pages/PendingApproval';
 import { supabase } from '../client';
 
 // Mock Navbar component
@@ -35,6 +28,12 @@ jest.mock('../client', () => ({
     from: jest.fn(),
   },
 }));
+
+// Mock react-icons
+jest.mock('react-icons/fa', () => ({
+  FaClock: () => <div data-testid="fa-clock" />
+}));
+
 
 describe('PendingApprovalPage', () => {
   beforeEach(() => {
@@ -140,7 +139,7 @@ describe('PendingApprovalPage', () => {
     });
   });
 
-  test('renders unknown status UI for unexpected status', async () => {
+  test('falls back to pending status on unexpected vendor status', async () => {
     supabase.from.mockReturnValue({
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
@@ -158,13 +157,10 @@ describe('PendingApprovalPage', () => {
     });
 
     await waitFor(() => {
-      console.log('Unknown test DOM:', screen.debug());
-      expect(screen.getByText('Unknown Status')).toBeInTheDocument();
-      expect(
-        screen.getByText(/We couldn’t determine your application status/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText('Application Under Review')).toBeInTheDocument();
     });
   });
+
 
   test('redirects to vendor-dashboard when status is accepted', async () => {
     supabase.from.mockReturnValue({

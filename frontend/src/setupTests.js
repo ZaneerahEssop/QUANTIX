@@ -1,4 +1,6 @@
 import '@testing-library/jest-dom';
+import React from 'react';
+import { TextEncoder, TextDecoder } from 'util';
 
 process.env.REACT_APP_SUPABASE_URL = 'https://fake.supabase.url';
 process.env.REACT_APP_SUPABASE_ANON_KEY = 'fake-anon-key';
@@ -90,3 +92,10 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
+if (typeof global.TextEncoder === 'undefined') {
+  global.TextEncoder = TextEncoder;
+}
+
+if (typeof global.TextDecoder === 'undefined') {
+  global.TextDecoder = TextDecoder;
+}
