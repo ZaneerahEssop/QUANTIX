@@ -488,15 +488,6 @@ const EventDetails = () => {
     }
   }, [isReadOnly]);
 
-  // Add the missing handleVendorToggle function
-  const handleVendorToggle = (vendorId) => {
-    setSelectedVendors(prev => 
-      prev.some(v => v.vendor_id === vendorId)
-        ? prev.filter(v => v.vendor_id !== vendorId)
-        : [...prev, allVendors.find(v => v.vendor_id === vendorId)]
-    );
-  };
-
   const handleVendorCardClick = (vendorId) => {
     navigate(`/vendors/${vendorId}/services?readonly=true`);
   };
@@ -1400,7 +1391,7 @@ const EventDetails = () => {
                         ))}
                       </select>
                     </div>
-                    <div className="vendor-selection">
+                    <div className="vendor-selection"aria-label="Vendor Selection">
                       {allVendors
                         .filter((vendor) => {
                           const matchesSearch =

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import EventDetails from "../pages/EventDetails.jsx";
 
@@ -109,8 +109,8 @@ jest.mock("react-router-dom", () => ({
 jest.mock("../styling/eventDetails.css", () => ({}));
 
 describe("EventDetails Testing", () => {
-  const mockUser = { 
-    id: "test-user-id", 
+  const mockUser = {
+    id: "test-user-id",
     email: "test@example.com",
     user_metadata: { full_name: "Test User" }
   };
@@ -174,8 +174,8 @@ describe("EventDetails Testing", () => {
         return Promise.resolve({ ok: true, json: () => Promise.resolve(mockVendorRequests) });
       }
       if (url.includes("/api/events/test-event-id/export")) {
-        return Promise.resolve({ 
-          ok: true, 
+        return Promise.resolve({
+          ok: true,
           headers: { get: () => 'attachment; filename="event_export.zip"' },
           blob: () => Promise.resolve(new Blob(['test']))
         });
@@ -207,14 +207,6 @@ describe("EventDetails Testing", () => {
     }, { timeout: 3000 });
   };
 
-  // Helper function to enter edit mode
-  const enterEditMode = async () => {
-    const editButton = screen.getByRole('button', { name: /edit event/i });
-    await act(async () => {
-      fireEvent.click(editButton);
-    });
-  };
-
   // Helper function to switch to different views
   const switchToView = async (viewName) => {
     const viewButton = screen.getByRole("button", { name: new RegExp(viewName, "i") });
@@ -223,7 +215,6 @@ describe("EventDetails Testing", () => {
     });
   };
 
-  // FIXED: Basic rendering test
   test("renders event details component", async () => {
     await act(async () => {
       render(
@@ -291,7 +282,7 @@ describe("EventDetails Testing", () => {
 
     await waitForComponentToLoad();
 
-    expect(screen.queryByRole('button', { name: /edit event/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /edit details/i })).not.toBeInTheDocument();
   });
 
   test("toggles edit mode", async () => {
@@ -307,9 +298,12 @@ describe("EventDetails Testing", () => {
 
     await waitForComponentToLoad();
 
-    await enterEditMode();
+    const editButton = screen.getByRole('button', { name: /edit details/i });
+    await act(async () => {
+      fireEvent.click(editButton);
+    });
 
-    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save details/i })).toBeInTheDocument();
   });
 
   test("handles schedule management in edit mode", async () => {
@@ -324,7 +318,11 @@ describe("EventDetails Testing", () => {
     });
 
     await waitForComponentToLoad();
-    await enterEditMode();
+
+    const editScheduleButton = screen.getByRole('button', { name: /edit schedule/i });
+    await act(async () => {
+      fireEvent.click(editScheduleButton);
+    });
 
     const addActivityButton = screen.getByRole('button', { name: /add activity/i });
     await act(async () => {
@@ -333,7 +331,7 @@ describe("EventDetails Testing", () => {
 
     const timeInputs = screen.getAllByDisplayValue("");
     const activityInputs = screen.getAllByPlaceholderText("Activity");
-    
+
     expect(timeInputs.length).toBeGreaterThan(0);
     expect(activityInputs.length).toBeGreaterThan(0);
   });
@@ -350,7 +348,11 @@ describe("EventDetails Testing", () => {
     });
 
     await waitForComponentToLoad();
-    await enterEditMode();
+
+    const editThemeButton = screen.getByRole('button', { name: /edit theme/i });
+    await act(async () => {
+      fireEvent.click(editThemeButton);
+    });
 
     const themeNameInput = screen.getByPlaceholderText("Enter theme name");
     await act(async () => {
@@ -400,7 +402,6 @@ describe("EventDetails Testing", () => {
     expect(yesCheckboxes[0]).toBeChecked();
   });
 
-  // NEW: Test guest invite functionality
   test("sends guest invites with email functionality", async () => {
     await act(async () => {
       render(
@@ -420,7 +421,6 @@ describe("EventDetails Testing", () => {
       fireEvent.click(sendButtons[0]);
     });
 
-    // Wait for the modal to appear with success message
     await waitFor(() => {
       expect(screen.getByText(/Invitation successfully sent to/)).toBeInTheDocument();
     }, { timeout: 3000 });
@@ -443,7 +443,6 @@ describe("EventDetails Testing", () => {
     expect(screen.getByText("Vendor One")).toBeInTheDocument();
   });
 
-  // FIXED: Vendor requests test
   test("handles vendor requests", async () => {
     await act(async () => {
       render(
@@ -458,13 +457,11 @@ describe("EventDetails Testing", () => {
     await waitForComponentToLoad();
     await switchToView("Vendor Management");
 
-    // Verify that the vendor requests API was called
-    const vendorRequestCalls = global.fetch.mock.calls.filter(call => 
+    const vendorRequestCalls = global.fetch.mock.calls.filter(call =>
       call[0].includes("/api/vendor-requests/event/test-event-id")
     );
     expect(vendorRequestCalls.length).toBeGreaterThan(0);
 
-    // Verify that vendors are displayed
     expect(screen.getByText("Vendor One")).toBeInTheDocument();
   });
 
@@ -482,7 +479,6 @@ describe("EventDetails Testing", () => {
     await waitForComponentToLoad();
     await switchToView("Vendor Management");
 
-    // Wait for vendor list to load - look for specific vendor
     await waitFor(() => {
       expect(screen.getByText("Venue Provider")).toBeInTheDocument();
     });
@@ -492,20 +488,16 @@ describe("EventDetails Testing", () => {
       fireEvent.click(viewContractButtons[0]);
     });
 
-    // Should show contract management view
     expect(screen.getByTestId("mock-contract-management")).toBeInTheDocument();
     expect(screen.getByText(/Contract Management for/)).toBeInTheDocument();
 
-    // Test going back to vendor list
     const backButton = screen.getByRole('button', { name: /back to vendors/i });
     await act(async () => {
       fireEvent.click(backButton);
     });
 
-    // Should be back to vendor management view - check for the section header specifically
     await waitFor(() => {
-      const vendorSectionHeader = document.querySelector('.section-header h2');
-      expect(vendorSectionHeader).toHaveTextContent("Vendor Management");
+      expect(screen.getByRole('heading', { name: 'Vendors' })).toBeInTheDocument();
     }, { timeout: 3000 });
   });
 
@@ -539,7 +531,11 @@ describe("EventDetails Testing", () => {
 
     await waitForComponentToLoad();
     await switchToView("Document Management");
-    await enterEditMode();
+
+    const editDocsButton = screen.getByRole('button', { name: /edit documents/i });
+    await act(async () => {
+      fireEvent.click(editDocsButton);
+    });
 
     global.confirm.mockReturnValueOnce(true);
     const deleteButtons = screen.getAllByTitle("Delete document");
@@ -588,9 +584,13 @@ describe("EventDetails Testing", () => {
     });
 
     await waitForComponentToLoad();
-    await enterEditMode();
 
-    const saveButton = screen.getByRole('button', { name: /save changes/i });
+    const editButton = screen.getByRole('button', { name: /edit details/i });
+    await act(async () => {
+      fireEvent.click(editButton);
+    });
+
+    const saveButton = screen.getByRole('button', { name: /save details/i });
     await act(async () => {
       fireEvent.click(saveButton);
     });
@@ -604,7 +604,6 @@ describe("EventDetails Testing", () => {
       );
     });
   });
-
 
   test("handles empty data states", async () => {
     const emptyEventData = {
@@ -663,7 +662,7 @@ describe("EventDetails Testing", () => {
     });
   });
 
-  test("navigates back to dashboard", async () => {
+  test("navigates back", async () => {
     await act(async () => {
       render(
         <MemoryRouter initialEntries={["/events/test-event-id"]}>
@@ -676,14 +675,13 @@ describe("EventDetails Testing", () => {
 
     await waitForComponentToLoad();
 
-    const backButton = screen.getByRole('button', { name: /back to dashboard/i });
+    const backButton = screen.getByRole('button', { name: /back$/i });
     await act(async () => {
       fireEvent.click(backButton);
     });
 
     expect(mockedNavigate).toHaveBeenCalledWith(-1);
   });
-
 
   test("handles vendor card click", async () => {
     await act(async () => {
@@ -698,32 +696,22 @@ describe("EventDetails Testing", () => {
 
     await waitForComponentToLoad();
     await switchToView("Vendor Management");
-    await enterEditMode();
 
-    // Wait for vendor cards to load and find the specific vendor card by its structure
-    await waitFor(() => {
-      // Look for vendor cards by their container class
-      const vendorCards = screen.getAllByText("Vendor One");
-      expect(vendorCards.length).toBeGreaterThan(0);
-    });
-
-    // Find the vendor card by its container and click on the card content (not the buttons)
-    const vendorCards = document.querySelectorAll('.vendor-card');
-    expect(vendorCards.length).toBeGreaterThan(0);
-    
-    // Click on the first vendor card (the one that's not in the pending requests)
+    const editVendorsButton = screen.getByRole('button', { name: /edit vendors/i });
     await act(async () => {
-      // Find the vendor card that contains "Vendor One" but is not in the pending requests section
-      const vendorCard = Array.from(vendorCards).find(card => 
-        card.textContent.includes('Vendor One') && 
-        !card.closest('.pending-vendors-container')
-      );
-      
-      if (vendorCard) {
-        // Click on the card content area (not the buttons)
-        const cardContent = vendorCard.querySelector('.vendor-card-content');
-        fireEvent.click(cardContent);
-      }
+        fireEvent.click(editVendorsButton);
+    });
+    
+    // Find the main vendor selection container to scope our search
+    const vendorSelectionContainer = await screen.findByLabelText("Vendor Selection");
+
+    // Now, find the specific vendor card *within* that container
+    const vendorCard = within(vendorSelectionContainer).getByText("Vendor One").closest('.vendor-card');
+    expect(vendorCard).not.toBeNull();
+    
+    const cardContent = vendorCard.querySelector('.vendor-card-content');
+    await act(async () => {
+        if(cardContent) fireEvent.click(cardContent);
     });
 
     expect(mockedNavigate).toHaveBeenCalledWith("/vendors/vendor1/services?readonly=true");
