@@ -34,7 +34,7 @@ const responsiveStyles = `
 }
 
 .events-calendar-row {
-  display: flex;
+  display: flex; /* This remains for mobile-first */
   flex-direction: column;
   gap: 2rem;
 }
@@ -51,7 +51,7 @@ const responsiveStyles = `
   width: 100%;
 }
 
-/* Tablet (768px and up) */
+/* Tablet (768px and up) - SWITCH TO CSS GRID */
 @media (min-width: 768px) {
   .dashboard-responsive-container {
     max-width: 720px;
@@ -65,32 +65,19 @@ const responsiveStyles = `
   }
   
   .events-calendar-row {
-    flex-direction: row;
-  }
-  
-  .events-calendar-row > * {
-    flex: 1;
+    display: grid; /* USE GRID FOR A MORE ROBUST LAYOUT */
+    grid-template-columns: 1fr 1fr; /* CREATE TWO EQUAL COLUMNS */
+    gap: 2rem;
   }
 }
 
 /* Desktop (1024px and up) */
 @media (min-width: 1024px) {
   .dashboard-responsive-container {
-    max-width: 1200px;
+    max-width: 1250px;
   }
   
-  .planner-dashboard-content {
-    flex-direction: row;
-  }
-  
-  .dashboard-main {
-    flex: 3;
-  }
-  
-  .chat-section {
-    flex: 2;
-    margin-top: 0 !important;
-  }
+  /* The grid columns from the tablet view will apply, so no need to redefine them unless you want different proportions */
 }
 
 /* Mobile optimizations */
@@ -119,7 +106,6 @@ img {
 
 /* Improve scroll areas */
 .events-scroll-container {
-  max-height: 400px;
   overflow-y: auto;
 }
 
@@ -775,6 +761,8 @@ export default function PlannerDashboard({ session }) {
                     borderRadius: "12px",
                     padding: "1.5rem",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    display: 'flex',
+                    flexDirection: 'column',
                   }}
                 >
                   <div
@@ -821,9 +809,7 @@ export default function PlannerDashboard({ session }) {
 
                   <div
                     style={{
-                      maxHeight: "500px",
-                      minHeight: "400px",
-                      overflowY: "hidden",
+                      flex: '1',
                       paddingRight: "0.5rem",
                       transition: "all 0.3s ease",
                     }}
@@ -904,6 +890,31 @@ export default function PlannerDashboard({ session }) {
                                   <span>View Details</span>
                                   <span>→</span>
                                 </button>
+
+                                {/* VISUAL-ONLY DELETE BUTTON */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent other click events but does nothing
+                                  }}
+                                  style={{
+                                    backgroundColor: "#ffebee",
+                                    border: "none",
+                                    color: "#dc3545",
+                                    cursor: "pointer",
+                                    padding: "0.5rem",
+                                    borderRadius: "4px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    minHeight: "36px",
+                                    minWidth: "36px",
+                                    transition: "background-color 0.2s",
+                                  }}
+                                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ffcdd2'}
+                                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffebee'}
+                                >
+                                  <FaTrash size={14} />
+                                </button>
                               </div>
                             </div>
                             <div
@@ -953,325 +964,324 @@ export default function PlannerDashboard({ session }) {
                 </div>
 
                 {/* Calendar Section */}
-                {/* Calendar Section */}
-<div
-  style={{
-    backgroundColor: "#f8f9fa",
-    borderRadius: "12px",
-    padding: "1.5rem",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-  }}
->
-  <h2 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
-    Calendar
-  </h2>
-  <div
-    style={{
-      backgroundColor: "white",
-      borderRadius: "16px",
-      padding: "1rem",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-    }}
-  >
-    {/* Add the CSS styles directly here */}
-    <style>
-      {`
-      .dashboard-calendar {
-        width: 100%;
-        border: none;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      }
-      .react-calendar__navigation {
-        display: flex;
-        margin-bottom: 1em;
-      }
-      .react-calendar__navigation button {
-        color: #ff6b8b;
-        background: none;
-        border: none;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        padding: 0.5rem;
-        border-radius: 8px;
-        transition: all 0.2s;
-      }
-      .react-calendar__navigation button:hover {
-        background-color: #ffebee;
-      }
-      .react-calendar__navigation button:disabled {
-        background-color: transparent;
-        color: #ccc;
-      }
-      .react-calendar__month-view__weekdays {
-        text-align: center;
-        text-transform: uppercase;
-        font-weight: 600;
-        color: #ff6b8b;
-        font-size: 0.75rem;
-        margin-bottom: 0.5rem;
-      }
-      .react-calendar__month-view__weekdays__weekday abbr {
-        text-decoration: none;
-      }
-      .react-calendar__month-view__weekdays__weekday--weekend abbr {
-        color: #ff6b8b;
-      }
-      .react-calendar__month-view__days__day--weekend {
-        color: #ff6b8b;
-      }
-      .react-calendar__tile {
-        max-width: 100%;
-        text-align: center;
-        padding: 0.75em 0.5em;
-        background: none;
-        border: 2px solid transparent;
-        border-radius: 50%;
-        color: #333;
-        font-weight: 500;
-        transition: all 0.2s;
-        position: relative;
-        overflow: visible;
-        height: 40px;
-      }
-      .react-calendar__tile > div {
-        opacity: 1 !important;
-        visibility: visible !important;
-      }
-      .react-calendar__tile:enabled:hover,
-      .react-calendar__tile:enabled:focus {
-        background-color: #ffebee;
-        border-color: #ffb6c1;
-        transform: scale(1.1);
-      }
-      .react-calendar__tile--now {
-        background: #ffebee;
-        border: 2px solid #ffb6c1;
-        color: #ff6b8b;
-        font-weight: 600;
-      }
-      .react-calendar__tile--now:enabled:hover,
-      .react-calendar__tile--now:enabled:focus {
-        background: #ffd6de;
-        border-color: #ff8fa3;
-      }
-      .react-calendar__tile--active {
-        background: #ffb6c1 !important;
-        color: white !important;
-        border-color: #ffb6c1 !important;
-        font-weight: 600;
-      }
-      .react-calendar__tile--active:enabled:hover,
-      .react-calendar__tile--active:enabled:focus {
-        background: #ffc0cb !important;
-        border-color: #ffc0cb !important;
-      }
-      .react-calendar__month-view__days__day--neighboringMonth {
-        color: #ccc;
-      }
-      
-      /* Fix for event dots - ensure they're positioned correctly */
-      .react-calendar__tile {
-        position: relative;
-      }
-      .event-dots-container {
-        position: absolute;
-        bottom: 2px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 2px;
-        opacity: 1;
-        visibility: visible;
-      }
-      .event-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-      }
-      `}
-    </style>
-    <Calendar
-      onChange={setDate}
-      value={date}
-      className="dashboard-calendar"
-      tileContent={({ date, view }) => {
-        const dateEvents = getEventsForDate(date);
-        if (dateEvents.length === 0) return null;
-        
-        return (
-          <div className="event-dots-container">
-            {[...Array(Math.min(3, dateEvents.length))].map(
-              (_, i) => (
-                <div
-                  key={i}
-                  className="event-dot"
-                  style={{
-                    backgroundColor: isFutureEvent(
-                      dateEvents[i]?.start_time
-                    )
-                      ? "#4caf50"
-                      : "#ff6b6b",
-                  }}
-                />
-              )
-            )}
-          </div>
-        );
-      }}
-      formatShortWeekday={(locale, date) =>
-        ["S", "M", "T", "W", "T", "F", "S"][date.getDay()]
-      }
-      next2Label={null}
-      prev2Label={null}
-      minDetail="month"
-      showNeighboringMonth={false}
-    />
-  </div>
-
-  <div style={{ marginTop: "1.5rem" }}>
-    <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>
-      Events on {date.toLocaleDateString()}
-    </h3>
-    {getEventsForDate(date).length === 0 ? (
-      <p style={{ color: "#6c757d", textAlign: "center" }}>
-        No events scheduled for this day.
-      </p>
-    ) : (
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {getEventsForDate(date).map((event) => {
-          const isPast = !isFutureEvent(event.start_time);
-          return (
-            <li
-              key={event.id}
-              style={{
-                backgroundColor: isPast ? "#f8f9fa" : "white",
-                padding: "0.75rem 1rem",
-                borderRadius: "6px",
-                marginBottom: "0.5rem",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                borderLeft: isPast
-                  ? "3px solid #ff6b6b"
-                  : "3px solid #4caf50",
-                opacity: isPast ? 0.8 : 1,
-              }}
-            >
-              <div style={{ width: "100%" }}>
                 <div
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    marginBottom: "0.25rem",
-                    flexWrap: "wrap",
+                    backgroundColor: "#f8f9fa",
+                    borderRadius: "12px",
+                    padding: "1.5rem",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                   }}
                 >
-                  {isPast && (
-                    <span
-                      style={{
-                        fontSize: "0.65rem",
-                        backgroundColor: "#ffebee",
-                        color: "#d32f2f",
-                        padding: "0.15rem 0.5rem",
-                        borderRadius: "10px",
-                        fontWeight: "500",
-                        flexShrink: 0,
-                      }}
-                    >
-                      Past Event
-                    </span>
-                  )}
+                  <h2 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
+                    Calendar
+                  </h2>
                   <div
                     style={{
-                      fontWeight: "600",
-                      color: isPast ? "#6c757d" : "#333",
-                      flex: 1,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
+                      backgroundColor: "white",
+                      borderRadius: "16px",
+                      padding: "1rem",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                     }}
                   >
-                    {event.name || event.title}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginTop: "0.25rem",
-                    flexWrap: "wrap",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "0.8rem",
-                      color: isPast ? "#adb5bd" : "#6c757d",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      flex: 1,
-                    }}
-                  >
-                    <FaClock size={12} />
-                    {formatTime(event.start_time) ||
-                      "Time not set"}
-                  </div>
-
-                  {isPast && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(
-                          `/viewEvent/${
-                            event.event_id || event.id
-                          }?readonly=true`
+                    {/* Add the CSS styles directly here */}
+                    <style>
+                      {`
+                      .dashboard-calendar {
+                        width: 100%;
+                        border: none;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                      }
+                      .react-calendar__navigation {
+                        display: flex;
+                        margin-bottom: 1em;
+                      }
+                      .react-calendar__navigation button {
+                        color: #ff6b8b;
+                        background: none;
+                        border: none;
+                        font-size: 1rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        padding: 0.5rem;
+                        border-radius: 8px;
+                        transition: all 0.2s;
+                      }
+                      .react-calendar__navigation button:hover {
+                        background-color: #ffebee;
+                      }
+                      .react-calendar__navigation button:disabled {
+                        background-color: transparent;
+                        color: #ccc;
+                      }
+                      .react-calendar__month-view__weekdays {
+                        text-align: center;
+                        text-transform: uppercase;
+                        font-weight: 600;
+                        color: #ff6b8b;
+                        font-size: 0.75rem;
+                        margin-bottom: 0.5rem;
+                      }
+                      .react-calendar__month-view__weekdays__weekday abbr {
+                        text-decoration: none;
+                      }
+                      .react-calendar__month-view__weekdays__weekday--weekend abbr {
+                        color: #ff6b8b;
+                      }
+                      .react-calendar__month-view__days__day--weekend {
+                        color: #ff6b8b;
+                      }
+                      .react-calendar__tile {
+                        max-width: 100%;
+                        text-align: center;
+                        padding: 0.75em 0.5em;
+                        background: none;
+                        border: 2px solid transparent;
+                        border-radius: 50%;
+                        color: #333;
+                        font-weight: 500;
+                        transition: all 0.2s;
+                        position: relative;
+                        overflow: visible;
+                        height: 40px;
+                      }
+                      .react-calendar__tile > div {
+                        opacity: 1 !important;
+                        visibility: visible !important;
+                      }
+                      .react-calendar__tile:enabled:hover,
+                      .react-calendar__tile:enabled:focus {
+                        background-color: #ffebee;
+                        border-color: #ffb6c1;
+                        transform: scale(1.1);
+                      }
+                      .react-calendar__tile--now {
+                        background: #ffebee;
+                        border: 2px solid #ffb6c1;
+                        color: #ff6b8b;
+                        font-weight: 600;
+                      }
+                      .react-calendar__tile--now:enabled:hover,
+                      .react-calendar__tile--now:enabled:focus {
+                        background: #ffd6de;
+                        border-color: #ff8fa3;
+                      }
+                      .react-calendar__tile--active {
+                        background: #ffb6c1 !important;
+                        color: white !important;
+                        border-color: #ffb6c1 !important;
+                        font-weight: 600;
+                      }
+                      .react-calendar__tile--active:enabled:hover,
+                      .react-calendar__tile--active:enabled:focus {
+                        background: #ffc0cb !important;
+                        border-color: #ffc0cb !important;
+                      }
+                      .react-calendar__month-view__days__day--neighboringMonth {
+                        color: #ccc;
+                      }
+                      
+                      /* Fix for event dots - ensure they're positioned correctly */
+                      .react-calendar__tile {
+                        position: relative;
+                      }
+                      .event-dots-container {
+                        position: absolute;
+                        bottom: 2px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        display: flex;
+                        gap: 2px;
+                        opacity: 1;
+                        visibility: visible;
+                      }
+                      .event-dot {
+                        width: 6px;
+                        height: 6px;
+                        border-radius: 50%;
+                      }
+                      `}
+                    </style>
+                    <Calendar
+                      onChange={setDate}
+                      value={date}
+                      className="dashboard-calendar"
+                      tileContent={({ date, view }) => {
+                        const dateEvents = getEventsForDate(date);
+                        if (dateEvents.length === 0) return null;
+                        
+                        return (
+                          <div className="event-dots-container">
+                            {[...Array(Math.min(3, dateEvents.length))].map(
+                              (_, i) => (
+                                <div
+                                  key={i}
+                                  className="event-dot"
+                                  style={{
+                                    backgroundColor: isFutureEvent(
+                                      dateEvents[i]?.start_time
+                                    )
+                                      ? "#4caf50"
+                                      : "#ff6b6b",
+                                  }}
+                                />
+                              )
+                            )}
+                          </div>
                         );
                       }}
-                      style={{
-                        fontSize: "0.7rem",
-                        backgroundColor: "transparent",
-                        color: "#e91e63",
-                        border: "1px solid #e91e63",
-                        padding: "0.4rem 0.8rem",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.25rem",
-                        transition: "all 0.2s",
-                        minHeight: "32px",
-                      }}
-                    >
-                      View Details
-                    </button>
-                  )}
-                </div>
-
-                {event.venue && (
-                  <div
-                    style={{
-                      fontSize: "0.8rem",
-                      color: isPast ? "#adb5bd" : "#6c757d",
-                      marginTop: "0.25rem",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                    }}
-                  >
-                    <span>📍</span>
-                    {event.venue}
+                      formatShortWeekday={(locale, date) =>
+                        ["S", "M", "T", "W", "T", "F", "S"][date.getDay()]
+                      }
+                      next2Label={null}
+                      prev2Label={null}
+                      minDetail="month"
+                      showNeighboringMonth={false}
+                    />
                   </div>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-    )}
-  </div>
-</div>
+
+                  <div style={{ marginTop: "1.5rem" }}>
+                    <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>
+                      Events on {date.toLocaleDateString()}
+                    </h3>
+                    {getEventsForDate(date).length === 0 ? (
+                      <p style={{ color: "#6c757d", textAlign: "center" }}>
+                        No events scheduled for this day.
+                      </p>
+                    ) : (
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                        {getEventsForDate(date).map((event) => {
+                          const isPast = !isFutureEvent(event.start_time);
+                          return (
+                            <li
+                              key={event.id}
+                              style={{
+                                backgroundColor: isPast ? "#f8f9fa" : "white",
+                                padding: "0.75rem 1rem",
+                                borderRadius: "6px",
+                                marginBottom: "0.5rem",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                                borderLeft: isPast
+                                  ? "3px solid #ff6b6b"
+                                  : "3px solid #4caf50",
+                                opacity: isPast ? 0.8 : 1,
+                              }}
+                            >
+                              <div style={{ width: "100%" }}>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
+                                    marginBottom: "0.25rem",
+                                    flexWrap: "wrap",
+                                  }}
+                                >
+                                  {isPast && (
+                                    <span
+                                      style={{
+                                        fontSize: "0.65rem",
+                                        backgroundColor: "#ffebee",
+                                        color: "#d32f2f",
+                                        padding: "0.15rem 0.5rem",
+                                        borderRadius: "10px",
+                                        fontWeight: "500",
+                                        flexShrink: 0,
+                                      }}
+                                    >
+                                      Past Event
+                                    </span>
+                                  )}
+                                  <div
+                                    style={{
+                                      fontWeight: "600",
+                                      color: isPast ? "#6c757d" : "#333",
+                                      flex: 1,
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                  >
+                                    {event.name || event.title}
+                                  </div>
+                                </div>
+
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    marginTop: "0.25rem",
+                                    flexWrap: "wrap",
+                                    gap: "0.5rem",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontSize: "0.8rem",
+                                      color: isPast ? "#adb5bd" : "#6c757d",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "0.5rem",
+                                      flex: 1,
+                                    }}
+                                  >
+                                    <FaClock size={12} />
+                                    {formatTime(event.start_time) ||
+                                      "Time not set"}
+                                  </div>
+
+                                  {isPast && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(
+                                          `/viewEvent/${
+                                            event.event_id || event.id
+                                          }?readonly=true`
+                                        );
+                                      }}
+                                      style={{
+                                        fontSize: "0.7rem",
+                                        backgroundColor: "transparent",
+                                        color: "#e91e63",
+                                        border: "1px solid #e91e63",
+                                        padding: "0.4rem 0.8rem",
+                                        borderRadius: "4px",
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.25rem",
+                                        transition: "all 0.2s",
+                                        minHeight: "32px",
+                                      }}
+                                    >
+                                      View Details
+                                    </button>
+                                  )}
+                                </div>
+
+                                {event.venue && (
+                                  <div
+                                    style={{
+                                      fontSize: "0.8rem",
+                                      color: isPast ? "#adb5bd" : "#6c757d",
+                                      marginTop: "0.25rem",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "0.5rem",
+                                    }}
+                                  >
+                                    <span>📍</span>
+                                    {event.venue}
+                                  </div>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Tasks Section */}
