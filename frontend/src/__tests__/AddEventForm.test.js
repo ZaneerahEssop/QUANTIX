@@ -283,7 +283,7 @@ describe('AddEventForm', () => {
     fireEvent.change(eventNameInput, { target: { value: 'Test Event' } });
     
     const dateInput = document.querySelector('input[name="date"]');
-    fireEvent.change(dateInput, { target: { value: '2025-10-01' } });
+    fireEvent.change(dateInput, { target: { value: '2026-12-01' } });
 
     // Submit the form
     await act(async () => {
@@ -348,7 +348,7 @@ describe('AddEventForm', () => {
     fireEvent.change(eventNameInput, { target: { value: 'Test Event' } });
     
     const dateInput = document.querySelector('input[name="date"]');
-    fireEvent.change(dateInput, { target: { value: '2025-10-01' } });
+    fireEvent.change(dateInput, { target: { value: '2026-12-01' } });
     
     const timeInput = document.querySelector('input[name="time"]');
     fireEvent.change(timeInput, { target: { value: '10:00' } });
@@ -397,10 +397,20 @@ describe('AddEventForm', () => {
     });
 
     // Wait for success message with vendor count
+// Wait for success message with vendor count
     await waitFor(() => {
-      expect(screen.getByText(/Event "Test Event" created successfully/i)).toBeInTheDocument();
-      expect(screen.getByText(/2 vendor request\(s\) sent!/i)).toBeInTheDocument();
+      const successMessage = screen.getByText((content) =>
+        content.includes('Event "Test Event" created successfully')
+      );
+      expect(successMessage).toBeInTheDocument();
+
+      const vendorMessage = screen.getByText((content) =>
+        content.includes('2 vendor request(s) sent!')
+      );
+      expect(vendorMessage).toBeInTheDocument();
     }, { timeout: 5000 });
+
+
 
     // Close the success modal and navigate to dashboard
     const closeButton = screen.getByRole('button', { name: /×/i });
