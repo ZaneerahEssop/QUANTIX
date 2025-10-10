@@ -7,7 +7,12 @@ module.exports = {
   ],
   moduleFileExtensions: ["js", "jsx", "ts", "tsx", "json", "node"],
   testEnvironment: "jsdom",
-    setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
+  testMatch: [
+    '<rootDir>/src/**/__tests__/**/*.{js,jsx}',
+    '<rootDir>/src/**/*.{test,spec}.{js,jsx}',
+    '!<rootDir>/src/**/*.ignore.{js,jsx}'
+  ],
 
 
   collectCoverageFrom: [
