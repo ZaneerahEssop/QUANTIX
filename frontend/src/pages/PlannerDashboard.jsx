@@ -1321,6 +1321,7 @@ export default function PlannerDashboard({ session }) {
                     />
                     <button
                       type="submit"
+                      data-testid="add-task-btn" //this is for testing
                       style={{
                         backgroundColor: "#E8B180",
                         color: "white",

@@ -43,17 +43,25 @@ jest.mock("../components/ChatUI", () => ({
   ),
 }));
 
+// Mock react-calendar
+jest.mock("react-calendar", () => {
+  return function MockCalendar({ onChange, value }) {
+    return (
+      <div data-testid="mock-calendar" onClick={() => onChange(new Date('2025-10-10'))}>
+        Mock Calendar - Selected: {value?.toDateString()}
+      </div>
+    );
+  };
+});
+
 // Mock global fetch
 global.fetch = jest.fn();
 
-// Mock window.location
-Object.defineProperty(window, "location", {
-  value: { hostname: "localhost" },
-  writable: true,
-});
-
 // Mock window.scrollTo
 window.scrollTo = jest.fn();
+
+// Mock environment variable
+process.env.REACT_APP_API_URL = "http://localhost:3001";
 
 // Increase timeout for all tests
 jest.setTimeout(20000);
@@ -71,13 +79,22 @@ describe("PlannerDashboard Testing", () => {
     profile_picture: "test-pic.jpg",
   };
 
+  // Create events with FUTURE dates (important!)
   const mockEventsData = [
     {
       event_id: "1",
       name: "Test Event",
-      start_time: "2025-10-01T14:00:00",
+      start_time: "2025-12-01T14:00:00Z", // Future date
       venue: "Test Venue",
+      location: "Test Location"
     },
+    {
+      event_id: "2", 
+      name: "Another Event",
+      start_time: "2025-11-15T10:00:00Z", // Future date
+      venue: "Another Venue",
+      location: "Another Location"
+    }
   ];
 
   const mockTasksData = [
@@ -93,45 +110,44 @@ describe("PlannerDashboard Testing", () => {
   let mockInsert;
   let mockUpdate;
   let mockDelete;
+  let mockSelect;
 
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useRealTimers();
 
-    // Create individual mock functions
-    mockInsert = jest.fn().mockReturnValue({
+   mockSelect = jest.fn(() => ({
+      eq: jest.fn().mockReturnValue({
+        order: jest.fn().mockResolvedValue({ data: mockTasksData, error: null }),
+      }),
+      limit: jest.fn().mockResolvedValue({ data: [], error: null }), // handles test query
+      order: jest.fn().mockResolvedValue({ data: mockTasksData, error: null }),
+    }));
+
+
+    mockInsert = jest.fn(() => ({
       select: jest.fn().mockResolvedValue({
-        data: [{ 
-          task_id: "2", 
+        data: [{
+          task_id: "2",
           id: "2",
-          item: "New Task", 
+          item: "New Task",
           completed: false,
-          created_at: new Date().toISOString()
-        }], 
-        error: null 
-      })
-    });
+          created_at: new Date().toISOString(),
+        }],
+        error: null,
+      }),
+    }));
+
 
     mockUpdate = jest.fn().mockReturnValue({
       eq: jest.fn().mockResolvedValue({
-        data: [{ ...mockTasksData[0], completed: true }], 
         error: null 
       })
     });
 
     mockDelete = jest.fn().mockReturnValue({
       eq: jest.fn().mockResolvedValue({
-        data: [], 
         error: null 
-      })
-    });
-
-    const mockSelect = jest.fn().mockReturnValue({
-      eq: jest.fn().mockReturnValue({
-        order: jest.fn().mockResolvedValue({
-          data: mockTasksData,
-          error: null
-        })
       })
     });
 
@@ -154,10 +170,15 @@ describe("PlannerDashboard Testing", () => {
       };
     });
 
-    supabase.auth.getUser.mockResolvedValue({ data: { user: mockSession.user } });
+    supabase.auth.getUser.mockResolvedValue({ 
+      data: { user: mockSession.user },
+      error: null 
+    });
 
     // Mock fetch for API calls
     global.fetch.mockImplementation((url) => {
+      console.log('Fetch called with URL:', url);
+      
       if (url.includes("/api/planners/test-user-id")) {
         return Promise.resolve({
           ok: true,
@@ -165,6 +186,7 @@ describe("PlannerDashboard Testing", () => {
           json: () => Promise.resolve(mockPlannerData),
         });
       }
+      
       if (url.includes("/api/events?planner_id=test-user-id")) {
         return Promise.resolve({
           ok: true,
@@ -172,41 +194,69 @@ describe("PlannerDashboard Testing", () => {
           json: () => Promise.resolve(mockEventsData),
         });
       }
-      return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+      
+      // Default response for other endpoints
+      return Promise.resolve({ 
+        ok: false, 
+        headers: { get: () => "application/json" },
+        json: () => Promise.resolve({}) 
+      });
     });
 
+    // Mock console methods
     jest.spyOn(console, "error").mockImplementation(() => {});
     jest.spyOn(console, "log").mockImplementation(() => {});
+    jest.spyOn(console, "warn").mockImplementation(() => {});
   });
 
   afterEach(() => {
     console.error.mockRestore();
     console.log.mockRestore();
+    console.warn.mockRestore();
   });
 
-  // Helper function to wait for dashboard to load
+  // Helper function to wait for dashboard to load completely
   const waitForDashboardLoad = async () => {
     await waitFor(() => {
-      expect(screen.getByText(/My To-Do List/i)).toBeInTheDocument();
+      expect(screen.getByText(/Welcome back/i)).toBeInTheDocument();
     }, { timeout: 10000 });
   };
 
   test("renders loading state initially", async () => {
-    global.fetch.mockImplementationOnce((url) => {
+    // Create a delayed promise for ALL API calls to ensure loading state is visible
+    let resolvePlannerPromise;
+    let resolveEventsPromise; 
+    let resolveTasksPromise;
+    
+    const plannerPromise = new Promise((resolve) => {
+      resolvePlannerPromise = resolve;
+    });
+    const eventsPromise = new Promise((resolve) => {
+      resolveEventsPromise = resolve;
+    });
+    const tasksPromise = new Promise((resolve) => {
+      resolveTasksPromise = resolve;
+    });
+
+    global.fetch.mockImplementation((url) => {
       if (url.includes("/api/planners/test-user-id")) {
-        return new Promise((resolve) =>
-          setTimeout(() => resolve({ 
-            ok: true, 
-            headers: { get: () => "application/json" }, 
-            json: () => Promise.resolve(mockPlannerData) 
-          }), 100)
-        );
+        return plannerPromise;
+      }
+      if (url.includes("/api/events")) {
+        return eventsPromise;
       }
       return Promise.resolve({ 
         ok: true, 
-        headers: { get: () => "application/json" }, 
+        headers: { get: () => "application/json" },
         json: () => Promise.resolve([]) 
       });
+    });
+
+    // Also delay the Supabase tasks call
+    mockSelect.mockReturnValue({
+      eq: jest.fn().mockReturnValue({
+        order: jest.fn().mockReturnValue(tasksPromise)
+      })
     });
 
     await act(async () => {
@@ -217,7 +267,30 @@ describe("PlannerDashboard Testing", () => {
       );
     });
 
-    expect(document.body.classList.contains("dashboard-loading")).toBe(true);
+    const loadingTexts = screen.getAllByText(/Loading your dashboard/i);
+    expect(loadingTexts.length).toBeGreaterThan(0);
+
+    // Also check for the spinner element
+    const spinner = document.querySelector('.spinner');
+    expect(spinner).toBeInTheDocument();
+
+    // Resolve all promises to continue
+    await act(async () => {
+      resolvePlannerPromise({
+        ok: true,
+        headers: { get: () => "application/json" },
+        json: () => Promise.resolve(mockPlannerData)
+      });
+      resolveEventsPromise({
+        ok: true,
+        headers: { get: () => "application/json" },
+        json: () => Promise.resolve(mockEventsData)
+      });
+      resolveTasksPromise({
+        data: mockTasksData,
+        error: null
+      });
+    });
   });
 
   test("fetches and displays user data", async () => {
@@ -243,9 +316,33 @@ describe("PlannerDashboard Testing", () => {
       );
     });
 
+    // Wait for the dashboard to fully load
+    await waitForDashboardLoad();
+
+    // Debug: Check what's actually rendered
+    console.log('Screen content:', screen.debug());
+
+    // Look for the event name - use more flexible query
     await waitFor(() => {
-      expect(screen.getByText("Test Event")).toBeInTheDocument();
-    }, { timeout: 10000 });
+      const eventElement = screen.getByText((content, element) => {
+        // Check if the element contains "Test Event" text
+        return content.includes('Test Event') || 
+               (element.textContent && element.textContent.includes('Test Event'));
+      });
+      expect(eventElement).toBeInTheDocument();
+    }, { 
+      timeout: 10000,
+      onTimeout: () => {
+        // If timeout, show what events are actually there
+        const eventElements = screen.queryAllByText(/event/i);
+        console.log('Event elements found:', eventElements.map(el => el.textContent));
+      }
+    });
+
+    // Also check for venue text
+    await waitFor(() => {
+      expect(screen.getByText("Test Venue")).toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 
   test("fetches and displays tasks", async () => {
@@ -257,134 +354,79 @@ describe("PlannerDashboard Testing", () => {
       );
     });
 
+    await waitForDashboardLoad();
+
     await waitFor(() => {
       expect(screen.getByText("Test Task")).toBeInTheDocument();
     }, { timeout: 10000 });
   });
 
-  test.skip("adds a new task - debug version", async () => {
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <PlannerDashboard session={mockSession} />
-        </MemoryRouter>
-      );
-    });
-
-    await waitForDashboardLoad();
-
-    // Debug: Let's see what's actually in the DOM
-    console.log("=== DEBUG: Checking DOM ===");
-    
-    // Check all forms
-    const forms = screen.queryAllByRole('form');
-    console.log("Forms found:", forms.length);
-    forms.forEach((form, i) => {
-      console.log(`Form ${i}:`, form.innerHTML);
-    });
-
-    // Check all inputs
-    const inputs = screen.queryAllByRole('textbox');
-    console.log("Inputs found:", inputs.length);
-    inputs.forEach((input, i) => {
-      console.log(`Input ${i}:`, {
-        placeholder: input.placeholder,
-        value: input.value,
-        type: input.type
+  test("adds a new task", async () => {
+      // Render the dashboard
+      await act(async () => {
+        render(
+          <MemoryRouter>
+            <PlannerDashboard session={mockSession} />
+          </MemoryRouter>
+        );
       });
-    });
 
-    // Check all buttons
-    const buttons = screen.queryAllByRole('button');
-    console.log("Buttons found:", buttons.length);
-    buttons.forEach((button, i) => {
-      console.log(`Button ${i}:`, {
-        text: button.textContent,
-        type: button.type
+      // Wait for dashboard to load
+      await waitFor(() => {
+        expect(screen.getByText(/Welcome back/i)).toBeInTheDocument();
       });
-    });
 
-    // Find the task input specifically
-    const taskInput = screen.getByPlaceholderText("Add a new task...");
-    expect(taskInput).toBeInTheDocument();
+      // Find input and button
+      const taskInput = screen.getByPlaceholderText("Add a new task...");
+      const addButton = screen.getByTestId("add-task-btn");
 
-    // Find the add button - look for button with text "Add"
-    const addButtons = buttons.filter(button => 
-      button.textContent?.trim() === 'Add' || 
-      button.textContent?.includes('Add')
-    );
-    
-    expect(addButtons.length).toBeGreaterThan(0);
-    const addButton = addButtons[0];
-
-    // Fill the input
-    await act(async () => {
+      // Type the new task
       fireEvent.change(taskInput, { target: { value: "New Task" } });
-    });
 
-    // Verify input value was set
-    expect(taskInput.value).toBe("New Task");
-
-    // Submit the form
-    await act(async () => {
-      // Try to find the form that contains the input
-      const form = taskInput.closest('form');
-      if (form) {
-        console.log("Submitting form directly");
-        fireEvent.submit(form);
-      } else {
-        console.log("No form found, clicking button directly");
+      // Click the Add button
+      await act(async () => {
         fireEvent.click(addButton);
-      }
+      });
+
+      // Wait for Supabase insert to be called
+      await waitFor(() => {
+        expect(mockInsert).toHaveBeenCalledWith([{
+          planner_id: "test-user-id",
+          item: "New Task",
+          completed: false,
+        }]);
+      }, { timeout: 5000 });
+
+      // Check that input was cleared
+      expect(taskInput.value).toBe("");
     });
 
-    // Wait for any async operations
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+
+    test("toggles task completion", async () => {
+      await act(async () => {
+        render(
+          <MemoryRouter>
+            <PlannerDashboard session={mockSession} />
+          </MemoryRouter>
+        );
+      });
+
+      await waitForDashboardLoad();
+
+      // Find the task completion button
+      const taskText = screen.getByText("Test Task");
+      const taskItem = taskText.closest('li');
+      const buttons = taskItem.querySelectorAll('button');
+      const toggleButton = buttons[0];
+      
+      await act(async () => {
+        fireEvent.click(toggleButton);
+      });
+
+      await waitFor(() => {
+        expect(mockUpdate).toHaveBeenCalled();
+      }, { timeout: 5000 });
     });
-
-    // Debug: Check if mock was called
-    console.log("Mock insert call count:", mockInsert.mock.calls.length);
-    console.log("Mock insert calls:", mockInsert.mock.calls);
-
-    // Check if Supabase insert was called
-    expect(mockInsert).toHaveBeenCalled();
-  });
-
-  test("toggles task completion", async () => {
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <PlannerDashboard session={mockSession} />
-        </MemoryRouter>
-      );
-    });
-
-    await waitForDashboardLoad();
-
-    // Find the task
-    const taskText = screen.getByText("Test Task");
-    expect(taskText).toBeInTheDocument();
-
-    // Find the toggle button (first button in the task item)
-    const taskItem = taskText.closest('li');
-    const buttons = taskItem.querySelectorAll('button');
-    const toggleButton = buttons[0];
-    
-    expect(toggleButton).toBeInTheDocument();
-
-    await act(async () => {
-      fireEvent.click(toggleButton);
-    });
-
-    // Wait for async operations
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    });
-
-    // Check if Supabase update was called
-    expect(mockUpdate).toHaveBeenCalled();
-  });
 
   test("deletes a task", async () => {
     await act(async () => {
@@ -397,28 +439,15 @@ describe("PlannerDashboard Testing", () => {
 
     await waitForDashboardLoad();
 
-    // Find the task
-    const taskText = screen.getByText("Test Task");
-    expect(taskText).toBeInTheDocument();
-
-    // Find the delete button (last button in the task item)
-    const taskItem = taskText.closest('li');
-    const buttons = taskItem.querySelectorAll('button');
-    const deleteButton = buttons[buttons.length - 1];
+    const deleteButton = screen.getByTestId("delete-task-1");
     
-    expect(deleteButton).toBeInTheDocument();
-
     await act(async () => {
       fireEvent.click(deleteButton);
     });
 
-    // Wait for async operations
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    });
-
-    // Check if Supabase delete was called
-    expect(mockDelete).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockDelete).toHaveBeenCalled();
+    }, { timeout: 5000 });
   });
 
   test("handles no session", async () => {
@@ -447,5 +476,64 @@ describe("PlannerDashboard Testing", () => {
     await waitFor(() => {
       expect(screen.getByTestId("chat-ui")).toBeInTheDocument();
     }, { timeout: 10000 });
+  });
+
+  test("handles API errors gracefully", async () => {
+    global.fetch.mockImplementationOnce(() => 
+      Promise.resolve({
+        ok: false,
+        headers: { get: () => "application/json" },
+        json: () => Promise.resolve({ error: "API Error" })
+      })
+    );
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <PlannerDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/My To-Do List/i)).toBeInTheDocument();
+    }, { timeout: 10000 });
+  });
+
+  // Add a debug test to see what's happening
+  test("DEBUG: check events rendering", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <PlannerDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitForDashboardLoad();
+
+    // Wait a bit longer for events to load
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    });
+
+    console.log('=== DEBUG SCREEN ===');
+    screen.debug();
+
+    // Check if events section exists
+    const upcomingEventsSection = screen.getByText('Upcoming Events');
+    expect(upcomingEventsSection).toBeInTheDocument();
+
+    // Check what's in the events section
+    const eventsContainer = upcomingEventsSection.closest('div');
+    const eventsText = eventsContainer?.textContent;
+    console.log('Events section content:', eventsText);
+
+    // Check if our mock events data would be considered "upcoming"
+    const now = new Date();
+    mockEventsData.forEach(event => {
+      const eventDate = new Date(event.start_time);
+      console.log(`Event "${event.name}" is future:`, eventDate > now);
+    });
   });
 });
