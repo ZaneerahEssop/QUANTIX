@@ -17,7 +17,6 @@ const getOrCreateConversation = async (req, res) => {
       .from("conversations")
       .select("*")
       .eq("planner_id", plannerId)
-      .eq("vendor_id", vendorId)
       .eq("event_id", eventId || null)
       .eq("is_active", true)
       .maybeSingle(); // <-- FIX: Changed .single() to .maybeSingle()
@@ -41,7 +40,6 @@ const getOrCreateConversation = async (req, res) => {
       .insert({
         planner_id: plannerId,
         vendor_id: vendorId,
-        event_id: eventId || null,
       })
       .select()
       .single();
