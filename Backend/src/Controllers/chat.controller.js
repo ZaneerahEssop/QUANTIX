@@ -1,10 +1,10 @@
 const supabase = require("../Config/supabase");
 const axios = require('axios');
 
-// Get or create a conversation between planner and vendor
+
 const getOrCreateConversation = async (req, res) => {
   try {
-    const { plannerId, vendorId, eventId } = req.body;
+    const { plannerId, vendorId } = req.body;
 
     if (!plannerId || !vendorId) {
       return res
@@ -17,7 +17,7 @@ const getOrCreateConversation = async (req, res) => {
       .from("conversations")
       .select("*")
       .eq("planner_id", plannerId)
-      .eq("event_id", eventId || null)
+      .eq("vendor_id", vendorId)
       .eq("is_active", true)
       .maybeSingle(); // <-- FIX: Changed .single() to .maybeSingle()
 
@@ -56,7 +56,7 @@ const getOrCreateConversation = async (req, res) => {
   }
 };
 
-// Get all conversations for a user
+// Get all conversations for a user (planner or vendor)
 const getUserConversations = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -72,8 +72,7 @@ const getUserConversations = async (req, res) => {
         `
         *,
         planner:planners(name),
-        vendor:vendors(name),
-        event:events(name, start_time)
+        vendor:vendors(name)
       `
       )
       .or(`planner_id.eq.${userId},vendor_id.eq.${userId}`)
