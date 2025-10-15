@@ -149,6 +149,7 @@ export default function PlannerDashboard({ session }) {
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
   const [, setConversations] = useState([]);
+  const [conversationItems, setConversationItems] = useState([]);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -161,6 +162,20 @@ export default function PlannerDashboard({ session }) {
         session.user.id
       );
       setConversations(conversations);
+      // Map conversations to sidebar items (counterparty for the planner)
+      const items = (conversations || []).map((c) => {
+        const business = c.vendor?.business_name;
+        const person = c.vendor?.name || c.planner?.name;
+        const counterpartyName = business && person ? `${business} — ${person}` : (business || person || "Conversation");
+        return {
+          id: c.vendor_id && session.user.id === c.planner_id ? c.vendor_id : c.planner_id,
+          name: counterpartyName,
+          conversation_id: c.conversation_id,
+          lastMessage: c.last_message_text || "",
+          unread: 0,
+        };
+      });
+      setConversationItems(items);
     } catch (error) {
       console.error("Error loading conversations:", error);
     }
@@ -1459,6 +1474,7 @@ export default function PlannerDashboard({ session }) {
                     : []
                 }
                 unreadCount={unreadCount}
+                  conversations={conversationItems}
               />
             </div>
           </div>
