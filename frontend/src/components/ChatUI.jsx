@@ -427,7 +427,8 @@ const ChatUI = ({
   messages = [],
   showSearch = true,
   vendors = [],
-  unreadCount = 0
+  unreadCount = 0,
+  conversations = []
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isMobileView, setIsMobileView] = useState(false);
@@ -520,7 +521,22 @@ const ChatUI = ({
                   selectedVendorId={selectedVendor?.id}
                 />
                 <ChatList>
-                  {selectedVendor && (
+                  {conversations && conversations.length > 0 && conversations.map((conv) => (
+                    <div
+                      key={`conv-${conv.conversation_id || conv.id}`}
+                      className={`chat-item ${selectedVendor?.id === conv.id ? 'active' : ''}`}
+                      onClick={() => handleVendorSelect({ id: conv.id, name: conv.name })}
+                    >
+                      <div className="info">
+                        <div className="name">{conv.name}</div>
+                        <div className="last-message">{conv.lastMessage || 'Click to chat'}</div>
+                      </div>
+                      {conv.unread > 0 && (
+                        <div className="unread-badge">{conv.unread}</div>
+                      )}
+                    </div>
+                  ))}
+                  {selectedVendor && !conversations.some(c => c.id === selectedVendor.id) && (
                     <div 
                       className="chat-item active"
                       onClick={() => handleVendorSelect(selectedVendor)}

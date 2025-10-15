@@ -72,7 +72,7 @@ const getUserConversations = async (req, res) => {
         `
         *,
         planner:planners(name),
-        vendor:vendors(name)
+        vendor:vendors(name, business_name)
       `
       )
       .or(`planner_id.eq.${userId},vendor_id.eq.${userId}`)
