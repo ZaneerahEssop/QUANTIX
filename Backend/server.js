@@ -14,6 +14,7 @@ const guestRoutes = require("./src/Routes/guests.routes");
 const emailRoutes = require("./src/Routes/email.routes");
 const contractRoutes = require("./src/Routes/contract.routes"); // <-- ADDED
 const path = require("path");
+const unsplashRoutes = require("./src/Routes/unsplash.routes");
 
 dotenv.config();
 
@@ -43,6 +44,7 @@ app.use("/api/emails", emailRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/guests", guestRoutes);
 app.use("/api/contracts", contractRoutes); // <-- ADDED
+app.use("/api/unsplash", unsplashRoutes);
 
 // Supabase client
 const supabase = createClient(
