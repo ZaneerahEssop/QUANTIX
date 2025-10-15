@@ -20,6 +20,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../client";
 import "../styling/eventDetails.css";
 import ContractManagement from "../components/ContractManagement";
+import { searchUnsplashPhotos, registerUnsplashDownload } from "../services/unsplash";
 
 // --- Sub-components (EventSchedule, EventTheme, GuestManagement) with individual edit controls ---
 const EventSchedule = ({ schedule, onUpdate, isEditing, onToggleEdit }) => {
@@ -471,6 +472,12 @@ const EventDetails = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
+  // Unsplash inspiration state (visible on overview)
+  const [unsplashQuery, setUnsplashQuery] = useState("");
+  const [unsplashResults, setUnsplashResults] = useState([]);
+  const [unsplashLoading, setUnsplashLoading] = useState(false);
+  const [unsplashError, setUnsplashError] = useState("");
+  const [unsplashPage, setUnsplashPage] = useState(1);
 
   const API_URL = process.env.REACT_APP_API_URL;
   const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
@@ -1262,6 +1269,146 @@ const EventDetails = () => {
                 isEditing={isThemeEditing}
                 onToggleEdit={() => isThemeEditing ? handleSaveTheme() : setIsThemeEditing(true)}
               />
+            </section>
+            {/* Event Ideas (Unsplash) */}
+            <section>
+              <div className="section-header">
+                <h2 style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                  <FaSearch /> Event Ideas
+                  <span style={{ fontSize: ".8rem", color: "#888" }}>(Photos by <a href="https://unsplash.com" target="_blank" rel="noreferrer noopener" style={{ color: "#888" }}>Unsplash</a>)</span>
+                </h2>
+              </div>
+              <div style={{ display: "flex", gap: ".5rem", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap" }}>
+                <input
+                  type="text"
+                  value={unsplashQuery}
+                  onChange={(e) => setUnsplashQuery(e.target.value)}
+                  placeholder="Search inspiration for this event"
+                  className="form-input"
+                  style={{ flex: 1, minWidth: 220 }}
+                />
+                <button
+                  type="button"
+                  className="edit-button"
+                  onClick={async () => {
+                    try {
+                      setUnsplashLoading(true);
+                      setUnsplashError("");
+                      setUnsplashPage(1);
+                      const base = theme?.name || formData?.venue || formData?.name || "event";
+                      const query = (unsplashQuery || base).toString();
+                      const data = await searchUnsplashPhotos(query, 1, 12);
+                      setUnsplashResults(data.results || []);
+                    } catch (err) {
+                      setUnsplashError(err.message || "Search failed");
+                    } finally {
+                      setUnsplashLoading(false);
+                    }
+                  }}
+                  disabled={unsplashLoading}
+                >
+                  {unsplashLoading ? "Searching..." : "Search"}
+                </button>
+              </div>
+              {unsplashError && (
+                <div className="search-error" style={{ marginTop: ".25rem", color: "#c00" }}>
+                  {unsplashError}
+                </div>
+              )}
+              {unsplashResults && unsplashResults.length > 0 && (
+                <>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                      gap: "10px",
+                      marginTop: "0.5rem",
+                    }}
+                  >
+                    {unsplashResults.map((photo) => (
+                      <div key={photo.id} style={{ position: "relative", borderRadius: "8px", overflow: "hidden", border: "1px solid #eee" }}>
+                        <img
+                          src={photo.urls?.small}
+                          alt={photo.alt_description || "Unsplash photo"}
+                          style={{ width: "100%", height: "120px", objectFit: "cover", display: "block" }}
+                          loading="lazy"
+                          onClick={async () => {
+                            try { await registerUnsplashDownload(photo.id); } catch (_) {}
+                            window.open(photo.links?.html || photo.urls?.regular, "_blank", "noopener");
+                          }}
+                        />
+                        <div style={{ padding: "6px 8px", fontSize: ".75rem", background: "#fafafa", borderTop: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <a
+                            href={photo.links?.html}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            style={{ color: "#555", textDecoration: "none" }}
+                            onClick={async (e) => { e.stopPropagation(); try { await registerUnsplashDownload(photo.id); } catch (_) {} }}
+                            title="View on Unsplash"
+                          >
+                            {photo.user?.name || "Photographer"}
+                          </a>
+                          <a
+                            href="https://unsplash.com"
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            style={{ color: "#999", textDecoration: "none" }}
+                          >
+                            Unsplash
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: ".5rem", marginTop: "0.75rem", justifyContent: "flex-end" }}>
+                    <button
+                      type="button"
+                      className="new-button"
+                      onClick={async () => {
+                        if (unsplashPage <= 1) return;
+                        try {
+                          setUnsplashLoading(true);
+                          const newPage = unsplashPage - 1;
+                          const base = theme?.name || formData?.venue || formData?.name || "event";
+                          const query = (unsplashQuery || base).toString();
+                          const data = await searchUnsplashPhotos(query, newPage, 12);
+                          setUnsplashResults(data.results || []);
+                          setUnsplashPage(newPage);
+                        } catch (err) {
+                          setUnsplashError(err.message || "Failed to load page");
+                        } finally {
+                          setUnsplashLoading(false);
+                        }
+                      }}
+                      disabled={unsplashLoading || unsplashPage <= 1}
+                    >
+                      Prev
+                    </button>
+                    <button
+                      type="button"
+                      className="new-button"
+                      onClick={async () => {
+                        try {
+                          setUnsplashLoading(true);
+                          const newPage = unsplashPage + 1;
+                          const base = theme?.name || formData?.venue || formData?.name || "event";
+                          const query = (unsplashQuery || base).toString();
+                          const data = await searchUnsplashPhotos(query, newPage, 12);
+                          setUnsplashResults(data.results || []);
+                          setUnsplashPage(newPage);
+                        } catch (err) {
+                          setUnsplashError(err.message || "Failed to load page");
+                        } finally {
+                          setUnsplashLoading(false);
+                        }
+                      }}
+                      disabled={unsplashLoading}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </>
+              )}
             </section>
           </>
         )}
