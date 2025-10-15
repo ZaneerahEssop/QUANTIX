@@ -220,6 +220,7 @@ const GuestManagement = ({
   isReadOnly,
   setModalMessage,
   setShowSuccessModal,
+  plannerName,
 }) => {
   const [newGuest, setNewGuest] = useState({
     name: "",
@@ -263,10 +264,24 @@ const GuestManagement = ({
       setModalMessage(`Sending invitation to ${guest.name}...`);
       setShowSuccessModal(true);
 
+      let derivedDate = "";
+      let derivedTime = "";
+      if (eventData?.start_time) {
+        const dt = new Date(eventData.start_time);
+        if (!isNaN(dt.getTime())) {
+          derivedDate = dt.toISOString().split("T")[0];
+          derivedTime = dt.toTimeString().substring(0, 5);
+        }
+      }
+
       const payload = {
         guestEmail: guest.contact,
         guestName: guest.name,
         eventName: eventData.name,
+        eventDate: derivedDate,
+        eventTime: derivedTime,
+        plannerName: plannerName,
+        themeName: (eventData?.theme && eventData.theme.name) ? eventData.theme.name : (typeof eventData?.theme === 'string' ? (() => { try { return JSON.parse(eventData.theme)?.name || ''; } catch { return ''; } })() : ''),
       };
 
       const response = await fetch(`${API_URL}/api/emails/send-invite`, {
@@ -1423,6 +1438,7 @@ const EventDetails = () => {
             API_URL={API_URL}
             setModalMessage={setModalMessage}
             setShowSuccessModal={setShowSuccessModal}
+            plannerName={currentUser?.name}
           />
         )}
         {activeView === "vendors" && (

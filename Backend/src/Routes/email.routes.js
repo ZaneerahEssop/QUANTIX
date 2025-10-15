@@ -26,7 +26,7 @@ router.post("/send-invite", async (req, res) => {
     }
 
     // Destructure the required information from the request body sent by the frontend
-    const { guestEmail, guestName, eventName } = req.body;
+    const { guestEmail, guestName, eventName, eventDate, eventTime, plannerName, themeName } = req.body;
 
     // Validate that all necessary information was received
     if (!guestEmail || !guestName || !eventName) {
@@ -34,6 +34,17 @@ router.post("/send-invite", async (req, res) => {
         error: "Missing required fields: guestEmail, guestName, or eventName",
       });
     }
+
+    // Build optional date/time section
+    let dateTimeSection = "";
+    if (eventDate || eventTime) {
+      const dateLine = eventDate ? `<p><strong>Date:</strong> ${eventDate}</p>` : "";
+      const timeLine = eventTime ? `<p><strong>Time:</strong> ${eventTime}</p>` : "";
+      dateTimeSection = `${dateLine}${timeLine}<br/>`;
+    }
+
+    const inviterLine = plannerName ? `<p><strong>Invited by:</strong> ${plannerName}</p><br/>` : "";
+    const themeLine = themeName ? `<p>We’ll be celebrating in style with the theme: <strong>${themeName}</strong>.</p>` : "";
 
     // Construct the email message
     const mailOptions = {
@@ -44,11 +55,15 @@ router.post("/send-invite", async (req, res) => {
         <html>
           <body style="font-family: Arial, sans-serif; line-height: 1.6;">
             <h2>Hi ${guestName},</h2>
-            <p>You have been formally invited to the event: <strong>${eventName}</strong>.</p>
+            <p>You have been warmly invited to <strong>${eventName}</strong>.</p>
+            ${inviterLine}
+            ${dateTimeSection}
+            ${themeLine}
+            <p>We would be delighted to have you join us. Your presence will make the occasion even more special.</p>
             <p>We're excited and look forward to seeing you there!</p>
             <br/>
             <p>Best regards,</p>
-            <p><strong>The Eventually Perfect Team</strong></p>
+            <p><strong>${plannerName || 'The Eventually Perfect Team'}</strong></p>
           </body>
         </html>
       `,
