@@ -1820,3 +1820,54 @@ input[type="color"]::-moz-color-swatch {
     background-color: #d69e6b;
     }
 
+/* Add these styles to the end of your eventDetails.css file */
+
+/* --- CONTRACT MANAGEMENT STYLES --- */
+.contract-section {
+    background-color: var(--card-background);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.contract-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.contract-section .info-message {
+    background-color: #fff3e0;
+    color: #f57c00;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #f57c00;
+}
+
+/* Status Banners */
+.status-banner {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.status-banner.revisions {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+/* --- NEW: Style for pending banners --- */
+.status-banner.pending {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+.status-banner.active {
+    background-color: #e8f5e9;
+    color: #388e3c;
+}
+
+

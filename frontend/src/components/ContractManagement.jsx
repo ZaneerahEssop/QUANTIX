@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { FaSignature, FaExclamationTriangle, FaCheckCircle, FaEdit, FaFileDownload, FaTimes, FaSave, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaSignature, FaExclamationTriangle, FaCheckCircle, FaEdit, FaFileDownload, FaTimes, FaSave, FaPlus, FaTrash, FaClock } from 'react-icons/fa';
 import '../styling/eventDetails.css';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// --- SuccessModal component ---
+// --- SuccessModal component (Unchanged) ---
 const SuccessModal = ({ message, onClose }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -29,7 +29,12 @@ const parseContractContent = (content) => {
         const match = line.match(/- \*\*(.*?):\*\* (.*)/);
         if (match) {
             const key = match[1];
-            const value = match[2];
+            let value = match[2]; 
+
+            if (value.trim().startsWith('[') && value.trim().endsWith(']')) {
+                value = '';
+            }
+
             const fieldKey = key.charAt(0).toLowerCase() + key.slice(1).replace(/[\s&]+/g, '');
             if (standardKeys.includes(key)) {
                 fields[fieldKey] = value;
@@ -103,7 +108,6 @@ const ContractManagement = ({ eventData, currentUser, vendor, isVendorAccepted, 
         else if (serviceType === 'flowers') { servicesSection = `### 1. Services Provided (Floral Design)\n- **Arrangement Types:** [e.g., Bridal Bouquet]\n- **Substitutions:** Vendor reserves the right to make suitable substitutions.`; }
         else if (serviceType === 'venue') { servicesSection = `### 1. Venue Rental\n- **Space(s) Provided:** [e.g., Grand Ballroom]\n- **Capacity:** [e.g., 150 guests]\n- **Restrictions:** [e.g., Music must end by 11:00 PM]`; }
         
-        // ✨ FIX: This logic now correctly determines the client's name.
         const clientName = (planner?.role === 'planner' ? planner.name : event.planner_name) || 'The Planner';
 
         return `
@@ -275,8 +279,29 @@ ${servicesSection}
                 </div>
             </div>
 
-            {contract?.status === 'revisions_requested' && <div className="status-banner revisions"><FaExclamationTriangle /> Revisions requested. Please review comments and update the contract.</div>}
+            {contract?.status === 'revisions_requested' && (
+                <div className="status-banner revisions">
+                    <FaExclamationTriangle /> 
+                    {isPlanner
+                        ? "You have requested revisions. Awaiting vendor updates."
+                        : "Revisions requested. Please review comments and update the contract."
+                    }
+                </div>
+            )}
+
             {contract?.status === 'active' && <div className="status-banner active"><FaCheckCircle /> This contract is active and has been signed by both parties.</div>}
+
+            {isVendor && contract && contract.status === 'pending_planner_signature' && !contract.planner_signature && (
+                <div className="status-banner pending">
+                    <FaClock /> Contract is with the planner for review and signature.
+                </div>
+            )}
+            {isPlanner && contract?.planner_signature && !contract?.vendor_signature && contract?.status !== 'active' && (
+                <div className="status-banner pending">
+                    <FaClock /> You have signed the contract. Waiting for the vendor's signature.
+                </div>
+            )}
+
 
             {isEditing && canEdit ? (
                 <div className="contract-form-editor">
@@ -308,6 +333,7 @@ ${servicesSection}
                      {vendor.service_type.toLowerCase() === 'venue' && (
                         <>
                            <div className="form-field-group"><label>Space(s) Provided</label><input type="text" value={contractFields.spaceSProvided || ''} onChange={(e) => handleFieldChange('spaceSProvided', e.target.value)} placeholder="e.g., Grand Ballroom and Gardens"/></div>
+                           {/* ✨ FIX: Corrected the onChange handler */}
                            <div className="form-field-group"><label>Capacity</label><input type="text" value={contractFields.capacity || ''} onChange={(e) => handleFieldChange('capacity', e.target.value)} placeholder="e.g., 150 guests"/></div>
                            <div className="form-field-group"><label>Restrictions</label><textarea value={contractFields.restrictions || ''} onChange={(e) => handleFieldChange('restrictions', e.target.value)} placeholder="e.g., All music must end by 11:00 PM"/></div>
                         </>
@@ -361,7 +387,7 @@ ${servicesSection}
                 </div>
             )}
             
-            {canRevise && (
+            {canRevise && isPlanner && !contract?.planner_signature && (
                 <div className="revisions-section standalone-revisions">
                     <h3>Request Revisions</h3>
                     <form onSubmit={handleAddRevision} className="revision-form">
