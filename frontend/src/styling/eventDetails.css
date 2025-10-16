@@ -85,7 +85,6 @@
 
 .event-header .button-group {
     justify-self: center; /* Centers the button group in the middle column */
-    margin: 0; /* Reset any previous margins */
 }
 
 .event-header .header-actions {
@@ -128,6 +127,9 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 130px;        
+    justify-content: center;  
+    min-height: 55px;
 }
 
 .edit-button {
@@ -158,9 +160,10 @@
 /*Buttons Styling */
 .button-group {
     display: flex;
+    flex-direction: row; /* Aligns items horizontally */
+    justify-content: center; /* Centers the buttons */
     gap: 1rem;
-    margin-left: auto; /* Pushes the group to the right */
-    margin-right: 2rem; /* Adds space between this group and the edit/save buttons */
+    margin: 0; /* Resets any conflicting margins */
 }
 
 .new-button {
@@ -1886,5 +1889,3 @@ input[type="color"]::-moz-color-swatch {
     background-color: #e8f5e9;
     color: #388e3c;
 }
-
-

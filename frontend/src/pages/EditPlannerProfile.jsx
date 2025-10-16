@@ -378,7 +378,31 @@ const EditPlannerProfile = ({ session }) => {
         </div>
       )}
       
-      <div className="profile-container" style={{ maxWidth: "600px", padding: "3.5rem 2.5rem" }}>
+      <div className="profile-container" style={{ maxWidth: "600px" }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <button 
+            type="button"
+            onClick={() => window.history.back()} 
+            className="back-button"
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '1rem',
+              color: '#666',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0.5rem 0',
+              transition: 'color 0.2s',
+              ':hover': {
+                color: '#E5ACBF'
+              }
+            }}
+          >
+            <span style={{ marginRight: '8px' }}>←</span> Back
+          </button>
+        </div>
+        
         <h1 style={{ textAlign: "center", fontSize: "2.3rem", fontWeight: 600, marginBottom: "0.5rem" }}>
           Edit your <span style={{ color: "#E5ACBF" }}>Planner</span> profile
         </h1>
@@ -387,6 +411,7 @@ const EditPlannerProfile = ({ session }) => {
         </p>
         
         <form onSubmit={handleSubmit} className="profile-form">
+          
           {/* Profile Picture Upload */}
           <div className="profile-pic-group" style={{ marginBottom: '2rem' }}>
             <label htmlFor="profilePic" className="pic-upload-label" style={{
