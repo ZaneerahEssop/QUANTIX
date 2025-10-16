@@ -23,7 +23,6 @@ import AddEventForm from './pages/AddEventForm';
 import EventDetails from './pages/EventDetails';
 import PendingApproval from './pages/PendingApproval';
 import VendorServices from './pages/VendorServices';
-import React from 'react';
 
 
 export default function App() {

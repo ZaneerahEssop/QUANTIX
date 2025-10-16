@@ -23,7 +23,7 @@ import ContractManagement from "../components/ContractManagement";
 import { searchUnsplashPhotos, registerUnsplashDownload } from "../services/unsplash";
 
 // --- Sub-components (EventSchedule, EventTheme, GuestManagement) with individual edit controls ---
-const EventSchedule = ({ schedule, onUpdate, isEditing, onToggleEdit }) => {
+const EventSchedule = ({ schedule, onUpdate, isEditing, onToggleEdit, isReadOnly }) => {
   const handleAddItem = () =>
     onUpdate([...(schedule || []), { time: "", activity: "" }]);
   const handleRemoveItem = (index) =>
@@ -38,9 +38,12 @@ const EventSchedule = ({ schedule, onUpdate, isEditing, onToggleEdit }) => {
     <div className="schedule-section">
       <div className="section-header">
         <h2>Schedule</h2>
-        <button onClick={onToggleEdit} className="edit-button">
-          {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Schedule" : "Edit Schedule"}
-        </button>
+        {/* ✨ FIX: Edit button is now hidden in read-only mode */}
+        {!isReadOnly && (
+            <button onClick={onToggleEdit} className="edit-button">
+            {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Schedule" : "Edit Schedule"}
+            </button>
+        )}
       </div>
       {isEditing ? (
         <>
@@ -91,7 +94,7 @@ const EventSchedule = ({ schedule, onUpdate, isEditing, onToggleEdit }) => {
   );
 };
 
-const EventTheme = ({ theme, onUpdate, isEditing, onToggleEdit }) => {
+const EventTheme = ({ theme, onUpdate, isEditing, onToggleEdit, isReadOnly }) => {
   const safeTheme =
     typeof theme === "string"
       ? (() => {
@@ -131,9 +134,12 @@ const EventTheme = ({ theme, onUpdate, isEditing, onToggleEdit }) => {
     <div className="theme-section">
       <div className="section-header">
         <h2>Event Theme</h2>
-        <button onClick={onToggleEdit} className="edit-button">
-          {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Theme" : "Edit Theme"}
-        </button>
+        {/* ✨ FIX: Edit button is now hidden in read-only mode */}
+        {!isReadOnly && (
+            <button onClick={onToggleEdit} className="edit-button">
+            {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Theme" : "Edit Theme"}
+            </button>
+        )}
       </div>
       {isEditing ? (
         <div className="theme-editor">
@@ -310,9 +316,12 @@ const GuestManagement = ({
     <div className="guests-section">
       <div className="section-header">
         <h2>Guest Management</h2>
-        <button onClick={onToggleEdit} className="edit-button">
-          {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Guests" : "Edit Guests"}
-        </button>
+        {/* ✨ FIX: Edit button is now hidden in read-only mode */}
+        {!isReadOnly && (
+            <button onClick={onToggleEdit} className="edit-button">
+            {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Guests" : "Edit Guests"}
+            </button>
+        )}
       </div>
 
       {isEditing && (
@@ -464,7 +473,6 @@ const EventDetails = () => {
     notes: "",
   });
 
-  // Individual edit states for each section
   const [isMainEditing, setIsMainEditing] = useState(false);
   const [isScheduleEditing, setIsScheduleEditing] = useState(false);
   const [isThemeEditing, setIsThemeEditing] = useState(false);
@@ -487,7 +495,6 @@ const EventDetails = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
-  // Unsplash inspiration state (visible on overview)
   const [unsplashQuery, setUnsplashQuery] = useState("");
   const [unsplashResults, setUnsplashResults] = useState([]);
   const [unsplashLoading, setUnsplashLoading] = useState(false);
@@ -498,7 +505,6 @@ const EventDetails = () => {
   const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
   const [vendorRequests, setVendorRequests] = useState([]);
 
-  // Reset all edit states when read-only mode changes
   useEffect(() => {
     if (isReadOnly) {
       setIsMainEditing(false);
@@ -1121,7 +1127,6 @@ const EventDetails = () => {
     (req) => req.status === "rejected"
   );
 
-  // Create a clean, unique list of vendor categories
   const uniqueVendorCategories = Array.from(
     new Set(
       allVendors
@@ -1156,25 +1161,28 @@ const EventDetails = () => {
           >
             Event Overview
           </button>
+          {/* ✨ FIX: Renamed button */}
           <button
             onClick={() => setActiveView("guests")}
             className={`new-button ${activeView === "guests" ? "active" : ""}`}
           >
-            Guest Management
+            Guest List
           </button>
+          {/* ✨ FIX: Renamed button */}
           <button
             onClick={() => setActiveView("vendors")}
             className={`new-button ${activeView === "vendors" ? "active" : ""}`}
           >
-            Vendor Management
+            Vendor List
           </button>
+          {/* ✨ FIX: Renamed button */}
           <button
             onClick={() => setActiveView("documents")}
             className={`new-button ${
               activeView === "documents" ? "active" : ""
             }`}
           >
-            Document Management
+            Documents
           </button>
         </div>
         <div className="header-actions">
@@ -1184,10 +1192,10 @@ const EventDetails = () => {
         </div>
       </div>
 
-      {/* Main Event Details Section with Edit Button */}
       <div className="event-main-details-section">
         <div className="section-header">
           <h2>Event Details</h2>
+          {/* ✨ FIX: Edit button is now hidden in read-only mode */}
           {!isReadOnly && (
             <button 
               onClick={() => isMainEditing ? handleSaveMainDetails() : setIsMainEditing(true)} 
@@ -1275,6 +1283,7 @@ const EventDetails = () => {
                 onUpdate={setSchedule}
                 isEditing={isScheduleEditing}
                 onToggleEdit={() => isScheduleEditing ? handleSaveSchedule() : setIsScheduleEditing(true)}
+                isReadOnly={isReadOnly}
               />
             </section>
             <section>
@@ -1283,148 +1292,151 @@ const EventDetails = () => {
                 onUpdate={setTheme}
                 isEditing={isThemeEditing}
                 onToggleEdit={() => isThemeEditing ? handleSaveTheme() : setIsThemeEditing(true)}
+                isReadOnly={isReadOnly}
               />
             </section>
-            {/* Event Ideas (Unsplash) */}
-            <section>
-              <div className="section-header">
-                <h2 style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-                  <FaSearch /> Event Ideas
-                  <span style={{ fontSize: ".8rem", color: "#888" }}>(Photos by <a href="https://unsplash.com" target="_blank" rel="noreferrer noopener" style={{ color: "#888" }}>Unsplash</a>)</span>
-                </h2>
-              </div>
-              <div style={{ display: "flex", gap: ".5rem", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap" }}>
-                <input
-                  type="text"
-                  value={unsplashQuery}
-                  onChange={(e) => setUnsplashQuery(e.target.value)}
-                  placeholder="Search inspiration for this event"
-                  className="form-input"
-                  style={{ flex: 1, minWidth: 220 }}
-                />
-                <button
-                  type="button"
-                  className="edit-button"
-                  onClick={async () => {
-                    try {
-                      setUnsplashLoading(true);
-                      setUnsplashError("");
-                      setUnsplashPage(1);
-                      const base = theme?.name || formData?.venue || formData?.name || "event";
-                      const query = (unsplashQuery || base).toString();
-                      const data = await searchUnsplashPhotos(query, 1, 12);
-                      setUnsplashResults(data.results || []);
-                    } catch (err) {
-                      setUnsplashError(err.message || "Search failed");
-                    } finally {
-                      setUnsplashLoading(false);
-                    }
-                  }}
-                  disabled={unsplashLoading}
-                >
-                  {unsplashLoading ? "Searching..." : "Search"}
-                </button>
-              </div>
-              {unsplashError && (
-                <div className="search-error" style={{ marginTop: ".25rem", color: "#c00" }}>
-                  {unsplashError}
+            {/* ✨ FIX: Unsplash section is now hidden in read-only mode */}
+            {!isReadOnly && (
+              <section>
+                <div className="section-header">
+                  <h2 style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                    <FaSearch /> Event Ideas
+                    <span style={{ fontSize: ".8rem", color: "#888" }}>(Photos by <a href="https://unsplash.com" target="_blank" rel="noreferrer noopener" style={{ color: "#888" }}>Unsplash</a>)</span>
+                  </h2>
                 </div>
-              )}
-              {unsplashResults && unsplashResults.length > 0 && (
-                <>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-                      gap: "10px",
-                      marginTop: "0.5rem",
+                <div style={{ display: "flex", gap: ".5rem", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap" }}>
+                  <input
+                    type="text"
+                    value={unsplashQuery}
+                    onChange={(e) => setUnsplashQuery(e.target.value)}
+                    placeholder="Search inspiration for this event"
+                    className="form-input"
+                    style={{ flex: 1, minWidth: 220 }}
+                  />
+                  <button
+                    type="button"
+                    className="edit-button"
+                    onClick={async () => {
+                      try {
+                        setUnsplashLoading(true);
+                        setUnsplashError("");
+                        setUnsplashPage(1);
+                        const base = theme?.name || formData?.venue || formData?.name || "event";
+                        const query = (unsplashQuery || base).toString();
+                        const data = await searchUnsplashPhotos(query, 1, 12);
+                        setUnsplashResults(data.results || []);
+                      } catch (err) {
+                        setUnsplashError(err.message || "Search failed");
+                      } finally {
+                        setUnsplashLoading(false);
+                      }
                     }}
+                    disabled={unsplashLoading}
                   >
-                    {unsplashResults.map((photo) => (
-                      <div key={photo.id} style={{ position: "relative", borderRadius: "8px", overflow: "hidden", border: "1px solid #eee" }}>
-                        <img
-                          src={photo.urls?.small}
-                          alt={photo.alt_description || "Unsplash photo"}
-                          style={{ width: "100%", height: "120px", objectFit: "cover", display: "block" }}
-                          loading="lazy"
-                          onClick={async () => {
-                            try { await registerUnsplashDownload(photo.id); } catch (_) {}
-                            window.open(photo.links?.html || photo.urls?.regular, "_blank", "noopener");
-                          }}
-                        />
-                        <div style={{ padding: "6px 8px", fontSize: ".75rem", background: "#fafafa", borderTop: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <a
-                            href={photo.links?.html}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            style={{ color: "#555", textDecoration: "none" }}
-                            onClick={async (e) => { e.stopPropagation(); try { await registerUnsplashDownload(photo.id); } catch (_) {} }}
-                            title="View on Unsplash"
-                          >
-                            {photo.user?.name || "Photographer"}
-                          </a>
-                          <a
-                            href="https://unsplash.com"
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            style={{ color: "#999", textDecoration: "none" }}
-                          >
-                            Unsplash
-                          </a>
+                    {unsplashLoading ? "Searching..." : "Search"}
+                  </button>
+                </div>
+                {unsplashError && (
+                  <div className="search-error" style={{ marginTop: ".25rem", color: "#c00" }}>
+                    {unsplashError}
+                  </div>
+                )}
+                {unsplashResults && unsplashResults.length > 0 && (
+                  <>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                        gap: "10px",
+                        marginTop: "0.5rem",
+                      }}
+                    >
+                      {unsplashResults.map((photo) => (
+                        <div key={photo.id} style={{ position: "relative", borderRadius: "8px", overflow: "hidden", border: "1px solid #eee" }}>
+                          <img
+                            src={photo.urls?.small}
+                            alt={photo.alt_description || "Unsplash photo"}
+                            style={{ width: "100%", height: "120px", objectFit: "cover", display: "block" }}
+                            loading="lazy"
+                            onClick={async () => {
+                              try { await registerUnsplashDownload(photo.id); } catch (_) {}
+                              window.open(photo.links?.html || photo.urls?.regular, "_blank", "noopener");
+                            }}
+                          />
+                          <div style={{ padding: "6px 8px", fontSize: ".75rem", background: "#fafafa", borderTop: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <a
+                              href={photo.links?.html}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              style={{ color: "#555", textDecoration: "none" }}
+                              onClick={async (e) => { e.stopPropagation(); try { await registerUnsplashDownload(photo.id); } catch (_) {} }}
+                              title="View on Unsplash"
+                            >
+                              {photo.user?.name || "Photographer"}
+                            </a>
+                            <a
+                              href="https://unsplash.com"
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              style={{ color: "#999", textDecoration: "none" }}
+                            >
+                              Unsplash
+                            </a>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ display: "flex", gap: ".5rem", marginTop: "0.75rem", justifyContent: "flex-end" }}>
-                    <button
-                      type="button"
-                      className="new-button"
-                      onClick={async () => {
-                        if (unsplashPage <= 1) return;
-                        try {
-                          setUnsplashLoading(true);
-                          const newPage = unsplashPage - 1;
-                          const base = theme?.name || formData?.venue || formData?.name || "event";
-                          const query = (unsplashQuery || base).toString();
-                          const data = await searchUnsplashPhotos(query, newPage, 12);
-                          setUnsplashResults(data.results || []);
-                          setUnsplashPage(newPage);
-                        } catch (err) {
-                          setUnsplashError(err.message || "Failed to load page");
-                        } finally {
-                          setUnsplashLoading(false);
-                        }
-                      }}
-                      disabled={unsplashLoading || unsplashPage <= 1}
-                    >
-                      Prev
-                    </button>
-                    <button
-                      type="button"
-                      className="new-button"
-                      onClick={async () => {
-                        try {
-                          setUnsplashLoading(true);
-                          const newPage = unsplashPage + 1;
-                          const base = theme?.name || formData?.venue || formData?.name || "event";
-                          const query = (unsplashQuery || base).toString();
-                          const data = await searchUnsplashPhotos(query, newPage, 12);
-                          setUnsplashResults(data.results || []);
-                          setUnsplashPage(newPage);
-                        } catch (err) {
-                          setUnsplashError(err.message || "Failed to load page");
-                        } finally {
-                          setUnsplashLoading(false);
-                        }
-                      }}
-                      disabled={unsplashLoading}
-                    >
-                      Next
-                    </button>
-                  </div>
-                </>
-              )}
-            </section>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", gap: ".5rem", marginTop: "0.75rem", justifyContent: "flex-end" }}>
+                      <button
+                        type="button"
+                        className="new-button"
+                        onClick={async () => {
+                          if (unsplashPage <= 1) return;
+                          try {
+                            setUnsplashLoading(true);
+                            const newPage = unsplashPage - 1;
+                            const base = theme?.name || formData?.venue || formData?.name || "event";
+                            const query = (unsplashQuery || base).toString();
+                            const data = await searchUnsplashPhotos(query, newPage, 12);
+                            setUnsplashResults(data.results || []);
+                            setUnsplashPage(newPage);
+                          } catch (err) {
+                            setUnsplashError(err.message || "Failed to load page");
+                          } finally {
+                            setUnsplashLoading(false);
+                          }
+                        }}
+                        disabled={unsplashLoading || unsplashPage <= 1}
+                      >
+                        Prev
+                      </button>
+                      <button
+                        type="button"
+                        className="new-button"
+                        onClick={async () => {
+                          try {
+                            setUnsplashLoading(true);
+                            const newPage = unsplashPage + 1;
+                            const base = theme?.name || formData?.venue || formData?.name || "event";
+                            const query = (unsplashQuery || base).toString();
+                            const data = await searchUnsplashPhotos(query, newPage, 12);
+                            setUnsplashResults(data.results || []);
+                            setUnsplashPage(newPage);
+                          } catch (err) {
+                            setUnsplashError(err.message || "Failed to load page");
+                          } finally {
+                            setUnsplashLoading(false);
+                          }
+                        }}
+                        disabled={unsplashLoading}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </>
+                )}
+              </section>
+            )}
           </>
         )}
         {activeView === "guests" && (
@@ -1779,6 +1791,7 @@ const EventDetails = () => {
           <section className="documents-section">
             <div className="section-header">
               <h2>Documents</h2>
+              {/* ✨ FIX: Edit button is now hidden in read-only mode */}
               {!isReadOnly && (
                 <button 
                   onClick={() => setIsDocumentsEditing(!isDocumentsEditing)} 
