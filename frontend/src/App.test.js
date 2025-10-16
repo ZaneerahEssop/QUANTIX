@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom'; // ✨ FIX: Import MemoryRouter
 import App from './App';
 
 // Mock console warnings
@@ -38,85 +39,106 @@ jest.mock('./client', () => ({
 
 import { supabase } from './client';
 
+// ✨ FIX: Create a helper function to render the App with MemoryRouter
+const renderWithRouter = (initialRoute = '/') => {
+  return render(
+    <MemoryRouter initialEntries={[initialRoute]}>
+      <App />
+    </MemoryRouter>
+  );
+};
+
 describe('App Component', () => {
   beforeEach(() => {
-    // Clear all mocks before each test
     jest.clearAllMocks();
-    
-    // Mock getSession to return no session by default
     supabase.auth.getSession.mockResolvedValue({
       data: { session: null }
     });
-
-    // Set test environment
     process.env.NODE_ENV = 'test';
   });
 
   afterEach(() => {
-    // Reset process.env
     delete process.env.NODE_ENV;
   });
 
+  // --- Public Routes Tests ---
   test('renders Landing page by default', async () => {
-    render(<App />);
-
+    renderWithRouter('/');
     await waitFor(() => {
       expect(screen.getByText(/Landing Page/i)).toBeInTheDocument();
     });
   });
 
   test('renders Login page when navigating to /login', async () => {
-    window.history.pushState({}, 'Login Page', '/login');
-    render(<App />);
-
+    renderWithRouter('/login');
     await waitFor(() => {
       expect(screen.getByText(/Login Page/i)).toBeInTheDocument();
     });
   });
 
   test('renders SignUp page when navigating to /signup', async () => {
-    window.history.pushState({}, 'SignUp Page', '/signup');
-    render(<App />);
-
+    renderWithRouter('/signup');
     await waitFor(() => {
       expect(screen.getByText(/SignUp Page/i)).toBeInTheDocument();
     });
   });
 
+  // --- Special Routes Tests ---
   test('renders Loading page when navigating to /loading', async () => {
-    window.history.pushState({}, 'Loading Page', '/loading');
-    render(<App />);
-
+    renderWithRouter('/loading');
     await waitFor(() => {
       expect(screen.getByText(/Loading Page/i)).toBeInTheDocument();
     });
   });
 
   test('renders PlannerForm when navigating to /planner-form', async () => {
-    window.history.pushState({}, 'Planner Form', '/planner-form');
-    render(<App />);
-
+    renderWithRouter('/planner-form');
     await waitFor(() => {
       expect(screen.getByText(/Planner Form/i)).toBeInTheDocument();
     });
   });
 
   test('renders VendorForm when navigating to /vendor-form', async () => {
-    window.history.pushState({}, 'Vendor Form', '/vendor-form');
-    render(<App />);
-
+    renderWithRouter('/vendor-form');
     await waitFor(() => {
       expect(screen.getByText(/Vendor Form/i)).toBeInTheDocument();
     });
   });
 
   test('renders PostSignupRedirect when navigating to /post-signup', async () => {
-    window.history.pushState({}, 'Post Signup Redirect', '/post-signup');
-    render(<App />);
-
+    renderWithRouter('/post-signup');
     await waitFor(() => {
       expect(screen.getByText(/Post Signup Redirect/i)).toBeInTheDocument();
     });
   });
 
+  // --- Protected Routes Tests ---
+  describe('Protected Routes', () => {
+    test('redirects to /login from /dashboard when not authenticated', async () => {
+      renderWithRouter('/dashboard');
+      await waitFor(() => {
+        expect(screen.getByText(/Login Page/i)).toBeInTheDocument();
+      });
+    });
+
+    test('renders PlannerDashboard when authenticated', async () => {
+      supabase.auth.getSession.mockResolvedValue({
+        data: { session: { user: { id: '123' } } }
+      });
+      renderWithRouter('/dashboard');
+      await waitFor(() => {
+        expect(screen.getByText(/Planner Dashboard/i)).toBeInTheDocument();
+      });
+    });
+
+    test('renders EventDetails when authenticated', async () => {
+        supabase.auth.getSession.mockResolvedValue({
+          data: { session: { user: { id: '123' } } }
+        });
+        renderWithRouter('/viewEvent/some-event-id');
+        await waitFor(() => {
+          expect(screen.getByText(/Event Details/i)).toBeInTheDocument();
+        });
+      });
+  });
 });
