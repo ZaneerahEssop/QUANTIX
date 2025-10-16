@@ -3,6 +3,8 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../client";
 import {
   FaArrowLeft,
+  FaArrowDown,
+  FaArrowUp,
   FaCalendarAlt,
   FaCheck,
   FaClock,
@@ -48,6 +50,8 @@ export default function AddEventForm() {
   const [searchInput, setSearchInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isLoading, setIsLoading] = useState(true);
+  const [showAllVendors, setShowAllVendors] = useState(false);
+  const VENDORS_PER_PAGE = 6;
   const [isSearching, setIsSearching] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [usingVenueVendor, setUsingVenueVendor] = useState(false);
@@ -909,84 +913,129 @@ export default function AddEventForm() {
                 </div>
               ) : (
                 <div className="vendor-grid">
-                  {filteredVendors.map((vendor) => {
-                    const isSelected = selectedVendors.some(
-                      (v) => v.vendor_id === vendor.vendor_id
-                    );
+                  {filteredVendors
+                    .slice(0, showAllVendors ? filteredVendors.length : VENDORS_PER_PAGE)
+                    .map((vendor) => {
+                      const isSelected = selectedVendors.some(
+                        (v) => v.vendor_id === vendor.vendor_id
+                      );
 
-                    return (
-                      <div
-                        key={vendor.vendor_id}
-                        className="vendor-card"
-                        onClick={(e) => {
-                          // Only navigate if the click is not on the request button or its children
-                          if (
-                            !e.target.closest(
-                              ".add-vendor-btn, .undo-request-btn"
-                            )
-                          ) {
-                            handleVendorCardClick(vendor.vendor_id);
-                          }
-                        }}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <div className="vendor-info">
-                          <h4>{vendor.business_name}</h4>
-                          <div className="vendor-category">
-                            {vendor.service_type}
+                      return (
+                        <div
+                          key={vendor.vendor_id}
+                          className="vendor-card"
+                          onClick={(e) => {
+                            if (!e.target.closest(".add-vendor-btn, .undo-request-btn")) {
+                              handleVendorCardClick(vendor.vendor_id);
+                            }
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <div className="vendor-info">
+                            <h4>{vendor.business_name}</h4>
+                            <div className="vendor-category">
+                              {vendor.service_type}
+                            </div>
+                            <div className="vendor-description">
+                              {vendor.description || "No description available."}
+                            </div>
                           </div>
-                          <div className="vendor-description">
-                            {vendor.description || "No description available."}
-                          </div>
-                        </div>
-                        <div className="vendor-actions">
-                          <button
-                            type="button"
-                            className={`add-vendor-btn ${
-                              isSelected ? "added" : ""
-                            } ${isSelected ? "selected" : ""}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectVendor(vendor);
-                            }}
-                            disabled={isSelected}
-                            title={isSelected ? "Vendor selected" : ""}
-                          >
-                            {isSelected ? (
-                              <>
-                                <FaCheck /> Selected
-                              </>
-                            ) : (
-                              <>
-                                <FaPlus /> Select Vendor
-                              </>
-                            )}
-                          </button>
-                          {isSelected && (
+                          <div className="vendor-actions">
                             <button
                               type="button"
-                              className="undo-request-btn"
+                              className={`add-vendor-btn ${
+                                isSelected ? "added" : ""
+                              } ${isSelected ? "selected" : ""}`}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                e.preventDefault();
-                                handleRemoveVendor(vendor);
+                                handleSelectVendor(vendor);
                               }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
+                              disabled={isSelected}
+                              title={isSelected ? "Vendor selected" : ""}
+                            >
+                              {isSelected ? (
+                                <>
+                                  <FaCheck /> Selected
+                                </>
+                              ) : (
+                                <>
+                                  <FaPlus /> Select Vendor
+                                </>
+                              )}
+                            </button>
+                            {isSelected && (
+                              <button
+                                type="button"
+                                className="undo-request-btn"
+                                onClick={(e) => {
                                   e.stopPropagation();
                                   e.preventDefault();
                                   handleRemoveVendor(vendor);
-                                }
-                              }}
-                              title="Remove from selection"
-                            >
-                              Undo
-                            </button>
-                          )}
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    handleRemoveVendor(vendor);
+                                  }
+                                }}
+                                title="Remove from selection"
+                              >
+                                Undo
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  
+                  {!showAllVendors && filteredVendors.length > VENDORS_PER_PAGE && (
+                    <div className="view-all-container" style={{ width: '100%', textAlign: 'center', marginTop: '1rem' }}>
+                      <button
+                        type="button"
+                        className="view-all-btn"
+                        onClick={() => setShowAllVendors(true)}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #ddd',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          color: '#666',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          margin: '0 auto'
+                        }}
+                      >
+                        View All {filteredVendors.length} Vendors <FaArrowDown style={{ fontSize: '0.8rem' }} />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {showAllVendors && filteredVendors.length > VENDORS_PER_PAGE && (
+                    <div className="view-less-container" style={{ width: '100%', textAlign: 'center', marginTop: '1rem' }}>
+                      <button
+                        type="button"
+                        className="view-less-btn"
+                        onClick={() => setShowAllVendors(false)}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #ddd',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          color: '#666',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          margin: '0 auto'
+                        }}
+                      >
+                        Show Less <FaArrowUp style={{ fontSize: '0.8rem' }} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1072,23 +1121,25 @@ export default function AddEventForm() {
             </div>
 
             <div className="form-actions">
-              <button
-                type="button"
-                className="cancel-btn"
-                onClick={() => {
-                  setShowWarning(false);
-                  navigate("/dashboard");
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="submit-btn"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Creating Event..." : "Create Event"}
-              </button>
+              <div className="button-group">
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={() => {
+                    setShowWarning(false);
+                    navigate("/dashboard");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="submit-btn"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating Event..." : "Create Event"}
+                </button>
+              </div>
             </div>
           </form>
         </div>
