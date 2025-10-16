@@ -6,12 +6,19 @@ Event-ually Perfect is a full-stack event planning platform that connects event 
 
 ## 🚀 Features
 | 🧾 **Guest Management** | Create & update guest lists, send Gmail invitations, and track RSVP responses. |
+
 | 🛍️ **Vendors & Requests** | Discover vendors, send requests, and view detailed vendor profiles (name, business, contact). |
+
 | 📜 **Contracts** | Create and manage contract records between planners and vendors. |
+
 | 💬 **Real-Time Chat** | Planner-vendor chat with persistent sidebar history, unread count tracking, and profanity filtering. |
+
 | 🗓️ **Event Blueprint** | Build schedules, notes, and details; export as CSV/JSON or print-friendly format. |
+
 | 📸 **Unsplash Integration** | Search for and preview event inspiration photos with proper attribution and download tracking. |
+
 | ✉️ **Email Invitations** | Automatically send Gmail-backed invites with event details and themes. |
+
 | 🔐 **Authentication & Data** | Supabase-backed user auth, events, messages, and guests with secure session management. |
 
 ## 🔗 Visit our site
