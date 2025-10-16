@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BsEmojiSmile, BsPaperclip, BsSend } from 'react-icons/bs';
+import { BsSend } from 'react-icons/bs';
 import { FaComments } from 'react-icons/fa';
 import styled from 'styled-components';
 import VendorSearch from './VendorSearch';
@@ -628,18 +628,13 @@ const ChatUI = ({
                 
                 <InputContainer>
                   <InputForm onSubmit={handleSendMessage}>
-                    <IconButton type="button" aria-label="Add emoji">
-                      <BsEmojiSmile size={18} />
-                    </IconButton>
-                    <IconButton type="button" aria-label="Attach file">
-                      <BsPaperclip size={18} />
-                    </IconButton>
                     <Input
                       type="text"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       placeholder={`Message ${selectedVendor.name}...`}
                       disabled={!selectedVendor}
+                      style={{ marginLeft: '0.5rem' }}
                     />
                     <SendButton type="submit" aria-label="Send message">
                       <BsSend size={16} />
