@@ -700,33 +700,6 @@ const EventDetails = () => {
     );
   };
 
-  const handleVendorRequestResponse = async (requestId, status) => {
-    try {
-      const response = await fetch(
-        `${API_BASE}/api/vendor-requests/${requestId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ status }),
-        }
-      );
-
-      if (response.ok) {
-        setVendorRequests((prev) =>
-          prev.map((req) =>
-            req.request_id === requestId ? { ...req, status } : req
-          )
-        );
-        alert(`Vendor request ${status} successfully!`);
-      }
-    } catch (error) {
-      console.error("Error updating vendor request:", error);
-      alert("Failed to update vendor request.");
-    }
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -1479,9 +1452,36 @@ const EventDetails = () => {
               <>
                 {isVendorsEditing ? (
                   <div className="add-vendors-tool">
-                    {pendingRequests.length > 0 && (
+                    {isReadOnly && pendingRequests.length > 0 && (
                       <div className="pending-vendors-container">
-                        <h4>Pending Requests</h4>
+                        <h4>Your Pending Requests</h4>
+                        <div className="vendor-requests-list">
+                          {pendingRequests
+                            .filter(
+                              (request) => request.vendor?.vendor_id === currentUser?.id
+                            )
+                            .map((request) => (
+                              <div
+                                key={request.request_id}
+                                className="vendor-request-item"
+                              >
+                                <div className="vendor-request-info">
+                                  <strong>Event: {eventData?.name || "Event"}</strong>
+                                  <div className="vendor-details">
+                                    <small>
+                                      Status: Pending
+                                    </small>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {!isReadOnly && pendingRequests.length > 0 && (
+                      <div className="pending-vendors-container">
+                        <h4>Pending Vendor Requests</h4>
                         <div className="vendor-requests-list">
                           {pendingRequests.map((request) => (
                             <div
@@ -1500,32 +1500,9 @@ const EventDetails = () => {
                                 </div>
                               </div>
                               <div className="vendor-request-actions">
-                                {request.status === "pending" && isVendorsEditing && (
-                                  <div className="action-buttons">
-                                    <button
-                                      onClick={() =>
-                                        handleVendorRequestResponse(
-                                          request.request_id,
-                                          "accepted"
-                                        )
-                                      }
-                                      className="accept-btn"
-                                    >
-                                      Accept
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleVendorRequestResponse(
-                                          request.request_id,
-                                          "rejected"
-                                        )
-                                      }
-                                      className="reject-btn"
-                                    >
-                                      Reject
-                                    </button>
-                                  </div>
-                                )}
+                                <span className="status-label pending">
+                                  Pending
+                                </span>
                               </div>
                             </div>
                           ))}
