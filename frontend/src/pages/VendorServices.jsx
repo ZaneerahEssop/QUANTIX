@@ -186,18 +186,38 @@ const VendorServices = ({ session }) => {
 
   return (
     <div className="vendor-services-container">
-      <div className="vendor-services-content-wrapper">
-
-        {isOwner && (
-          <div className="back-button-container">
-            <button 
-              onClick={() => navigate('/vendor-dashboard')} 
-              className="back-to-dashboard"
-            >
-              <span style={{ marginRight: '8px', fontSize: '16px' }}>←</span> Back to Dashboard
-            </button>
-          </div>
-        )}
+      <div className="vendor-services-content-wrapper" style={{ position: 'relative' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center',
+          marginBottom: '20px'
+        }}>
+          <button 
+            onClick={() => window.history.back()} 
+            className="back-to-dashboard"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '12px 30px',
+              background: '#FFB6C1', /* Soft pink */
+              color: 'white',
+              border: 'none',
+              borderRadius: '30px',
+              cursor: 'pointer',
+              fontSize: '1.05rem',
+              fontWeight: '500',
+              boxShadow: '0 3px 6px rgba(0,0,0,0.1)',
+              transition: 'all 0.3s ease',
+              ':hover': {
+                background: '#FFA07A', /* Peach color on hover */
+                transform: 'translateY(-2px)',
+                boxShadow: '0 5px 15px rgba(0,0,0,0.15)'
+              }
+            }}
+          >
+            <span style={{ marginRight: '8px', fontSize: '16px' }}>←</span> Back
+          </button>
+        </div>
       
         <div className={`profile-reviews-container ${isOwner ? 'centered-profile' : ''}`}>
           <div className="vendor-profile-card content-card">
