@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import ContractManagement from '../components/ContractManagement';
-import { supabase } from '../client';
 
 // Mock dependencies
 jest.mock('../client', () => ({
@@ -59,6 +58,7 @@ jest.mock('react-icons/fa', () => ({
   FaSave: () => <span data-testid="fa-save">💾</span>,
   FaPlus: () => <span data-testid="fa-plus">+</span>,
   FaTrash: () => <span data-testid="fa-trash">🗑️</span>,
+  FaClock: () => <span data-testid="fa-clock">⏰</span>,
 }));
 
 // Mock global objects
@@ -114,6 +114,13 @@ describe('ContractManagement', () => {
     planner_signed_at: '2025-01-01T00:00:00Z',
     vendor_signed_at: '2025-01-01T00:00:00Z'
   };
+  
+  const mockPlannerSignedContract = {
+    ...mockContract,
+    status: 'pending_vendor_signature',
+    planner_signature: 'Test Planner',
+    planner_signed_at: '2025-01-01T00:00:00Z',
+  };
 
   const mockContractWithRevisions = {
     ...mockContract,
@@ -136,7 +143,6 @@ describe('ContractManagement', () => {
     );
   });
 
-  // Helper function to render component with different props
   const renderContractManagement = (props = {}) => {
     const defaultProps = {
       eventData: mockEventData,
@@ -183,8 +189,6 @@ describe('ContractManagement', () => {
     });
 
     expect(screen.getByTestId('react-markdown')).toBeInTheDocument();
-    
-    // Use more flexible text matching for the back button
     expect(screen.getByText(/Back to Vendors/i)).toBeInTheDocument();
     expect(screen.getByText('Export as PDF')).toBeInTheDocument();
   });
@@ -200,7 +204,6 @@ describe('ContractManagement', () => {
       expect(screen.getByText(/Back to Vendors/i)).toBeInTheDocument();
     });
 
-    // Use regex to match the text with the arrow character
     const backButton = screen.getByText(/Back to Vendors/i);
     fireEvent.click(backButton);
 
@@ -244,8 +247,6 @@ describe('ContractManagement', () => {
     });
 
     expect(screen.getByText('Edit Contract Details')).toBeInTheDocument();
-    
-    // Use getByDisplayValue for input fields instead of getByLabelText
     expect(screen.getByDisplayValue('R15000')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
     expect(screen.getByText('Save Contract')).toBeInTheDocument();
@@ -265,7 +266,6 @@ describe('ContractManagement', () => {
       fireEvent.click(editButton);
     });
 
-    // Find input by display value instead of label
     const totalFeeInput = screen.getByDisplayValue('R15000');
     await act(async () => {
       fireEvent.change(totalFeeInput, { target: { value: 'R20000' } });
@@ -278,45 +278,41 @@ describe('ContractManagement', () => {
     await act(async () => {
       renderContractManagement({ currentUser: mockCurrentUserVendor });
     });
-
+  
     await waitFor(() => {
       expect(screen.getByText('Edit Contract')).toBeInTheDocument();
     });
-
+  
     const editButton = screen.getByText('Edit Contract');
     await act(async () => {
       fireEvent.click(editButton);
     });
-
-    // Add custom field
+  
     const addButton = screen.getByText('Add Custom Field');
     await act(async () => {
       fireEvent.click(addButton);
     });
-
-    // Use the actual placeholder text from the component
+  
     const customFieldHeaders = screen.getAllByPlaceholderText('Clause Header (e.g., Travel Fee)');
     const customFieldValues = screen.getAllByPlaceholderText('Clause Details');
-
+  
     expect(customFieldHeaders.length).toBe(1);
     expect(customFieldValues.length).toBe(1);
-
-    // Fill custom field
+  
     await act(async () => {
       fireEvent.change(customFieldHeaders[0], { target: { value: 'Travel Fee' } });
       fireEvent.change(customFieldValues[0], { target: { value: 'R500 for distances over 50km' } });
     });
-
+  
     expect(customFieldHeaders[0].value).toBe('Travel Fee');
     expect(customFieldValues[0].value).toBe('R500 for distances over 50km');
-
-    // Remove custom field - find by role or test id
+  
     const removeButton = screen.getByTestId('fa-trash').closest('button');
+    expect(removeButton).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(removeButton);
     });
-
-    // Check that custom fields are removed
+  
     await waitFor(() => {
       expect(screen.queryByPlaceholderText('Clause Header (e.g., Travel Fee)')).not.toBeInTheDocument();
     });
@@ -362,11 +358,10 @@ describe('ContractManagement', () => {
   });
 
   test('handles contract signing for planner', async () => {
-    // Use the pending signature contract for this test
     global.fetch.mockImplementationOnce(() => 
       Promise.resolve({ 
         ok: true, 
-        json: () => Promise.resolve(mockContract) // This has pending_planner_signature status
+        json: () => Promise.resolve(mockContract)
       })
     );
 
@@ -375,14 +370,12 @@ describe('ContractManagement', () => {
     });
 
     await waitFor(() => {
-      // The signature input should be visible when contract is pending planner signature
       expect(screen.getByPlaceholderText('Type full name to sign')).toBeInTheDocument();
     });
 
     const signatureInput = screen.getByPlaceholderText('Type full name to sign');
     const signButton = screen.getByText('Sign');
 
-    // Mock the next fetch call for signing
     global.fetch.mockImplementationOnce(() => 
       Promise.resolve({ 
         ok: true, 
@@ -427,14 +420,13 @@ describe('ContractManagement', () => {
   });
 
   test('handles revision requests', async () => {
-    // Mock Date for consistent timestamp
     const mockDate = new Date('2025-09-29T19:55:14.946Z');
     jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
 
     global.fetch.mockImplementationOnce(() => 
       Promise.resolve({ 
         ok: true, 
-        json: () => Promise.resolve(mockContractWithRevisions) 
+        json: () => Promise.resolve(mockContract) 
       })
     );
 
@@ -448,6 +440,13 @@ describe('ContractManagement', () => {
 
     const revisionTextarea = screen.getByPlaceholderText('e.g., Please clarify payment terms...');
     const submitButton = screen.getByText('Submit Revision');
+
+    global.fetch.mockImplementationOnce(() => 
+        Promise.resolve({ 
+            ok: true, 
+            json: () => Promise.resolve(mockContractWithRevisions) 
+        })
+    );
 
     await act(async () => {
       fireEvent.change(revisionTextarea, { target: { value: 'Need more details on deliverables' } });
@@ -470,8 +469,27 @@ describe('ContractManagement', () => {
       );
     });
 
-    // Restore Date
     jest.restoreAllMocks();
+  });
+  
+  test('does not show revision form for planner after they have signed', async () => {
+    global.fetch.mockImplementationOnce(() => 
+      Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve(mockPlannerSignedContract) 
+      })
+    );
+
+    await act(async () => {
+      renderContractManagement({ currentUser: mockCurrentUserPlanner });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Contract: Test Vendor')).toBeInTheDocument();
+    });
+    
+    expect(screen.queryByText('Request Revisions')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('e.g., Please clarify payment terms...')).not.toBeInTheDocument();
   });
 
   test('displays revision history', async () => {
@@ -491,31 +509,47 @@ describe('ContractManagement', () => {
     });
 
     expect(screen.getByText('Test Planner')).toBeInTheDocument();
-    
-    // Use more flexible text matching for revision comments
-    // The comment might be wrapped in quotes or other elements
     expect(screen.getByText(/Please clarify payment terms/i)).toBeInTheDocument();
   });
 
+  // ✨ FIX: Updated test to check for role-specific banner messages
   test('shows status banners correctly', async () => {
-    // Test revisions requested banner
+    // Test revisions requested banner for PLANNER
     global.fetch.mockImplementationOnce(() => 
       Promise.resolve({ 
         ok: true, 
         json: () => Promise.resolve({ ...mockContract, status: 'revisions_requested' }) 
       })
     );
-
-    const { unmount } = await act(async () => {
-      return renderContractManagement();
+  
+    const { unmount: unmountPlanner } = await act(async () => {
+      return renderContractManagement({ currentUser: mockCurrentUserPlanner });
     });
-
+  
     await waitFor(() => {
-      expect(screen.getByText(/revisions requested/i)).toBeInTheDocument();
+      expect(screen.getByText(/You have requested revisions/i)).toBeInTheDocument();
     });
-
-    unmount();
-
+  
+    unmountPlanner();
+  
+    // Test revisions requested banner for VENDOR
+    global.fetch.mockImplementationOnce(() => 
+      Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({ ...mockContract, status: 'revisions_requested' }) 
+      })
+    );
+  
+    const { unmount: unmountVendor } = await act(async () => {
+      return renderContractManagement({ currentUser: mockCurrentUserVendor });
+    });
+  
+    await waitFor(() => {
+      expect(screen.getByText(/Revisions requested. Please review/i)).toBeInTheDocument();
+    });
+  
+    unmountVendor();
+  
     // Test active contract banner
     global.fetch.mockImplementationOnce(() => 
       Promise.resolve({ 
@@ -523,20 +557,18 @@ describe('ContractManagement', () => {
         json: () => Promise.resolve(mockSignedContract) 
       })
     );
-
+  
     await act(async () => {
       renderContractManagement();
     });
-
+  
     await waitFor(() => {
       expect(screen.getByText(/active.*signed by both parties/i)).toBeInTheDocument();
     });
   });
 
-
-
   test('handles fetch errors gracefully', async () => {
-    console.error = jest.fn(); // Suppress error logs
+    console.error = jest.fn();
     global.fetch.mockImplementationOnce(() => 
       Promise.reject(new Error('Network error'))
     );
@@ -549,7 +581,6 @@ describe('ContractManagement', () => {
       expect(screen.queryByText('Loading contract...')).not.toBeInTheDocument();
     });
 
-    // Should handle error without crashing
     expect(screen.getByText('Contract: Test Vendor')).toBeInTheDocument();
   });
 
@@ -599,9 +630,11 @@ describe('ContractManagement', () => {
       fireEvent.click(editButton);
     });
 
-    // Use getByPlaceholderText instead of getByLabelText for form fields
+    const capacityInput = screen.getByPlaceholderText('e.g., 150 guests');
+    fireEvent.change(capacityInput, { target: { value: '200' } });
+    expect(capacityInput.value).toBe('200');
+
     expect(screen.getByPlaceholderText('e.g., Grand Ballroom and Gardens')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('e.g., 150 guests')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('e.g., All music must end by 11:00 PM')).toBeInTheDocument();
   });
 
@@ -621,7 +654,6 @@ describe('ContractManagement', () => {
       expect(screen.queryByText('Loading contract...')).not.toBeInTheDocument();
     });
 
-    // Should render without contract data
     expect(screen.getByText('Contract: Test Vendor')).toBeInTheDocument();
   });
 });
