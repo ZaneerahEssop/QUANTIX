@@ -702,13 +702,16 @@ const EventDetails = () => {
         setSelectedVendors(fetchedEventData.vendors || []);
 
         const startTime = new Date(fetchedEventData.start_time);
-        const date = startTime.toISOString().split("T")[0];
-        const time = startTime.toTimeString().substring(0, 5);
+        const year = startTime.getFullYear();
+        const month = String(startTime.getMonth() + 1).padStart(2, "0");
+        const day = String(startTime.getDate()).padStart(2, "0");
+        const hours = String(startTime.getHours()).padStart(2, "0");
+        const minutes = String(startTime.getMinutes()).padStart(2, "0");
 
         setFormData({
           name: fetchedEventData.name || "",
-          date,
-          time,
+          date: `${year}-${month}-${day}`,
+          time: `${hours}:${minutes}`,
           venue: fetchedEventData.venue || "",
           notes: fetchedEventData.notes || "",
         });
