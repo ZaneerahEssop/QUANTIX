@@ -129,6 +129,8 @@ export default function VendorDashboard({ session }) {
         const accepted = [];
         const plannerIds = new Set();
 
+        const currentDate = new Date();
+
         if (requestsData && requestsData.length > 0) {
           requestsData.forEach((req) => {
             const eventDetails = req.events
@@ -145,12 +147,16 @@ export default function VendorDashboard({ session }) {
                 }
               : null;
 
-            if (req.status === "pending" && eventDetails) {
-              pending.push(eventDetails);
-              plannerIds.add(req.events.planner_id);
-            } else if (req.status === "accepted" && eventDetails) {
-              accepted.push(eventDetails);
-              plannerIds.add(req.events.planner_id);
+            if (eventDetails && eventDetails.eventDate) {
+              const isFutureEvent = eventDetails.eventDate >= currentDate;
+
+              if (req.status === "pending" && isFutureEvent) {
+                pending.push(eventDetails);
+                plannerIds.add(req.events.planner_id);
+              } else if (req.status === "accepted" && isFutureEvent) {
+                accepted.push(eventDetails);
+                plannerIds.add(req.events.planner_id);
+              }
             }
           });
         }
