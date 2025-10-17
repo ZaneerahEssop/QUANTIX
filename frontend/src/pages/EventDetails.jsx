@@ -896,10 +896,14 @@ const EventDetails = () => {
         setSchedule(fetchedEventData.schedule || []);
         // Load schedule from dedicated endpoint
         try {
-          const schedResp = await fetch(`${API_URL}/api/events/${eventId}/schedule`);
+          const schedResp = await fetch(
+            `${API_URL}/api/events/${eventId}/schedule`
+          );
           if (schedResp.ok) {
             const schedJson = await schedResp.json();
-            setSchedule(Array.isArray(schedJson.schedule) ? schedJson.schedule : []);
+            setSchedule(
+              Array.isArray(schedJson.schedule) ? schedJson.schedule : []
+            );
           } else {
             setSchedule(fetchedEventData.schedule || []);
           }
@@ -1111,27 +1115,38 @@ const EventDetails = () => {
       if (!user) return;
 
       // Map UI items to API shape, composing ISO start_time from selected event date + item.time
-      const dateForItems = (formData && formData.date) ? formData.date : (eventData?.start_time ? new Date(eventData.start_time).toISOString().split('T')[0] : null);
+      const dateForItems =
+        formData && formData.date
+          ? formData.date
+          : eventData?.start_time
+          ? new Date(eventData.start_time).toISOString().split("T")[0]
+          : null;
       const payload = Array.isArray(schedule)
         ? schedule.map((item, idx) => ({
-            activity: item.activity ?? '',
-            description: item.description ?? '',
-            start_time: (dateForItems && item.time) ? `${dateForItems}T${item.time}:00` : null,
+            activity: item.activity ?? "",
+            description: item.description ?? "",
+            start_time:
+              dateForItems && item.time
+                ? `${dateForItems}T${item.time}:00`
+                : null,
             end_time: null,
             position: idx,
           }))
         : [];
 
-      const response = await fetch(`${API_URL}/api/events/${eventId}/schedule`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ schedule: payload }),
-      });
+      const response = await fetch(
+        `${API_URL}/api/events/${eventId}/schedule`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ schedule: payload }),
+        }
+      );
 
       if (!response.ok) {
-        let serverMessage = '';
+        let serverMessage = "";
         try {
           const errJson = await response.json();
           serverMessage = errJson?.error || JSON.stringify(errJson);
@@ -1139,10 +1154,12 @@ const EventDetails = () => {
           try {
             serverMessage = await response.text();
           } catch (__e) {
-            serverMessage = '';
+            serverMessage = "";
           }
         }
-        const msg = serverMessage ? `Failed to update schedule: ${serverMessage}` : 'Failed to update schedule';
+        const msg = serverMessage
+          ? `Failed to update schedule: ${serverMessage}`
+          : "Failed to update schedule";
         throw new Error(msg);
       }
 
