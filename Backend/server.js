@@ -5,6 +5,7 @@ const { createClient } = require("@supabase/supabase-js");
 const newEventRoutes = require("./src/Routes/newEvent.routes");
 const getEventsRoutes = require("./src/Routes/getEvent.routes");
 const editEventRoutes = require("./src/Routes/editEvent.routes");
+const deleteEventRoutes = require("./src/Routes/deleteEvent.routes");
 const plannerRoutes = require("./src/Routes/planner.routes");
 const exportRoutes = require("./src/Routes/export.routes");
 const vendorRoutes = require("./src/Routes/vendor.routes");
@@ -24,8 +25,7 @@ app.set("trust proxy", 1);
 
 app.use(
   cors({
-    origin:
-      process.env.REACT_APP_BASE_URL,
+    origin: process.env.REACT_APP_BASE_URL,
     credentials: true,
   })
 );
@@ -36,6 +36,7 @@ app.use(express.json());
 app.use("/api/events", getEventsRoutes);
 app.use("/api/events", newEventRoutes);
 app.use("/api/events", editEventRoutes);
+app.use("/api/events", deleteEventRoutes);
 app.use("/api/planners", plannerRoutes);
 app.use("/api/events", exportRoutes);
 app.use("/api/vendors", vendorRoutes);
@@ -43,7 +44,7 @@ app.use("/api/vendor-requests", vendorRequestRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/guests", guestRoutes);
-app.use("/api/contracts", contractRoutes); // <-- ADDED
+app.use("/api/contracts", contractRoutes);
 app.use("/api/unsplash", unsplashRoutes);
 
 // Supabase client
@@ -57,7 +58,7 @@ app.get("/", (req, res) => {
   res.json({
     message: "QUANTIX Backend API is running",
     status: "healthy",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -82,14 +83,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal server error" });
 });
 
-
 const PORT = process.env.PORT || 3000;
 
 // Only start server if not in Vercel
 if (!process.env.PRODUCTION) {
-  app.listen(PORT, () =>
-    console.log(`Server running on port ${PORT}`)
-  );
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
 module.exports = app;

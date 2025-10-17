@@ -166,9 +166,15 @@ export default function PlannerDashboard({ session }) {
       const items = (conversations || []).map((c) => {
         const business = c.vendor?.business_name;
         const person = c.vendor?.name || c.planner?.name;
-        const counterpartyName = business && person ? `${business} — ${person}` : (business || person || "Conversation");
+        const counterpartyName =
+          business && person
+            ? `${business} — ${person}`
+            : business || person || "Conversation";
         return {
-          id: c.vendor_id && session.user.id === c.planner_id ? c.vendor_id : c.planner_id,
+          id:
+            c.vendor_id && session.user.id === c.planner_id
+              ? c.vendor_id
+              : c.planner_id,
           name: counterpartyName,
           conversation_id: c.conversation_id,
           lastMessage: c.last_message_text || "",
@@ -196,7 +202,7 @@ export default function PlannerDashboard({ session }) {
   // Initialize chat service and set up real-time listeners
   useEffect(() => {
     if (session?.user) {
-      const WS_URL = process.env.REACT_APP_API_URL
+      const WS_URL = process.env.REACT_APP_API_URL;
       // Connect to chat service
       chatService.connect(session.user.id, WS_URL);
 
@@ -571,6 +577,38 @@ export default function PlannerDashboard({ session }) {
     }
   };
 
+  const deleteEvent = async (eventId) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this event? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+    try {
+      const response = await fetch(`${API_URL}/api/events/${eventId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete event");
+      }
+
+      setEvents((prevEvents) =>
+        prevEvents.filter((event) => event.event_id !== eventId)
+      );
+
+      alert("Event deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      alert("Error deleting event");
+    }
+  };
+
   const handleAddEvent = (e) => {
     e.preventDefault();
     navigate("/add-event");
@@ -667,7 +705,7 @@ export default function PlannerDashboard({ session }) {
       }}
     >
       <Navbar session={session} />
-      
+
       {/* Responsive Container */}
       <div className="dashboard-responsive-container">
         <div
@@ -776,8 +814,8 @@ export default function PlannerDashboard({ session }) {
                     borderRadius: "12px",
                     padding: "1.5rem",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    display: 'flex',
-                    flexDirection: 'column',
+                    display: "flex",
+                    flexDirection: "column",
                   }}
                 >
                   <div
@@ -824,7 +862,7 @@ export default function PlannerDashboard({ session }) {
 
                   <div
                     style={{
-                      flex: '1',
+                      flex: "1",
                       paddingRight: "0.5rem",
                       transition: "all 0.3s ease",
                     }}
@@ -880,7 +918,13 @@ export default function PlannerDashboard({ session }) {
                               >
                                 {event.name}
                               </h3>
-                              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: "0.5rem",
+                                  flexWrap: "wrap",
+                                }}
+                              >
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -906,10 +950,11 @@ export default function PlannerDashboard({ session }) {
                                   <span>→</span>
                                 </button>
 
-                                {/* VISUAL-ONLY DELETE BUTTON */}
+                                {/* DELETE BUTTON */}
                                 <button
                                   onClick={(e) => {
-                                    e.stopPropagation(); // Prevent other click events but does nothing
+                                    e.stopPropagation();
+                                    deleteEvent(event.event_id);
                                   }}
                                   style={{
                                     backgroundColor: "#ffebee",
@@ -925,8 +970,19 @@ export default function PlannerDashboard({ session }) {
                                     minWidth: "36px",
                                     transition: "background-color 0.2s",
                                   }}
-                                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ffcdd2'}
-                                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffebee'}
+                                  onMouseOver={(e) => {
+                                    e.currentTarget.style.backgroundColor =
+                                      "#ffcdd2";
+                                    e.currentTarget.style.transform =
+                                      "scale(1.05)";
+                                  }}
+                                  onMouseOut={(e) => {
+                                    e.currentTarget.style.backgroundColor =
+                                      "#ffebee";
+                                    e.currentTarget.style.transform =
+                                      "scale(1)";
+                                  }}
+                                  title="Delete Event"
                                 >
                                   <FaTrash size={14} />
                                 </button>
@@ -967,7 +1023,9 @@ export default function PlannerDashboard({ session }) {
                                   marginBottom: "0.2rem",
                                 }}
                               >
-                                <span style={{ marginRight: "0.5rem" }}>📍</span>
+                                <span style={{ marginRight: "0.5rem" }}>
+                                  📍
+                                </span>
                                 {event.venue || "TBD"}
                               </div>
                             )}
@@ -1123,7 +1181,7 @@ export default function PlannerDashboard({ session }) {
                       tileContent={({ date, view }) => {
                         const dateEvents = getEventsForDate(date);
                         if (dateEvents.length === 0) return null;
-                        
+
                         return (
                           <div className="event-dots-container">
                             {[...Array(Math.min(3, dateEvents.length))].map(
@@ -1300,7 +1358,8 @@ export default function PlannerDashboard({ session }) {
               </div>
 
               {/* Tasks Section */}
-              <div className="tasks-section"
+              <div
+                className="tasks-section"
                 style={{
                   backgroundColor: "#f8f9fa",
                   borderRadius: "12px",
@@ -1312,7 +1371,10 @@ export default function PlannerDashboard({ session }) {
                   My To-Do List
                 </h2>
 
-                <form onSubmit={handleAddTask} style={{ marginBottom: "1.5rem" }}>
+                <form
+                  onSubmit={handleAddTask}
+                  style={{ marginBottom: "1.5rem" }}
+                >
                   <div
                     style={{
                       display: "flex",
@@ -1380,7 +1442,9 @@ export default function PlannerDashboard({ session }) {
                             display: "flex",
                             alignItems: "center",
                             padding: "0.75rem",
-                            backgroundColor: task.completed ? "#e8f5e9" : "white",
+                            backgroundColor: task.completed
+                              ? "#e8f5e9"
+                              : "white",
                             borderRadius: "6px",
                             marginBottom: "0.5rem",
                             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
@@ -1426,7 +1490,7 @@ export default function PlannerDashboard({ session }) {
                           </span>
                           <button
                             data-testid={`delete-task-${task.id}`}
-                          onClick={() => deleteTask(task.id)}
+                            onClick={() => deleteTask(task.id)}
                             style={{
                               background: "none",
                               border: "none",
@@ -1454,7 +1518,8 @@ export default function PlannerDashboard({ session }) {
             </div>
 
             {/* Chat Section */}
-            <div className="chat-section"
+            <div
+              className="chat-section"
               style={{
                 backgroundColor: "#f8f9fa",
                 borderRadius: "12px",
@@ -1474,7 +1539,7 @@ export default function PlannerDashboard({ session }) {
                     : []
                 }
                 unreadCount={unreadCount}
-                  conversations={conversationItems}
+                conversations={conversationItems}
               />
             </div>
           </div>
