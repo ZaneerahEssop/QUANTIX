@@ -632,7 +632,18 @@ const EventDetails = () => {
         initialGuestsRef.current = formattedGuests;
 
         setEventData(fetchedEventData);
-        setSchedule(fetchedEventData.schedule || []);
+        // Load schedule from dedicated endpoint
+        try {
+          const schedResp = await fetch(`${API_URL}/api/events/${eventId}/schedule`);
+          if (schedResp.ok) {
+            const schedJson = await schedResp.json();
+            setSchedule(Array.isArray(schedJson.schedule) ? schedJson.schedule : []);
+          } else {
+            setSchedule(fetchedEventData.schedule || []);
+          }
+        } catch (_e) {
+          setSchedule(fetchedEventData.schedule || []);
+        }
         let themeData = fetchedEventData.theme;
 
         if (typeof themeData === "string") {
@@ -842,24 +853,48 @@ const EventDetails = () => {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const response = await fetch(`${API_URL}/api/events/${eventId}`, {
+      // Map UI items to API shape, composing ISO start_time from selected event date + item.time
+      const dateForItems = (formData && formData.date) ? formData.date : (eventData?.start_time ? new Date(eventData.start_time).toISOString().split('T')[0] : null);
+      const payload = Array.isArray(schedule)
+        ? schedule.map((item, idx) => ({
+            activity: item.activity ?? '',
+            description: item.description ?? '',
+            start_time: (dateForItems && item.time) ? `${dateForItems}T${item.time}:00` : null,
+            end_time: null,
+            position: idx,
+          }))
+        : [];
+
+      const response = await fetch(`${API_URL}/api/events/${eventId}/schedule`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          schedule: schedule,
-        }),
+        body: JSON.stringify({ schedule: payload }),
       });
 
-      if (!response.ok) throw new Error("Failed to update schedule");
+      if (!response.ok) {
+        let serverMessage = '';
+        try {
+          const errJson = await response.json();
+          serverMessage = errJson?.error || JSON.stringify(errJson);
+        } catch (_e) {
+          try {
+            serverMessage = await response.text();
+          } catch (__e) {
+            serverMessage = '';
+          }
+        }
+        const msg = serverMessage ? `Failed to update schedule: ${serverMessage}` : 'Failed to update schedule';
+        throw new Error(msg);
+      }
 
       setIsScheduleEditing(false);
       setModalMessage("Schedule updated successfully!");
       setShowSuccessModal(true);
     } catch (error) {
       console.error("Error updating schedule:", error);
-      setModalMessage(`Failed to update schedule: ${error.message}`);
+      setModalMessage(error.message || "Failed to update schedule");
       setShowSuccessModal(true);
     }
   };
