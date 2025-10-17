@@ -30,7 +30,7 @@ export default function AddEventForm() {
     name: "",
     date: "",
     time: "",
-    theme: "",
+    theme: { name: "", colors: [], notes: "" },
     venue: "",
     end_time: "",
   });
@@ -76,10 +76,20 @@ export default function AddEventForm() {
       setSelectedVenueVendor(null);
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (name === "theme") {
+      setFormData((prev) => ({
+        ...prev,
+        theme: {
+          ...prev.theme,
+          name: value,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
 
     // Add/remove has-value class for floating labels
     if (value) {
@@ -260,8 +270,8 @@ export default function AddEventForm() {
               v.service_type &&
               v.service_type
                 .toLowerCase()
-                .split(',')
-                .map(s => s.trim())
+                .split(",")
+                .map((s) => s.trim())
                 .includes(selectedCategory.toLowerCase())
           );
         }
@@ -651,7 +661,7 @@ export default function AddEventForm() {
                 <input
                   type="text"
                   name="theme"
-                  value={formData.theme}
+                  value={formData.theme.name}
                   onChange={handleChange}
                   className="form-input"
                 />
@@ -914,7 +924,10 @@ export default function AddEventForm() {
               ) : (
                 <div className="vendor-grid">
                   {filteredVendors
-                    .slice(0, showAllVendors ? filteredVendors.length : VENDORS_PER_PAGE)
+                    .slice(
+                      0,
+                      showAllVendors ? filteredVendors.length : VENDORS_PER_PAGE
+                    )
                     .map((vendor) => {
                       const isSelected = selectedVendors.some(
                         (v) => v.vendor_id === vendor.vendor_id
@@ -925,7 +938,11 @@ export default function AddEventForm() {
                           key={vendor.vendor_id}
                           className="vendor-card"
                           onClick={(e) => {
-                            if (!e.target.closest(".add-vendor-btn, .undo-request-btn")) {
+                            if (
+                              !e.target.closest(
+                                ".add-vendor-btn, .undo-request-btn"
+                              )
+                            ) {
                               handleVendorCardClick(vendor.vendor_id);
                             }
                           }}
@@ -937,7 +954,8 @@ export default function AddEventForm() {
                               {vendor.service_type}
                             </div>
                             <div className="vendor-description">
-                              {vendor.description || "No description available."}
+                              {vendor.description ||
+                                "No description available."}
                             </div>
                           </div>
                           <div className="vendor-actions">
@@ -988,54 +1006,71 @@ export default function AddEventForm() {
                         </div>
                       );
                     })}
-                  
-                  {!showAllVendors && filteredVendors.length > VENDORS_PER_PAGE && (
-                    <div className="view-all-container" style={{ width: '100%', textAlign: 'center', marginTop: '1rem' }}>
-                      <button
-                        type="button"
-                        className="view-all-btn"
-                        onClick={() => setShowAllVendors(true)}
+
+                  {!showAllVendors &&
+                    filteredVendors.length > VENDORS_PER_PAGE && (
+                      <div
+                        className="view-all-container"
                         style={{
-                          background: 'transparent',
-                          border: '1px solid #ddd',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          color: '#666',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          margin: '0 auto'
+                          width: "100%",
+                          textAlign: "center",
+                          marginTop: "1rem",
                         }}
                       >
-                        View All {filteredVendors.length} Vendors <FaArrowDown style={{ fontSize: '0.8rem' }} />
-                      </button>
-                    </div>
-                  )}
-                  
-                  {showAllVendors && filteredVendors.length > VENDORS_PER_PAGE && (
-                    <div className="view-less-container" style={{ width: '100%', textAlign: 'center', marginTop: '1rem' }}>
-                      <button
-                        type="button"
-                        className="view-less-btn"
-                        onClick={() => setShowAllVendors(false)}
+                        <button
+                          type="button"
+                          className="view-all-btn"
+                          onClick={() => setShowAllVendors(true)}
+                          style={{
+                            background: "transparent",
+                            border: "1px solid #ddd",
+                            padding: "0.5rem 1rem",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            color: "#666",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            margin: "0 auto",
+                          }}
+                        >
+                          View All {filteredVendors.length} Vendors{" "}
+                          <FaArrowDown style={{ fontSize: "0.8rem" }} />
+                        </button>
+                      </div>
+                    )}
+
+                  {showAllVendors &&
+                    filteredVendors.length > VENDORS_PER_PAGE && (
+                      <div
+                        className="view-less-container"
                         style={{
-                          background: 'transparent',
-                          border: '1px solid #ddd',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          color: '#666',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          margin: '0 auto'
+                          width: "100%",
+                          textAlign: "center",
+                          marginTop: "1rem",
                         }}
                       >
-                        Show Less <FaArrowUp style={{ fontSize: '0.8rem' }} />
-                      </button>
-                    </div>
-                  )}
+                        <button
+                          type="button"
+                          className="view-less-btn"
+                          onClick={() => setShowAllVendors(false)}
+                          style={{
+                            background: "transparent",
+                            border: "1px solid #ddd",
+                            padding: "0.5rem 1rem",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            color: "#666",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            margin: "0 auto",
+                          }}
+                        >
+                          Show Less <FaArrowUp style={{ fontSize: "0.8rem" }} />
+                        </button>
+                      </div>
+                    )}
                 </div>
               )}
 
