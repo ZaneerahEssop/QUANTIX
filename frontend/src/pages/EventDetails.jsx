@@ -484,6 +484,236 @@ const SuccessModal = ({ message, onClose }) => {
   );
 };
 
+const VendorBookingNotes = ({ 
+  vendors, bookingNotes, onUpdateNotes, prices, onUpdatePrices, isEditing 
+}) => {
+  const [priceErrors, setPriceErrors] = useState({});
+  const handleNotesChange = (vendorId, notes) => {
+    onUpdateNotes({ ...bookingNotes, [vendorId]: notes });
+  };
+
+    const handlePriceChange = (vendorId, price) => {
+      const lowerPrice = price.toLowerCase();
+      const isValidText = lowerPrice.includes("e.g., 1500.00 or Contact for quote")
+  
+    if (isValidText) {
+      onUpdatePrices({ ...prices, [vendorId]: price });
+      return;
+    }
+    // Clear any previous error
+    setPriceErrors(prev => ({ ...prev, [vendorId]: '' }));
+    
+    // Allow empty value (for clearing)
+    if (price === '') {
+      onUpdatePrices({ ...prices, [vendorId]: '' });
+      return;
+    }
+
+    // Allow "Contact for quote"  text
+    if (/[a-zA-Z]/.test(price) && !isValidText) {
+      setPriceErrors(prev => ({ 
+        ...prev, 
+        [vendorId]: 'Please enter a valid amount or "Contact for quote"' 
+      }));
+      return;
+    }
+
+    // Validation: Only allow numbers, decimal point, and commas
+    const sanitizedPrice = price.replace(/[^\d.,]/g, '');
+    
+    // Check if it's a valid number format
+    const numericValue = parseFloat(sanitizedPrice.replace(/,/g, ''));
+    
+    if (!isNaN(numericValue)) {
+      // Check maximum value
+      if (numericValue > 1000000) {
+        setPriceErrors(prev => ({ 
+          ...prev, 
+          [vendorId]: 'Price cannot exceed R 1,000,000' 
+        }));
+        onUpdatePrices({ ...prices, [vendorId]: '' }); // ← Clear the price
+        return;
+      }
+      
+      // Check for reasonable minimum (optional)
+      if (numericValue < 0) {
+        setPriceErrors(prev => ({ 
+          ...prev, 
+          [vendorId]: 'Price cannot be negative' 
+        }));
+        return;
+      }
+    }
+    
+    onUpdatePrices({ ...prices, [vendorId]: sanitizedPrice });
+  };
+
+  const handlePriceBlur = (vendorId, price) => {
+    // Format the price on blur only if it's a pure number
+    if (price && !/[a-zA-Z]/.test(price)) {
+      const numericValue = parseFloat(price.replace(/,/g, ''));
+      if (!isNaN(numericValue)) {
+        // Format with thousand separators and R symbol
+        const formattedPrice = new Intl.NumberFormat('en-ZA', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(numericValue);
+        
+        onUpdatePrices({ ...prices, [vendorId]: `R ${formattedPrice}` });
+      }
+    }
+  };
+
+  return (
+    <div className="vendor-booking-notes-section">
+      <h3>Vendor Booking Details</h3>
+      <div className="vendor-notes-grid">
+        {vendors.map((vendor) => (
+          <div key={vendor.vendor_id} className="vendor-note-item">
+            <div className="vendor-note-header">
+              <h4>{vendor.business_name}</h4>
+              <span className="vendor-category">{vendor.service_type}</span>
+            </div>
+            
+            <div className="vendor-note-fields">
+              <div className="form-group">
+                <label>Quoted Price</label>
+                {isEditing ? (
+                  <div className="price-input-container">
+                    <input
+                      type="text"
+                      placeholder="e.g., 1500.00 or Contact for quote"
+                      value={prices[vendor.vendor_id] || ""}
+                      onChange={(e) => handlePriceChange(vendor.vendor_id, e.target.value)}
+                      onBlur={(e) => handlePriceBlur(vendor.vendor_id, e.target.value)}
+                      className={`price-input ${priceErrors[vendor.vendor_id] ? 'error' : ''}`}
+                    />
+                    {priceErrors[vendor.vendor_id] && (
+                      <div className="price-error-message">
+                        {priceErrors[vendor.vendor_id]}
+                      </div>
+                    )}
+                    <div className="price-validation-info">
+                      <small>Enter amount (max R 1,000,000) or "Contact for quote"</small>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="price-display">
+                    {prices[vendor.vendor_id] || "No price entered"}
+                  </div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>Booking Notes</label>
+                {isEditing ? (
+                  <textarea
+                    placeholder="Add notes, contact details, requirements, deadlines..."
+                    value={bookingNotes[vendor.vendor_id] || ""}
+                    onChange={(e) => handleNotesChange(vendor.vendor_id, e.target.value)}
+                    rows="3"
+                    className="notes-textarea"
+                  />
+                ) : (
+                  <div className="notes-display">
+                    {bookingNotes[vendor.vendor_id] || "No notes added"}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const PriceComparison = ({ vendors, prices, bookingNotes }) => {
+  const extractPriceValue = (priceString) => {
+    if (!priceString || priceString.toLowerCase().includes('contact')) return Infinity;
+    
+    // Extract numbers from price string
+    const numbers = priceString.replace(/[^0-9.]/g, '');
+    return parseFloat(numbers) || Infinity;
+  };
+  const vendorsWithPrices = vendors
+    .filter(vendor => prices[vendor.vendor_id] && prices[vendor.vendor_id] !== "")
+    .map(vendor => ({
+      ...vendor,
+      price: prices[vendor.vendor_id],
+      notes: bookingNotes[vendor.vendor_id] || ""
+    }))
+    .sort((a, b) => {
+      // Simple price extraction for sorting (handles formats like "$1,500", "1500", "Contact for quote")
+      const priceA = extractPriceValue(a.price);
+      const priceB = extractPriceValue(b.price);
+      return priceA - priceB;
+    });
+
+  
+
+  const formatPriceDisplay = (price) => {
+    if (!price) return "No price";
+    if (price.toLowerCase().includes('contact')) return price;
+    
+    const priceValue = extractPriceValue(price);
+    if (priceValue === Infinity) return price;
+    
+    return new Intl.NumberFormat('en-ZA', {
+      style: 'currency',
+      currency: 'ZAR'
+    }).format(priceValue);
+  };
+
+
+
+  if (vendorsWithPrices.length === 0) {
+    return (
+      <div className="price-comparison-section">
+        <h3>Price Comparison</h3>
+        <p>No vendor prices entered yet. Add prices to compare options.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="price-comparison-section">
+      <h3>Price Comparison</h3>
+      <div className="comparison-table">
+        <div className="comparison-header">
+          <span>Vendor</span>
+          <span>Service</span>
+          <span>Price</span>
+          <span>Notes</span>
+        </div>
+        {vendorsWithPrices.map((vendor, index) => (
+          <div key={vendor.vendor_id} className={`comparison-row ${index === 0 ? 'best-price' : ''}`}>
+            <span className="vendor-name">{vendor.business_name}</span>
+            <span className="service-type">{vendor.service_type}</span>
+            <span className="price">{formatPriceDisplay(vendor.price)}</span>
+            <span className="notes-preview">
+              {vendor.notes ? (
+                <div title={vendor.notes}>
+                  {vendor.notes.length > 50 ? `${vendor.notes.substring(0, 50)}...` : vendor.notes}
+                </div>
+              ) : (
+                "No notes"
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
+      {vendorsWithPrices.length > 1 && (
+        <div className="comparison-summary">
+          <p>
+            <strong>Best value:</strong> {vendorsWithPrices[0].business_name} - {formatPriceDisplay(vendorsWithPrices[0].price)}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const EventDetails = () => {
   const { id } = useParams();
   const searchParams = new URLSearchParams(window.location.search);
@@ -529,6 +759,8 @@ const EventDetails = () => {
   const [unsplashLoading, setUnsplashLoading] = useState(false);
   const [unsplashError, setUnsplashError] = useState("");
   const [unsplashPage, setUnsplashPage] = useState(1);
+  const [vendorBookingNotes, setVendorBookingNotes] = useState({});
+  const [vendorPrices, setVendorPrices] = useState({});
 
   const API_URL = process.env.REACT_APP_API_URL;
   const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
@@ -1951,9 +2183,54 @@ const EventDetails = () => {
                       )}
                   </div>
                 )}
+                {/* SECTION FOR BOOKING NOTES AND PRICE COMPARISON */}
+                {(selectedVendors.length > 0 || pendingRequests.length > 0)  && (
+                  <div className="vendor-management-tools">
+                    <VendorBookingNotes
+                      vendors={[
+                        // ALL vendors from vendorRequests
+                        ...vendorRequests
+                          .filter(request => request.vendor && (request.status === "accepted" || request.status === "pending"))
+                          .map(request => ({
+                            ...request.vendor,
+                            request_status: request.status
+                          })),
+                        // Any newly selected vendors not in requests
+                        ...selectedVendors.filter(
+                          selected => !vendorRequests.some(req => req.vendor_id === selected.vendor_id)
+                        )
+                      ]}
+  
+                      bookingNotes={vendorBookingNotes}
+                      onUpdateNotes={setVendorBookingNotes}
+                      prices={vendorPrices}
+                      onUpdatePrices={setVendorPrices}
+                      isEditing={isVendorsEditing}
+                    />
+                    
+                    <PriceComparison
+                      vendors={[
+                        // ALL vendors from vendorRequests
+                        ...vendorRequests
+                          .filter(request => request.vendor && (request.status === "accepted" || request.status === "pending"))
+                          .map(request => ({
+                            ...request.vendor,
+                            request_status: request.status
+                          })),
+                        // Any newly selected vendors not in requests
+                        ...selectedVendors.filter(
+                          selected => !vendorRequests.some(req => req.vendor_id === selected.vendor_id)
+                        )
+                      ]}
+                      prices={vendorPrices}
+                      bookingNotes={vendorBookingNotes}
+                    />
+                  </div>
+                )}
               </>
             )}
           </section>
+            
         )}
         {activeView === "documents" && (
           <section className="documents-section">
