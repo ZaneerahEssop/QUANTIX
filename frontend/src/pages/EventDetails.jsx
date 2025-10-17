@@ -20,10 +20,19 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../client";
 import "../styling/eventDetails.css";
 import ContractManagement from "../components/ContractManagement";
-import { searchUnsplashPhotos, registerUnsplashDownload } from "../services/unsplash";
+import {
+  searchUnsplashPhotos,
+  registerUnsplashDownload,
+} from "../services/unsplash";
 
 // --- Sub-components (EventSchedule, EventTheme, GuestManagement) with individual edit controls ---
-const EventSchedule = ({ schedule, onUpdate, isEditing, onToggleEdit, isReadOnly }) => {
+const EventSchedule = ({
+  schedule,
+  onUpdate,
+  isEditing,
+  onToggleEdit,
+  isReadOnly,
+}) => {
   const handleAddItem = () =>
     onUpdate([...(schedule || []), { time: "", activity: "" }]);
   const handleRemoveItem = (index) =>
@@ -33,16 +42,17 @@ const EventSchedule = ({ schedule, onUpdate, isEditing, onToggleEdit, isReadOnly
     newSchedule[index][field] = value;
     onUpdate(newSchedule);
   };
-  
+
   return (
     <div className="schedule-section">
       <div className="section-header">
         <h2>Schedule</h2>
         {/* ✨ FIX: Edit button is now hidden in read-only mode */}
         {!isReadOnly && (
-            <button onClick={onToggleEdit} className="edit-button">
-            {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Schedule" : "Edit Schedule"}
-            </button>
+          <button onClick={onToggleEdit} className="edit-button">
+            {isEditing ? <FaSave /> : <FaEdit />}{" "}
+            {isEditing ? "Save Schedule" : "Edit Schedule"}
+          </button>
         )}
       </div>
       {isEditing ? (
@@ -94,7 +104,13 @@ const EventSchedule = ({ schedule, onUpdate, isEditing, onToggleEdit, isReadOnly
   );
 };
 
-const EventTheme = ({ theme, onUpdate, isEditing, onToggleEdit, isReadOnly }) => {
+const EventTheme = ({
+  theme,
+  onUpdate,
+  isEditing,
+  onToggleEdit,
+  isReadOnly,
+}) => {
   const safeTheme =
     typeof theme === "string"
       ? (() => {
@@ -136,9 +152,10 @@ const EventTheme = ({ theme, onUpdate, isEditing, onToggleEdit, isReadOnly }) =>
         <h2>Event Theme</h2>
         {/* ✨ FIX: Edit button is now hidden in read-only mode */}
         {!isReadOnly && (
-            <button onClick={onToggleEdit} className="edit-button">
-            {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Theme" : "Edit Theme"}
-            </button>
+          <button onClick={onToggleEdit} className="edit-button">
+            {isEditing ? <FaSave /> : <FaEdit />}{" "}
+            {isEditing ? "Save Theme" : "Edit Theme"}
+          </button>
         )}
       </div>
       {isEditing ? (
@@ -287,7 +304,18 @@ const GuestManagement = ({
         eventDate: derivedDate,
         eventTime: derivedTime,
         plannerName: plannerName,
-        themeName: (eventData?.theme && eventData.theme.name) ? eventData.theme.name : (typeof eventData?.theme === 'string' ? (() => { try { return JSON.parse(eventData.theme)?.name || ''; } catch { return ''; } })() : ''),
+        themeName:
+          eventData?.theme && eventData.theme.name
+            ? eventData.theme.name
+            : typeof eventData?.theme === "string"
+            ? (() => {
+                try {
+                  return JSON.parse(eventData.theme)?.name || "";
+                } catch {
+                  return "";
+                }
+              })()
+            : "",
       };
 
       const response = await fetch(`${API_URL}/api/emails/send-invite`, {
@@ -318,9 +346,10 @@ const GuestManagement = ({
         <h2>Guest Management</h2>
         {/* ✨ FIX: Edit button is now hidden in read-only mode */}
         {!isReadOnly && (
-            <button onClick={onToggleEdit} className="edit-button">
-            {isEditing ? <FaSave /> : <FaEdit />} {isEditing ? "Save Guests" : "Edit Guests"}
-            </button>
+          <button onClick={onToggleEdit} className="edit-button">
+            {isEditing ? <FaSave /> : <FaEdit />}{" "}
+            {isEditing ? "Save Guests" : "Edit Guests"}
+          </button>
         )}
       </div>
 
@@ -461,7 +490,7 @@ const EventDetails = () => {
   const isReadOnly = searchParams.get("readonly") === "true";
   const eventId = id;
   const navigate = useNavigate();
-  
+
   const [eventData, setEventData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState("overview");
@@ -479,7 +508,7 @@ const EventDetails = () => {
   const [isGuestsEditing, setIsGuestsEditing] = useState(false);
   const [isVendorsEditing, setIsVendorsEditing] = useState(false);
   const [isDocumentsEditing, setIsDocumentsEditing] = useState(false);
-  
+
   const [allVendors, setAllVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -633,8 +662,8 @@ const EventDetails = () => {
 
         setEventData(fetchedEventData);
         setSchedule(fetchedEventData.schedule || []);
-        let themeData = fetchedEventData.theme;
 
+        let themeData = fetchedEventData.theme;
         if (typeof themeData === "string") {
           try {
             themeData = JSON.parse(themeData);
@@ -644,19 +673,14 @@ const EventDetails = () => {
           }
         }
 
-        if (themeData && typeof themeData === "object") {
-          const hasCorruptedProperties = Object.keys(themeData).some(
-            (key) => !isNaN(parseInt(key)) && themeData[key] !== undefined
-          );
+        themeData = cleanThemeObject(themeData);
 
-          if (hasCorruptedProperties) {
-            themeData = {
-              name: themeData.name || "",
-              colors: Array.isArray(themeData.colors) ? themeData.colors : [],
-              notes: themeData.notes || "",
-            };
-          }
-        }
+        const updatedEventData = {
+          ...fetchedEventData,
+          theme: themeData,
+        };
+
+        setEventData(updatedEventData);
         setTheme(themeData || { name: "", colors: [], notes: "" });
         setDocuments(fetchedEventData.documents || []);
         setSelectedVendors(fetchedEventData.vendors || []);
@@ -822,7 +846,7 @@ const EventDetails = () => {
         name: formData.name,
         start_time: startTime,
         venue: formData.venue,
-        theme: theme,
+        theme: cleanTheme,
       }));
 
       setModalMessage("Event details updated successfully!");
@@ -1170,22 +1194,28 @@ const EventDetails = () => {
           <h2>Event Details</h2>
           {/* ✨ FIX: Edit button is now hidden in read-only mode */}
           {!isReadOnly && (
-            <button 
-              onClick={() => isMainEditing ? handleSaveMainDetails() : setIsMainEditing(true)} 
+            <button
+              onClick={() =>
+                isMainEditing ? handleSaveMainDetails() : setIsMainEditing(true)
+              }
               className="edit-button"
             >
-              {isMainEditing ? <FaSave /> : <FaEdit />} {isMainEditing ? "Save Details" : "Edit Details"}
+              {isMainEditing ? <FaSave /> : <FaEdit />}{" "}
+              {isMainEditing ? "Save Details" : "Edit Details"}
             </button>
           )}
         </div>
-        
-        <div className="event-info-boxes" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '0.8rem',
-          marginTop: '1rem',
-          marginBottom: '2rem'
-        }}>
+
+        <div
+          className="event-info-boxes"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: "0.8rem",
+            marginTop: "1rem",
+            marginBottom: "2rem",
+          }}
+        >
           <div className="info-box date-box">
             <h4>
               <FaCalendarAlt /> Date
@@ -1255,7 +1285,11 @@ const EventDetails = () => {
                 schedule={schedule}
                 onUpdate={setSchedule}
                 isEditing={isScheduleEditing}
-                onToggleEdit={() => isScheduleEditing ? handleSaveSchedule() : setIsScheduleEditing(true)}
+                onToggleEdit={() =>
+                  isScheduleEditing
+                    ? handleSaveSchedule()
+                    : setIsScheduleEditing(true)
+                }
                 isReadOnly={isReadOnly}
               />
             </section>
@@ -1264,7 +1298,9 @@ const EventDetails = () => {
                 theme={theme}
                 onUpdate={setTheme}
                 isEditing={isThemeEditing}
-                onToggleEdit={() => isThemeEditing ? handleSaveTheme() : setIsThemeEditing(true)}
+                onToggleEdit={() =>
+                  isThemeEditing ? handleSaveTheme() : setIsThemeEditing(true)
+                }
                 isReadOnly={isReadOnly}
               />
             </section>
@@ -1272,12 +1308,37 @@ const EventDetails = () => {
             {!isReadOnly && (
               <section>
                 <div className="section-header">
-                  <h2 style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                  <h2
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: ".5rem",
+                    }}
+                  >
                     <FaSearch /> Event Ideas
-                    <span style={{ fontSize: ".8rem", color: "#888" }}>(Photos by <a href="https://unsplash.com" target="_blank" rel="noreferrer noopener" style={{ color: "#888" }}>Unsplash</a>)</span>
+                    <span style={{ fontSize: ".8rem", color: "#888" }}>
+                      (Photos by{" "}
+                      <a
+                        href="https://unsplash.com"
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        style={{ color: "#888" }}
+                      >
+                        Unsplash
+                      </a>
+                      )
+                    </span>
                   </h2>
                 </div>
-                <div style={{ display: "flex", gap: ".5rem", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: ".5rem",
+                    alignItems: "center",
+                    marginBottom: "0.75rem",
+                    flexWrap: "wrap",
+                  }}
+                >
                   <input
                     type="text"
                     value={unsplashQuery}
@@ -1294,7 +1355,11 @@ const EventDetails = () => {
                         setUnsplashLoading(true);
                         setUnsplashError("");
                         setUnsplashPage(1);
-                        const base = theme?.name || formData?.venue || formData?.name || "event";
+                        const base =
+                          theme?.name ||
+                          formData?.venue ||
+                          formData?.name ||
+                          "event";
                         const query = (unsplashQuery || base).toString();
                         const data = await searchUnsplashPhotos(query, 1, 12);
                         setUnsplashResults(data.results || []);
@@ -1310,7 +1375,10 @@ const EventDetails = () => {
                   </button>
                 </div>
                 {unsplashError && (
-                  <div className="search-error" style={{ marginTop: ".25rem", color: "#c00" }}>
+                  <div
+                    className="search-error"
+                    style={{ marginTop: ".25rem", color: "#c00" }}
+                  >
                     {unsplashError}
                   </div>
                 )}
@@ -1319,30 +1387,65 @@ const EventDetails = () => {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                        gridTemplateColumns:
+                          "repeat(auto-fill, minmax(140px, 1fr))",
                         gap: "10px",
                         marginTop: "0.5rem",
                       }}
                     >
                       {unsplashResults.map((photo) => (
-                        <div key={photo.id} style={{ position: "relative", borderRadius: "8px", overflow: "hidden", border: "1px solid #eee" }}>
+                        <div
+                          key={photo.id}
+                          style={{
+                            position: "relative",
+                            borderRadius: "8px",
+                            overflow: "hidden",
+                            border: "1px solid #eee",
+                          }}
+                        >
                           <img
                             src={photo.urls?.small}
                             alt={photo.alt_description || "Unsplash photo"}
-                            style={{ width: "100%", height: "120px", objectFit: "cover", display: "block" }}
+                            style={{
+                              width: "100%",
+                              height: "120px",
+                              objectFit: "cover",
+                              display: "block",
+                            }}
                             loading="lazy"
                             onClick={async () => {
-                              try { await registerUnsplashDownload(photo.id); } catch (_) {}
-                              window.open(photo.links?.html || photo.urls?.regular, "_blank", "noopener");
+                              try {
+                                await registerUnsplashDownload(photo.id);
+                              } catch (_) {}
+                              window.open(
+                                photo.links?.html || photo.urls?.regular,
+                                "_blank",
+                                "noopener"
+                              );
                             }}
                           />
-                          <div style={{ padding: "6px 8px", fontSize: ".75rem", background: "#fafafa", borderTop: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div
+                            style={{
+                              padding: "6px 8px",
+                              fontSize: ".75rem",
+                              background: "#fafafa",
+                              borderTop: "1px solid #eee",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
                             <a
                               href={photo.links?.html}
                               target="_blank"
                               rel="noreferrer noopener"
                               style={{ color: "#555", textDecoration: "none" }}
-                              onClick={async (e) => { e.stopPropagation(); try { await registerUnsplashDownload(photo.id); } catch (_) {} }}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  await registerUnsplashDownload(photo.id);
+                                } catch (_) {}
+                              }}
                               title="View on Unsplash"
                             >
                               {photo.user?.name || "Photographer"}
@@ -1359,7 +1462,14 @@ const EventDetails = () => {
                         </div>
                       ))}
                     </div>
-                    <div style={{ display: "flex", gap: ".5rem", marginTop: "0.75rem", justifyContent: "flex-end" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: ".5rem",
+                        marginTop: "0.75rem",
+                        justifyContent: "flex-end",
+                      }}
+                    >
                       <button
                         type="button"
                         className="new-button"
@@ -1368,13 +1478,23 @@ const EventDetails = () => {
                           try {
                             setUnsplashLoading(true);
                             const newPage = unsplashPage - 1;
-                            const base = theme?.name || formData?.venue || formData?.name || "event";
+                            const base =
+                              theme?.name ||
+                              formData?.venue ||
+                              formData?.name ||
+                              "event";
                             const query = (unsplashQuery || base).toString();
-                            const data = await searchUnsplashPhotos(query, newPage, 12);
+                            const data = await searchUnsplashPhotos(
+                              query,
+                              newPage,
+                              12
+                            );
                             setUnsplashResults(data.results || []);
                             setUnsplashPage(newPage);
                           } catch (err) {
-                            setUnsplashError(err.message || "Failed to load page");
+                            setUnsplashError(
+                              err.message || "Failed to load page"
+                            );
                           } finally {
                             setUnsplashLoading(false);
                           }
@@ -1390,13 +1510,23 @@ const EventDetails = () => {
                           try {
                             setUnsplashLoading(true);
                             const newPage = unsplashPage + 1;
-                            const base = theme?.name || formData?.venue || formData?.name || "event";
+                            const base =
+                              theme?.name ||
+                              formData?.venue ||
+                              formData?.name ||
+                              "event";
                             const query = (unsplashQuery || base).toString();
-                            const data = await searchUnsplashPhotos(query, newPage, 12);
+                            const data = await searchUnsplashPhotos(
+                              query,
+                              newPage,
+                              12
+                            );
                             setUnsplashResults(data.results || []);
                             setUnsplashPage(newPage);
                           } catch (err) {
-                            setUnsplashError(err.message || "Failed to load page");
+                            setUnsplashError(
+                              err.message || "Failed to load page"
+                            );
                           } finally {
                             setUnsplashLoading(false);
                           }
@@ -1417,7 +1547,9 @@ const EventDetails = () => {
             guests={guests}
             onUpdate={setGuests}
             isEditing={isGuestsEditing}
-            onToggleEdit={() => isGuestsEditing ? handleSaveGuests() : setIsGuestsEditing(true)}
+            onToggleEdit={() =>
+              isGuestsEditing ? handleSaveGuests() : setIsGuestsEditing(true)
+            }
             isReadOnly={isReadOnly}
             eventData={eventData}
             API_URL={API_URL}
@@ -1431,11 +1563,12 @@ const EventDetails = () => {
             <div className="section-header">
               <h2>Vendors</h2>
               {!isReadOnly && (
-                <button 
-                  onClick={() => setIsVendorsEditing(!isVendorsEditing)} 
+                <button
+                  onClick={() => setIsVendorsEditing(!isVendorsEditing)}
                   className="edit-button"
                 >
-                  {isVendorsEditing ? <FaSave /> : <FaEdit />} {isVendorsEditing ? "Save Vendors" : "Edit Vendors"}
+                  {isVendorsEditing ? <FaSave /> : <FaEdit />}{" "}
+                  {isVendorsEditing ? "Save Vendors" : "Edit Vendors"}
                 </button>
               )}
             </div>
@@ -1458,7 +1591,8 @@ const EventDetails = () => {
                         <div className="vendor-requests-list">
                           {pendingRequests
                             .filter(
-                              (request) => request.vendor?.vendor_id === currentUser?.id
+                              (request) =>
+                                request.vendor?.vendor_id === currentUser?.id
                             )
                             .map((request) => (
                               <div
@@ -1466,11 +1600,11 @@ const EventDetails = () => {
                                 className="vendor-request-item"
                               >
                                 <div className="vendor-request-info">
-                                  <strong>Event: {eventData?.name || "Event"}</strong>
+                                  <strong>
+                                    Event: {eventData?.name || "Event"}
+                                  </strong>
                                   <div className="vendor-details">
-                                    <small>
-                                      Status: Pending
-                                    </small>
+                                    <small>Status: Pending</small>
                                   </div>
                                 </div>
                               </div>
@@ -1538,12 +1672,16 @@ const EventDetails = () => {
                         <option value="All">All Categories</option>
                         {uniqueVendorCategories.map((category) => (
                           <option key={category} value={category}>
-                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                            {category.charAt(0).toUpperCase() +
+                              category.slice(1)}
                           </option>
                         ))}
                       </select>
                     </div>
-                    <div className="vendor-selection"aria-label="Vendor Selection">
+                    <div
+                      className="vendor-selection"
+                      aria-label="Vendor Selection"
+                    >
                       {allVendors
                         .filter((vendor) => {
                           const matchesSearch =
@@ -1770,11 +1908,12 @@ const EventDetails = () => {
               <h2>Documents</h2>
               {/* ✨ FIX: Edit button is now hidden in read-only mode */}
               {!isReadOnly && (
-                <button 
-                  onClick={() => setIsDocumentsEditing(!isDocumentsEditing)} 
+                <button
+                  onClick={() => setIsDocumentsEditing(!isDocumentsEditing)}
                   className="edit-button"
                 >
-                  {isDocumentsEditing ? <FaSave /> : <FaEdit />} {isDocumentsEditing ? "Save Documents" : "Edit Documents"}
+                  {isDocumentsEditing ? <FaSave /> : <FaEdit />}{" "}
+                  {isDocumentsEditing ? "Save Documents" : "Edit Documents"}
                 </button>
               )}
             </div>
