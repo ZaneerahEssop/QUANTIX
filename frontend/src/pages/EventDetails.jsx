@@ -24,6 +24,7 @@ import {
   searchUnsplashPhotos,
   registerUnsplashDownload,
 } from "../services/unsplash";
+//import { eventNames } from "../../../Backend/server";
 
 // --- Sub-components (EventSchedule, EventTheme, GuestManagement) with individual edit controls ---
 const EventSchedule = ({
@@ -741,6 +742,85 @@ const EventDetails = () => {
     setSelectedVendors((prev) =>
       prev.filter((v) => v.vendor_id !== vendorToRemove.vendor_id)
     );
+  };
+
+  const handleSaveVendors = async () => {
+    if (isReadOnly) return;
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      console.log("Sending vendor requests for vendors:", selectedVendors);
+
+      // Send vendor requests for each selected vendor
+      const requestPromises = selectedVendors.map(async (vendor) => {
+        try {
+          const requestBody = {
+            event_id: eventId,
+            vendor_id: vendor.vendor_id, // Use vendor_id instead of id
+            requester_id: user.id,
+          };
+
+          console.log("Request body:", requestBody);
+
+          const response = await fetch(`${API_URL}/api/vendor-requests`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+          });
+
+          const responseData = await response.json();
+
+          return {
+            vendor: vendor.name || vendor.vendor_id,
+            success: response.ok,
+            status: response.status,
+            data: responseData,
+          };
+        } catch (error) {
+          return {
+            vendor: vendor.name || vendor.vendor_id,
+            success: false,
+            error: error.message,
+          };
+        }
+      });
+
+      const results = await Promise.all(requestPromises);
+      console.log("All vendor request results:", results);
+
+      const failedRequests = results.filter((result) => !result.success);
+
+      if (failedRequests.length > 0) {
+        console.error("Failed vendor requests details:", failedRequests);
+        throw new Error(
+          `${failedRequests.length} vendor request(s) failed. First error: ${
+            failedRequests[0]?.data?.error || failedRequests[0]?.error
+          }`
+        );
+      }
+
+      // Update local state and exit editing mode
+      setEventData((prev) => ({
+        ...prev,
+        vendors: selectedVendors,
+      }));
+
+      setIsVendorsEditing(false);
+      setModalMessage(
+        `Successfully sent ${selectedVendors.length} vendor request(s)!`
+      );
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Error sending vendor requests:", error);
+      setModalMessage(`Failed to send vendor requests: ${error.message}`);
+      setShowSuccessModal(true);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -1620,10 +1700,18 @@ const EventDetails = () => {
               <h2>Vendors</h2>
               {!isReadOnly && (
                 <button
-                  onClick={() => setIsVendorsEditing(!isVendorsEditing)}
+                  onClick={() => {
+                    if (isVendorsEditing) {
+                      // Call the save function when in editing mode
+                      handleSaveVendors();
+                    } else {
+                      // Enter editing mode when not editing
+                      setIsVendorsEditing(true);
+                    }
+                  }}
                   className="edit-button"
                 >
-                  {isVendorsEditing ? <FaSave /> : <FaEdit />}{" "}
+                  {isVendorsEditing ? <FaSave /> : <FaEdit />}
                   {isVendorsEditing ? "Save Vendors" : "Edit Vendors"}
                 </button>
               )}
