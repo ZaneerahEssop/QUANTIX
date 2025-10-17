@@ -64,15 +64,31 @@
     color: var(--text-primary);
 }
 
+/* --- In eventDetails.css --- */
+
+/* Replace your existing .event-header block with this */
 .event-header {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr; /* Creates three columns: left, center (auto-sized), and right */
     align-items: center;
     margin: 1rem 0 2rem 0;
     padding: 1rem 0;
     border-bottom: 1px solid #eee;
     position: relative;
     z-index: 1;
+}
+
+/* Add these new rules to align the items within their grid columns */
+.event-header .back-button {
+    justify-self: start; /* Aligns the back button to the left */
+}
+
+.event-header .button-group {
+    justify-self: center; /* Centers the button group in the middle column */
+}
+
+.event-header .header-actions {
+    justify-self: end; /* Aligns the export button to the right */
 }
 
 .back-button {
@@ -111,6 +127,9 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 130px;        
+    justify-content: center;  
+    min-height: 55px;
 }
 
 .edit-button {
@@ -141,9 +160,10 @@
 /*Buttons Styling */
 .button-group {
     display: flex;
+    flex-direction: row; /* Aligns items horizontally */
+    justify-content: center; /* Centers the buttons */
     gap: 1rem;
-    margin-left: auto; /* Pushes the group to the right */
-    margin-right: 2rem; /* Adds space between this group and the edit/save buttons */
+    margin: 0; /* Resets any conflicting margins */
 }
 
 .new-button {
@@ -174,6 +194,10 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     text-align: center;
     transition: transform 0.2s ease-in-out;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .info-box:hover {
@@ -189,6 +213,7 @@
     font-size: 1rem;
     font-weight: 600;
     color: var(--text-dark);
+    min-height: 24px;
 }
 
 .info-box h4 svg {
@@ -242,14 +267,21 @@
 .event-content {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    gap: 2rem;
+    gap: 1.5rem;
+    align-items: stretch;
 }
 
 .event-info {
     background-color: var(--card-background);
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 150px;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 .event-info h1 {
@@ -1820,3 +1852,52 @@ input[type="color"]::-moz-color-swatch {
     background-color: #d69e6b;
     }
 
+/* Add these styles to the end of your eventDetails.css file */
+
+/* --- CONTRACT MANAGEMENT STYLES --- */
+.contract-section {
+    background-color: var(--card-background);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.contract-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.contract-section .info-message {
+    background-color: #fff3e0;
+    color: #f57c00;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #f57c00;
+}
+
+/* Status Banners */
+.status-banner {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.status-banner.revisions {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+/* --- NEW: Style for pending banners --- */
+.status-banner.pending {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+.status-banner.active {
+    background-color: #e8f5e9;
+    color: #388e3c;
+}

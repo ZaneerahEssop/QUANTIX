@@ -2,26 +2,27 @@
 
 ##  Event Planning Website
 
-A web application that helps users prepare and manage all aspects of an upcoming event, including guest invitations, vendor bookings, and event design. It provides tools for creating guest lists, managing vendors and venues, tracking RSVPs
-
+Event-ually Perfect is a full-stack event planning platform that connects event planners and vendors within a unified digital ecosystem. The system streamlines the event management workflow, promotes real-time collaboration, and centralizes communication and data management. Event-ually Perfect provides an end-to-end solution that enables planners to create and manage events, discover and engage vendors, negotiate and manage contracts, invite and track guests, exchange messages in real-time, find inspiration, and export event-related data and artifacts. Vendors, in turn, can maintain detailed profiles, manage requests, and communicate seamlessly with planners.
 
 ## 🚀 Features
-👥 Guest Management:  
-- Create and manage a guest list  
-- Send invitations  
-- Track RSVPs manually  
+| 🧾 **Guest Management** | Create & update guest lists, send Gmail invitations, and track RSVP responses. |
 
-🏛️ Vendor & Venue Planning:     
-- Add and manage venues, vendors, and booking notes locally   
-- Compare manually entered prices and availability    
+| 🛍️ **Vendors & Requests** | Discover vendors, send requests, and view detailed vendor profiles (name, business, contact). |
 
-📝 Event Blueprint:   
-- Manually input event schedules, sessions, and floorplans      
-- Export plans as downloadable files or printable materials   
-- Export structured data as JSON or CSV (schedule, guest list, and layout)  
+| 📜 **Contracts** | Create and manage contract records between planners and vendors. |
+
+| 💬 **Real-Time Chat** | Planner-vendor chat with persistent sidebar history, unread count tracking, and profanity filtering. |
+
+| 🗓️ **Event Blueprint** | Build schedules, notes, and details; export as CSV/JSON or print-friendly format. |
+
+| 📸 **Unsplash Integration** | Search for and preview event inspiration photos with proper attribution and download tracking. |
+
+| ✉️ **Email Invitations** | Automatically send Gmail-backed invites with event details and themes. |
+
+| 🔐 **Authentication & Data** | Supabase-backed user auth, events, messages, and guests with secure session management. |
 
 ## 🔗 Visit our site
-Click [here](https://quantix-production.up.railway.app)
+Click [here](http://quantix-frontend.vercel.app/)
 
 ## 👥 Our Team
 Karabo Bopape   
@@ -32,19 +33,39 @@ Tariro Muvevi
 Imaan Saloojee   
 
 ## 🖥 Tech Stack 
- -Frontend: Javascript xml, React   
- -Backend: Firebase    
- -Database: Firestore( by Firebase)   
+ -Frontend: Javascript xml, ReactJS  
+ -Backend: NodeJS, ExpressJS
+ -Database: Supabase
  -Authentication: Google OAuth   
  -CI/CD Pipeline: Github actions      
  -Testing: Jest 
 
 ## Local Setup and Installation
-1. To setup the project on your device, clone the repository by running the following command\
+
+1. Clone the repository  
 `git clone https://github.com/ZaneerahEssop/QUANTIX.git`
-2. Navigate to the project directory   
-`cd QUANTIX`
-3. Install all dependencies to run the project locally by running the command    
-`npm install`
-4. To run the Project, in the project directory you can run the command   
-`npm start`
+2. Install dependencies  
+```
+cd QUANTIX-11/Backend && npm install
+cd ../frontend && npm install
+```
+3. Configure environment variables (minimal)
+- Backend `.env`:
+  - `REACT_APP_BASE_URL=http://localhost:3000` (CORS)
+  - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+  - `UNSPLASH_ACCESS_KEY`, `UNSPLASH_API_BASE=https://api.unsplash.com`
+  - `MODERATION_API_URL`, `MODERATION_API_KEY`
+  - `GMAIL_USER`, `GMAIL_APP_PASSWORD` (16‑char App Password)
+- Frontend `.env` (optional):
+  - `REACT_APP_SUPABASE_URL`, `REACT_APP_SUPABASE_ANON_KEY`
+4. Start the backend  
+```
+cd Backend
+npm run dev   # or npm start
+```
+5. Start the frontend  
+```
+cd ../frontend
+npm start
+```
+Frontend: `http://localhost:3000`  |  Backend: `http://localhost:5000`

@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { FaSignature, FaExclamationTriangle, FaCheckCircle, FaEdit, FaFileDownload, FaTimes, FaSave, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaSignature, FaExclamationTriangle, FaCheckCircle, FaEdit, FaFileDownload, FaTimes, FaSave, FaPlus, FaTrash, FaClock } from 'react-icons/fa';
 import '../styling/eventDetails.css';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// --- SuccessModal component ---
 const SuccessModal = ({ message, onClose }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -17,7 +16,6 @@ const SuccessModal = ({ message, onClose }) => {
   );
 };
 
-// --- UTILITY FUNCTIONS (Unchanged) ---
 const parseContractContent = (content) => {
     const fields = {};
     const customFields = [];
@@ -29,8 +27,18 @@ const parseContractContent = (content) => {
         const match = line.match(/- \*\*(.*?):\*\* (.*)/);
         if (match) {
             const key = match[1];
-            const value = match[2];
+            let value = match[2];
+
+            if (value.trim().startsWith('[') && value.trim().endsWith(']')) {
+                value = '';
+            }
+            
             const fieldKey = key.charAt(0).toLowerCase() + key.slice(1).replace(/[\s&]+/g, '');
+
+            if (fieldKey === 'totalFee' || fieldKey === 'hoursOfCoverage') {
+                value = value.replace(/[^0-9]/g, '');
+            }
+
             if (standardKeys.includes(key)) {
                 fields[fieldKey] = value;
             } else if (!nonEditableKeys.includes(key)) {
@@ -41,7 +49,8 @@ const parseContractContent = (content) => {
     if (!fields.totalFee) {
         const feeLine = lines.find(l => l.includes('**Total Fee:**'));
         if (feeLine) {
-            fields.totalFee = feeLine.split(':')[1]?.trim().replace(/\*\*/g, '') || '';
+            // ✨ FIX: Corrected the invalid regex from /[^0--9]/g to /[^0-9]/g
+            fields.totalFee = (feeLine.split(':')[1]?.trim().replace(/[^0-9]/g, '') || '');
         }
     }
     return { fields, customFields };
@@ -51,8 +60,13 @@ const assembleContractContent = (fields, customFields, baseTemplate) => {
     let newContent = baseTemplate || '';
     const replaceValue = (key, value) => {
         const regex = new RegExp(`(\\*\\*${key}:\\*\\*).+`);
+
+        let displayValue = value || '[Not Specified]';
+        if (key === 'Total Fee' && value) displayValue = `R${value}`;
+        if (key === 'Hours of Coverage' && value) displayValue = `${value} hours`;
+
         if (newContent.match(regex)) {
-             newContent = newContent.replace(regex, `$1 ${value || '[Not Specified]'}`);
+             newContent = newContent.replace(regex, `$1 ${displayValue}`);
         }
     };
     Object.keys(fields).forEach(fieldKey => {
@@ -103,7 +117,6 @@ const ContractManagement = ({ eventData, currentUser, vendor, isVendorAccepted, 
         else if (serviceType === 'flowers') { servicesSection = `### 1. Services Provided (Floral Design)\n- **Arrangement Types:** [e.g., Bridal Bouquet]\n- **Substitutions:** Vendor reserves the right to make suitable substitutions.`; }
         else if (serviceType === 'venue') { servicesSection = `### 1. Venue Rental\n- **Space(s) Provided:** [e.g., Grand Ballroom]\n- **Capacity:** [e.g., 150 guests]\n- **Restrictions:** [e.g., Music must end by 11:00 PM]`; }
         
-        // ✨ FIX: This logic now correctly determines the client's name.
         const clientName = (planner?.role === 'planner' ? planner.name : event.planner_name) || 'The Planner';
 
         return `
@@ -166,7 +179,25 @@ ${servicesSection}
 
     useEffect(() => { fetchContract(); }, [fetchContract]);
 
-    const handleFieldChange = (field, value) => { setContractFields(prev => ({ ...prev, [field]: value })); };
+    const handleFieldChange = (field, value) => {
+        if (field === 'totalFee' || field === 'hoursOfCoverage') {
+            const sanitizedValue = value.replace(/[^0-9]/g, '');
+            const numValue = Number(sanitizedValue);
+    
+            if (field === 'totalFee' && numValue > 1000000) {
+                return;
+            }
+            if (field === 'hoursOfCoverage' && numValue > 48) {
+                return;
+            }
+            
+            setContractFields(prev => ({ ...prev, [field]: sanitizedValue }));
+            return;
+        }
+        
+        setContractFields(prev => ({ ...prev, [field]: value }));
+    };
+
     const handleCustomFieldChange = (index, field, value) => {
         const updatedFields = [...customFields];
         updatedFields[index][field] = value;
@@ -275,20 +306,58 @@ ${servicesSection}
                 </div>
             </div>
 
-            {contract?.status === 'revisions_requested' && <div className="status-banner revisions"><FaExclamationTriangle /> Revisions requested. Please review comments and update the contract.</div>}
+            {contract?.status === 'revisions_requested' && (
+                <div className="status-banner revisions">
+                    <FaExclamationTriangle /> 
+                    {isPlanner
+                        ? "You have requested revisions. Awaiting vendor updates."
+                        : "Revisions requested. Please review comments and update the contract."
+                    }
+                </div>
+            )}
+
             {contract?.status === 'active' && <div className="status-banner active"><FaCheckCircle /> This contract is active and has been signed by both parties.</div>}
+
+            {isVendor && contract && contract.status === 'pending_planner_signature' && !contract.planner_signature && (
+                <div className="status-banner pending">
+                    <FaClock /> Contract is with the planner for review and signature.
+                </div>
+            )}
+            {isPlanner && contract?.planner_signature && !contract?.vendor_signature && contract?.status !== 'active' && (
+                <div className="status-banner pending">
+                    <FaClock /> You have signed the contract. Waiting for the vendor's signature.
+                </div>
+            )}
+
 
             {isEditing && canEdit ? (
                 <div className="contract-form-editor">
                     <h3>Edit Contract Details</h3>
                     <div className="form-field-group">
-                        <label>Total Fee</label>
-                        <input type="text" value={contractFields.totalFee || ''} onChange={(e) => handleFieldChange('totalFee', e.target.value)} placeholder="e.g., R15000"/>
+                        <label>Total Fee (R)</label>
+                        <input 
+                            type="text" 
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={contractFields.totalFee || ''} 
+                            onChange={(e) => handleFieldChange('totalFee', e.target.value)} 
+                            placeholder="e.g., 15000"
+                        />
                     </div>
                     
                     {vendor.service_type.toLowerCase() === 'photography' && (
                         <>
-                            <div className="form-field-group"><label>Hours of Coverage</label><input type="text" value={contractFields.hoursOfCoverage || ''} onChange={(e) => handleFieldChange('hoursOfCoverage', e.target.value)} placeholder="e.g., 8 hours"/></div>
+                            <div className="form-field-group">
+                                <label>Hours of Coverage</label>
+                                <input 
+                                    type="text" 
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    value={contractFields.hoursOfCoverage || ''} 
+                                    onChange={(e) => handleFieldChange('hoursOfCoverage', e.target.value)} 
+                                    placeholder="e.g., 8"
+                                />
+                            </div>
                             <div className="form-field-group"><label>Deliverables</label><textarea value={contractFields.deliverables || ''} onChange={(e) => handleFieldChange('deliverables', e.target.value)} placeholder="e.g., High-resolution digital gallery"/></div>
                         </>
                     )}
@@ -361,7 +430,7 @@ ${servicesSection}
                 </div>
             )}
             
-            {canRevise && (
+            {canRevise && isPlanner && !contract?.planner_signature && (
                 <div className="revisions-section standalone-revisions">
                     <h3>Request Revisions</h3>
                     <form onSubmit={handleAddRevision} className="revision-form">
