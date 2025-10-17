@@ -16,6 +16,7 @@ const emailRoutes = require("./src/Routes/email.routes");
 const contractRoutes = require("./src/Routes/contract.routes"); // <-- ADDED
 const path = require("path");
 const unsplashRoutes = require("./src/Routes/unsplash.routes");
+const scheduleRoutes = require("./src/Routes/schedule.routes");
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ app.use("/api/events", getEventsRoutes);
 app.use("/api/events", newEventRoutes);
 app.use("/api/events", editEventRoutes);
 app.use("/api/events", deleteEventRoutes);
+app.use("/api/events", scheduleRoutes);
 app.use("/api/planners", plannerRoutes);
 app.use("/api/events", exportRoutes);
 app.use("/api/vendors", vendorRoutes);
