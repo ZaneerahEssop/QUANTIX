@@ -8,6 +8,8 @@ function SignUpPage() {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState("");
   const [showRoleWarning, setShowRoleWarning] = useState(false);
+  const [showConflict, setShowConflict] = useState(false);
+  const [conflictText, setConflictText] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,6 +26,19 @@ function SignUpPage() {
       setSession(session);
     });
     return () => subscription.unsubscribe();
+  }, []);
+
+  // Detect conflict from query params (redirected from PostSignupRedirect)
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('conflict') === '1') {
+      const existingRole = query.get('existingRole');
+      const intendedRole = query.get('intendedRole');
+      setConflictText(
+        `This email is already registered as a ${existingRole}. To sign up as a ${intendedRole}, please use a different email.`
+      );
+      setShowConflict(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -119,6 +134,24 @@ function SignUpPage() {
                 &times;
               </button>
               <p>Please select a role first!</p>
+            </div>
+          </div>
+        )}
+
+        {showConflict && (
+          <div className="role-warning-modal" onClick={() => setShowConflict(false)}>
+            <div className="role-warning-box" onClick={(e) => e.stopPropagation()}>
+              <button className="close-warning" onClick={() => setShowConflict(false)}>
+                &times;
+              </button>
+              <h2 className="accent-text">Role Conflict</h2>
+              <p style={{ marginTop: '0.5rem' }}>{conflictText}</p>
+              <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>
+                Tip: Use a different Google account or create a new email for your second role.
+              </p>
+              <button className="auth-btn" onClick={() => setShowConflict(false)}>
+                Okay, got it
+              </button>
             </div>
           </div>
         )}

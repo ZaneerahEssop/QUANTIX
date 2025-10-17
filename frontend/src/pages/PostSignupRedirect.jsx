@@ -19,12 +19,13 @@ export default function PostSignupRedirect() {
       const role = sessionStorage.getItem("signupRole");
       if (role) {
         // Check if user exists in users table
-        const { data: userExists } = await supabase
+        const { data: existingUser } = await supabase
           .from("users")
-          .select("user_id")
+          .select("user_id, user_role")
           .eq("user_id", session.user.id)
-          .single();
-        if (!userExists) {
+          .maybeSingle();
+
+        if (!existingUser) {
             // Upsert user into users table (insert or update)
             const { error: insertError } = await supabase.from("users").upsert([
               {
@@ -38,6 +39,18 @@ export default function PostSignupRedirect() {
             if (insertError) {
               console.error("Error inserting user:", insertError.message);
             }
+        } else if (existingUser.user_role && existingUser.user_role !== role) {
+          // Role conflict: prevent sign-up with same email for a different role
+          // Clear stored role and sign out
+          sessionStorage.removeItem('signupRole');
+          await supabase.auth.signOut();
+          const params = new URLSearchParams({
+            conflict: '1',
+            existingRole: existingUser.user_role,
+            intendedRole: role,
+          });
+          navigate(`/signup?${params.toString()}`, { replace: true });
+          return;
         }
         // Clear the role from sessionStorage after use
         sessionStorage.removeItem('signupRole');

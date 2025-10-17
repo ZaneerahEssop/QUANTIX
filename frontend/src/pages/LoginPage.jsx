@@ -1,75 +1,101 @@
-// src/pages/LoginPage.jsx
-import React, { useEffect, useState } from "react";
-import { supabase } from "../client";
-import { useNavigate, Link } from "react-router-dom";
-import "../App.css";
-import "../AuthPages.css";
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../client';
+import '../AuthPages.css';
 
 function LoginPage() {
   const [session, setSession] = useState(null);
+  const [loginError, setLoginError] = useState("");
+  const [showRoleConflict, setShowRoleConflict] = useState(false);
+  const [roleConflictMessage, setRoleConflictMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    
+    // Set up initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
+
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
+
+    // Cleanup subscription
     return () => subscription.unsubscribe();
   }, []);
 
-const [loginError, setLoginError] = useState("");
-
-useEffect(() => {
-  async function redirectByRole() {
-    if (session && session.user) {
-      const { data, error } = await supabase
-        .from('users')
-        .select('user_role')
-        .eq('user_id', session.user.id)
-        .single();
-      if (error || !data) {
-        setLoginError("Account not found. Please sign up first.");
-        return;
-      }
-      if (data.user_role === 'planner') navigate('/dashboard');
-      else if (data.user_role === 'vendor') {
-        // fetch vendor status
-        const { data: vendor, error: vendorError } = await supabase
-          .from("vendors")
-          .select("status")
-          .eq("vendor_id", session.user.id)
+  useEffect(() => {
+    async function redirectByRole() {
+      if (session && session.user) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('user_role')
+          .eq('user_id', session.user.id)
           .single();
 
-        if (vendorError || !vendor) {
-            console.error("Error fetching vendor status:", vendorError?.message);
-            navigate("/pending-approval", { state: { status: "pending" } }); // fallback
-            return;
-        }else if (vendor.status === "accepted") {
-            navigate("/vendor-dashboard");
-        } else if (vendor.status === "pending") {
-            navigate("/pending-approval", { state: { status: "pending" } });
-        } else if (vendor.status === "rejected") {
-            navigate("/pending-approval", { state: { status: "rejected" } });
-        } else {
-            // unknown status fallback
-            navigate("/pending-approval", { state: { status: "pending" } });
-          }
-      }
+        if (error || !data) {
+          setLoginError("Account not found. Please sign up first.");
+          await supabase.auth.signOut();
+          return;
+        }
 
-      else if (data.user_role === 'admin') navigate('/admin-dashboard');
-      else navigate('/dashboard');
+        // Get the intended role from URL or state
+        const intendedRole = new URLSearchParams(window.location.search).get('role');
+
+        // Check if user is trying to sign up with a different role
+        if (intendedRole && data.user_role !== intendedRole) {
+          setRoleConflictMessage(
+            `You already have an account as a ${data.user_role}. To register as a ${intendedRole}, please use a different email.`
+          );
+          setShowRoleConflict(true);
+          // Sign out the user since they shouldn't proceed
+          await supabase.auth.signOut();
+          return;
+        }
+
+        // Handle role-based navigation
+        switch (data.user_role) {
+          case 'planner':
+            navigate('/dashboard');
+            break;
+          case 'vendor':
+            // Check vendor status
+            const { data: vendor, error: vendorError } = await supabase
+              .from("vendors")
+              .select("status")
+              .eq("vendor_id", session.user.id)
+              .single();
+
+            if (vendorError) {
+              console.error("Error fetching vendor status:", vendorError.message);
+              setLoginError("Error verifying vendor status. Please try again.");
+              return;
+            }
+
+            if (vendor.status === 'pending') {
+              navigate('/vendor-pending');
+            } else if (vendor.status === 'approved') {
+              navigate('/vendor-dashboard');
+            } else {
+              navigate('/vendor-rejected');
+            }
+            break;
+          case 'admin':
+            navigate('/admin-dashboard');
+            break;
+          default:
+            setLoginError("Invalid user role. Please contact support.");
+            await supabase.auth.signOut();
+        }
+      }
     }
-  }
-  redirectByRole();
-}, [session, navigate]);
+    redirectByRole();
+  }, [session, navigate]);
 
   const handleGoogleSignIn = async () => {
-    // Always use localhost for development
     const redirectUrl = `${window.location.protocol}//${window.location.host}/loading`;
-      
+    
     console.log('Initiating Google OAuth with redirect URL:', redirectUrl);
     
     try {
@@ -81,13 +107,13 @@ useEffect(() => {
             access_type: 'offline',
             prompt: 'consent',
           },
-          skipBrowserRedirect: false // Ensure the browser handles the redirect
+          skipBrowserRedirect: false
         }
       });
       
       if (error) {
-        console.error('Error with Google sign-in:', error);
-        // Handle error (show to user)
+        console.error('Error during Google sign in:', error.message);
+        setLoginError("Failed to sign in with Google. Please try again.");
         return;
       }
       
@@ -95,6 +121,7 @@ useEffect(() => {
       
     } catch (err) {
       console.error('Unexpected error during sign in:', err);
+      setLoginError("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -105,14 +132,17 @@ useEffect(() => {
           Welcome to <span className="accent-text">Event-ually Perfect</span>
         </h1>
         <p>Login to get started planning or managing your event experience.</p>
+        
         <button onClick={handleGoogleSignIn} className="auth-btn">
           <i className="fab fa-google"></i> Login with Google
         </button>
-         {loginError && (
-        <div style={{ color: "pink", marginBottom: "1rem" }}>
-          {loginError}
-        </div>
-      )}
+        
+        {loginError && (
+          <div style={{ color: "pink", marginBottom: "1rem" }}>
+            {loginError}
+          </div>
+        )}
+        
         <p className="auth-prompt">
           First time?{' '}
           <Link to="/signup" className="auth-link">
@@ -120,6 +150,24 @@ useEffect(() => {
           </Link>
         </p>
       </div>
+
+      {showRoleConflict && (
+        <div className="role-warning-modal" onClick={() => setShowRoleConflict(false)}>
+          <div className="role-warning-box" onClick={(e) => e.stopPropagation()}>
+            <button className="close-warning" aria-label="Close" onClick={() => setShowRoleConflict(false)}>
+              ×
+            </button>
+            <h2 className="accent-text">Account Already Exists</h2>
+            <p style={{ marginTop: '0.5rem' }}>{roleConflictMessage}</p>
+            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>
+              Tip: Use another Google account or sign out and create a new email for the second role.
+            </p>
+            <button className="auth-btn" onClick={() => setShowRoleConflict(false)}>
+              Okay, got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
