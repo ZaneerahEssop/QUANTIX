@@ -917,6 +917,40 @@ const EventDetails = () => {
   const [vendorPrices, setVendorPrices] = useState({});
   const [activeView, setActiveView] = useState("overview");
 
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    if (eventId && activeView) {
+      localStorage.setItem(`event_${eventId}_activeTab`, activeView);
+      // Update URL to reflect the active tab
+      const url = new URL(window.location);
+      if (activeView !== 'overview') {
+        url.searchParams.set('tab', activeView);
+      } else {
+        url.searchParams.delete('tab');
+      }
+      window.history.replaceState({}, '', url);
+    }
+  }, [activeView, eventId]);
+
+  // Load saved tab from localStorage or URL on component mount
+  useEffect(() => {
+    if (!eventId) return;
+    
+    // First check URL for tab parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabFromUrl = urlParams.get('tab');
+    
+    if (tabFromUrl) {
+      setActiveView(tabFromUrl);
+    } else {
+      // If no tab in URL, check localStorage
+      const savedTab = localStorage.getItem(`event_${eventId}_activeTab`);
+      if (savedTab) {
+        setActiveView(savedTab);
+      }
+    }
+  }, [eventId]);
+
   const API_URL = process.env.REACT_APP_API_URL;
   const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
   const [vendorRequests, setVendorRequests] = useState([]);
