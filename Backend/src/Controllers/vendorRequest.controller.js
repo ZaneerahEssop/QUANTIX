@@ -2,11 +2,14 @@ const supabase = require("../Config/supabase");
 
 const createVendorRequest = async (req, res) => {
   try {
-    const { event_id, vendor_id, requester_id } = req.body;
+    // ✨ MODIFICATION: Get 'service_requested' from the request body
+    const { event_id, vendor_id, requester_id, service_requested } = req.body;
 
-    if (!event_id || !vendor_id || !requester_id) {
+    // ✨ MODIFICATION: Add 'service_requested' to the validation
+    if (!event_id || !vendor_id || !requester_id || !service_requested) {
       return res.status(400).json({
-        error: "Event ID and Vendor ID and Requester ID are required",
+        error:
+          "Event ID, Vendor ID, Requester ID, and Service Requested are required",
       });
     }
 
@@ -14,11 +17,21 @@ const createVendorRequest = async (req, res) => {
       event_id,
       vendor_id,
       requester_id,
+      service_requested, // ✨ MODIFICATION: Log the new field
     });
 
     const { data, error } = await supabase
       .from("vendor_requests")
-      .insert([{ event_id, vendor_id, requester_id, status: "pending" }])
+      // ✨ MODIFICATION: Insert the 'service_requested' field
+      .insert([
+        {
+          event_id,
+          vendor_id,
+          requester_id,
+          service_requested,
+          status: "pending",
+        },
+      ])
       .select()
       .single();
 
@@ -48,6 +61,9 @@ const getVendorRequestByVendorId = async (req, res) => {
         status,
         requester_id,
         event_id,
+        service_requested, 
+        booking_notes, 
+        quoted_price, 
         events:event_id (
           event_id,
           name,
@@ -92,6 +108,9 @@ const getVendorRequestByEventId = async (req, res) => {
         status,
         created_at,
         vendor_id,
+        service_requested, 
+        booking_notes, 
+        quoted_price, 
         vendor:vendor_id (
           vendor_id,
           business_name,
@@ -118,25 +137,59 @@ const getVendorRequestByEventId = async (req, res) => {
   }
 };
 
+// =================================================================
+// ✨ MODIFIED FUNCTION: updateVendorRequest
+// =================================================================
 const updateVendorRequest = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { event_id, vendor_id, status } = req.body;
+    const { id } = req.params; // This is the request_id
+    
+    // Accept status, booking_notes, or quoted_price
+    const { status, booking_notes, quoted_price } = req.body;
+
+    const updateData = {};
+
+    // Conditionally add fields to the update object if they were provided
+    // We check for 'undefined' to allow setting fields to 'null' or an empty string
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+    if (booking_notes !== undefined) {
+      updateData.booking_notes = booking_notes;
+    }
+    if (quoted_price !== undefined) {
+      updateData.quoted_price = quoted_price;
+    }
+
+    // Check if any valid field was provided
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        error: "At least one field (status, booking_notes, quoted_price) is required",
+      });
+    }
 
     const { data, error } = await supabase
       .from("vendor_requests")
-      .update({ event_id, vendor_id, status })
+      .update(updateData) // Update with the dynamically built object
       .eq("request_id", id)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase update error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+    
     res.json({ success: true, request: data });
   } catch (err) {
     console.error("Error updating vendor request:", err.message);
     res.status(500).json({ error: "Failed to update vendor request" });
   }
 };
+// =================================================================
+// END OF MODIFIED FUNCTION
+// =================================================================
+
 
 module.exports = {
   createVendorRequest,

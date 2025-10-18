@@ -4,6 +4,7 @@ import { FaSignature, FaExclamationTriangle, FaCheckCircle, FaEdit, FaFileDownlo
 import '../styling/eventDetails.css';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { supabase } from '../client';
 
 const SuccessModal = ({ message, onClose }) => {
   return (
@@ -176,6 +177,40 @@ ${servicesSection}
             setIsLoading(false);
         }
     }, [API_URL, eventData, vendor, currentUser, isVendor, isVendorAccepted, generateContractTemplate]);
+
+    // Set up real-time subscription for contract updates
+    useEffect(() => {
+        if (!eventData?.event_id || !vendor?.vendor_id) return;
+        
+        const subscription = supabase
+            .channel(`contract_${eventData.event_id}_${vendor.vendor_id}`)
+            .on('postgres_changes', 
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'contracts',
+                    filter: `event_id=eq.${eventData.event_id}`
+                },
+                (payload) => {
+                    if (payload.new && payload.new.vendor_id === vendor.vendor_id) {
+                        setContract(payload.new);
+                        // Only update content if it's a new contract or if we don't have content yet
+                        if (!content || payload.eventType === 'INSERT') {
+                            const currentContent = payload.new.content || generateContractTemplate(eventData, vendor, currentUser);
+                            setContent(currentContent);
+                            const { fields, customFields } = parseContractContent(currentContent);
+                            setContractFields(fields);
+                            setCustomFields(customFields);
+                        }
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [eventData, vendor, currentUser, content, generateContractTemplate]);
 
     useEffect(() => { fetchContract(); }, [fetchContract]);
 

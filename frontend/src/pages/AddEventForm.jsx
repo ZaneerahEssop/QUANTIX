@@ -16,24 +16,32 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import "../AddEventForm.css";
+import "../AddEventForm.css"; // Ensure this path is correct
 
 export default function AddEventForm() {
   const navigate = useNavigate();
 
-  // Function to handle vendor card click
-  const handleVendorCardClick = (vendorId) => {
+  // Function to handle vendor profile button click
+  const handleViewProfileClick = (vendorId) => {
+    // Navigate to the vendor's profile page, likely read-only
     navigate(`/vendors/${vendorId}/services?readonly=true`);
   };
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    date: "",
-    time: "",
-    theme: { name: "", colors: [], notes: "" },
-    venue: "",
-    end_time: "",
-  });
+  // Load saved form data from localStorage on component mount
+  const loadFormData = () => {
+    const savedData = localStorage.getItem('eventFormData');
+    return savedData ? JSON.parse(savedData) : {
+      name: "",
+      date: "",
+      time: "",
+      theme: { name: "", colors: [], notes: "" },
+      venue: "",
+      end_time: "",
+    };
+  };
+
+  const [formData, setFormData] = useState(loadFormData());
   const vendorCategories = [
     "Catering",
     "Flowers",
@@ -45,7 +53,13 @@ export default function AddEventForm() {
 
   const [allVendors, setAllVendors] = useState([]);
   const [filteredVendors, setFilteredVendors] = useState([]);
-  const [selectedVendors, setSelectedVendors] = useState([]);
+
+  // MODIFICATION: selectedVendors now stores { vendor, service }
+  const [selectedVendors, setSelectedVendors] = useState(() => {
+    const savedVendors = localStorage.getItem('selectedVendors');
+    return savedVendors ? JSON.parse(savedVendors) : [];
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -53,7 +67,10 @@ export default function AddEventForm() {
   const [showAllVendors, setShowAllVendors] = useState(false);
   const VENDORS_PER_PAGE = 6;
   const [isSearching, setIsSearching] = useState(false);
-  const [documents, setDocuments] = useState([]);
+  const [documents, setDocuments] = useState(() => {
+    const savedDocs = localStorage.getItem('eventDocuments');
+    return savedDocs ? JSON.parse(savedDocs) : [];
+  });
   const [usingVenueVendor, setUsingVenueVendor] = useState(false);
   const [selectedVenueVendor, setSelectedVenueVendor] = useState(null);
   const [selectedVenueIndex, setSelectedVenueIndex] = useState(0);
@@ -67,6 +84,30 @@ export default function AddEventForm() {
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('eventFormData', JSON.stringify(formData));
+  }, [formData]);
+
+  // Save selected vendors to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('selectedVendors', JSON.stringify(selectedVendors));
+  }, [selectedVendors]);
+
+  // Save documents to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('eventDocuments', JSON.stringify(documents));
+  }, [documents]);
+
+  // Clear saved form data when component unmounts (optional, uncomment if needed)
+  // useEffect(() => {
+  //   return () => {
+  //     localStorage.removeItem('eventFormData');
+  //     localStorage.removeItem('selectedVendors');
+  //     localStorage.removeItem('eventDocuments');
+  //   };
+  // }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -77,13 +118,16 @@ export default function AddEventForm() {
     }
 
     if (name === "theme") {
-      setFormData((prev) => ({
-        ...prev,
-        theme: {
-          ...prev.theme,
-          name: value,
-        },
-      }));
+      setFormData((prev) => {
+        const newData = {
+          ...prev,
+          theme: {
+            ...prev.theme,
+            name: value,
+          },
+        };
+        return newData;
+      });
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -120,76 +164,17 @@ export default function AddEventForm() {
   };
 
   useEffect(() => {
-    // Mock vendor data for development
-    const mockVendors = [
-      {
-        vendor_id: 1,
-        business_name: "Elegant Events",
-        service_type: "Venue",
-        contact_number: "(555) 123-4567",
-        email: "info@elegantevents.com",
-        address: "123 Event St, New York, NY",
-        description:
-          "A beautiful venue for all types of events with modern amenities and professional staff.",
-      },
-      {
-        vendor_id: 2,
-        business_name: "Perfect Clicks Photography",
-        service_type: "Photography",
-        contact_number: "(555) 234-5678",
-        email: "hello@perfectclicks.com",
-        address: "456 Photo Ave, New York, NY",
-        description:
-          "Professional photography services capturing your special moments with creativity and style.",
-      },
-      {
-        vendor_id: 3,
-        business_name: "Melody Makers",
-        service_type: "Music",
-        contact_number: "(555) 345-6789",
-        email: "bookings@melodymakers.com",
-        address: "789 Music Ln, New York, NY",
-        description:
-          "Live music band providing entertainment for all types of events and celebrations.",
-      },
-      {
-        vendor_id: 4,
-        business_name: "Blooms & Petals",
-        service_type: "Florist",
-        contact_number: "(555) 456-7890",
-        email: "info@bloomsandpetals.com",
-        address: "321 Flower Rd, New York, NY",
-        description:
-          "Floral arrangements and decorations to make your event beautiful and memorable.",
-      },
-      {
-        vendor_id: 5,
-        business_name: "Gourmet Delights",
-        service_type: "Catering",
-        contact_number: "(555) 567-8901",
-        email: "catering@gourmetdelights.com",
-        address: "654 Food Blvd, New York, NY",
-        description:
-          "Delicious catering services with a variety of menu options for any occasion.",
-      },
-    ];
-
     const fetchVendors = async () => {
       setIsLoading(true);
       setSearchError(null);
-
       try {
-        // Get the user session
         const {
           data: { session },
         } = await supabase.auth.getSession();
         if (!session) {
           throw new Error("No active session. Please log in.");
         }
-
-        // Use the same API URL as PlannerDashboard
         const API_URL = process.env.REACT_APP_API_URL;
-
         const response = await fetch(`${API_URL}/api/vendors`, {
           headers: {
             "Content-Type": "application/json",
@@ -197,58 +182,40 @@ export default function AddEventForm() {
             Authorization: `Bearer ${session.access_token}`,
           },
         });
-
         if (!response.ok) {
           throw new Error(
             `Failed to fetch vendors: ${response.status} ${response.statusText}`
           );
         }
-
         const data = await response.json();
         if (!Array.isArray(data)) {
           throw new Error("Invalid vendor data format received");
         }
-
-        console.log("Fetched vendors:", data);
         setAllVendors(data);
         setFilteredVendors(data);
       } catch (error) {
         console.error("Error fetching vendors:", error);
-        // Fallback to mock data in development
-        if (process.env.NODE_ENV === "development") {
-          console.warn("Using mock vendor data due to API error");
-          setAllVendors(mockVendors);
-          setFilteredVendors(mockVendors);
-          setSearchError(
-            "Using sample vendor data. Some features may be limited."
-          );
-        } else {
-          setSearchError("Failed to load vendors. Please try again later.");
-        }
+        setSearchError("Failed to load vendors. Please try again later.");
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchVendors();
-  }, []); // Empty dependency array since we don't have any external dependencies
+  }, []);
 
   // Debounced search effect
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
-
     if (searchInput.trim() === searchTerm) {
       return;
     }
-
     setIsSearching(true);
     searchTimeoutRef.current = setTimeout(() => {
       setSearchTerm(searchInput.trim().toLowerCase());
       setIsSearching(false);
     }, 300);
-
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
@@ -261,9 +228,6 @@ export default function AddEventForm() {
     const filterVendors = () => {
       try {
         let result = [...allVendors];
-
-        // --- CHANGE START ---
-        // Filter by category
         if (selectedCategory !== "All") {
           result = result.filter(
             (v) =>
@@ -275,9 +239,6 @@ export default function AddEventForm() {
                 .includes(selectedCategory.toLowerCase())
           );
         }
-        // --- CHANGE END ---
-
-        // Filter by search term
         if (searchTerm) {
           result = result.filter((v) => {
             const searchFields = [
@@ -291,11 +252,9 @@ export default function AddEventForm() {
             ]
               .filter(Boolean)
               .map((field) => field.toLowerCase());
-
             return searchFields.some((field) => field.includes(searchTerm));
           });
         }
-
         setFilteredVendors(result);
         setSearchError(null);
       } catch (error) {
@@ -303,56 +262,83 @@ export default function AddEventForm() {
         setSearchError("An error occurred while searching. Please try again.");
       }
     };
-
     filterVendors();
   }, [searchTerm, selectedCategory, allVendors]);
 
-  const handleSelectVendor = (vendor) => {
-    if (selectedVendors.some((v) => v.vendor_id === vendor.vendor_id)) {
-      return;
+  // MODIFICATION: handleSelectVendor now accepts 'service'
+  const handleSelectVendor = (vendor, service) => {
+    if (
+      selectedVendors.some(
+        (v) => v.vendor.vendor_id === vendor.vendor_id && v.service === service
+      )
+    ) {
+      return; // Already selected
     }
 
     setSelectedVendors((prev) => [
       ...prev,
       {
-        ...vendor,
+        vendor: vendor,
+        service: service,
         request_status: "selected",
       },
     ]);
+
+    if (service.toLowerCase() === "venue") {
+      setUsingVenueVendor(true);
+      setSelectedVenueVendor(vendor);
+      const firstVenueName = vendor.venue_names?.[0] || vendor.business_name;
+      setFormData((prev) => ({ ...prev, venue: firstVenueName }));
+      setSelectedVenueIndex(0);
+    }
   };
 
-  const handleRemoveVendor = (vendorToRemove) => {
+  // MODIFICATION: handleRemoveVendor now accepts 'service'
+  const handleRemoveVendor = (vendorToRemove, serviceToRemove) => {
     const vendorName = vendorToRemove.business_name || "Vendor";
 
     try {
-      // Simply remove from selected vendors - no API call needed since
-      // requests haven't been sent yet
       setSelectedVendors((prev) =>
-        prev.filter((vendor) => vendor.vendor_id !== vendorToRemove.vendor_id)
+        prev.filter(
+          (v) =>
+            !(
+              v.vendor.vendor_id === vendorToRemove.vendor_id &&
+              v.service === serviceToRemove
+            )
+        )
       );
 
-      // Show success message
-      setSuccessMessage(`${vendorName} removed from selection.`);
-      setShowSuccess(true);
+      if (
+        usingVenueVendor &&
+        selectedVenueVendor?.vendor_id === vendorToRemove.vendor_id &&
+        serviceToRemove.toLowerCase() === "venue"
+      ) {
+        setUsingVenueVendor(false);
+        setSelectedVenueVendor(null);
+        setFormData((prev) => ({ ...prev, venue: "" }));
+      }
 
-      // Optional: Auto-hide after 1.5 seconds
-      setTimeout(() => {
-        setShowSuccess(false);
-      }, 1500);
+      setSuccessMessage(
+        `${vendorName} (${serviceToRemove}) removed from selection.`
+      );
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 1500);
     } catch (error) {
       console.error("Error removing vendor:", error);
-      setWarningMessage(`Failed to remove ${vendorName}. Please try again.`);
+      setWarningMessage(
+        `Failed to remove ${vendorName} (${serviceToRemove}). Please try again.`
+      );
       setShowWarning(true);
     }
   };
 
+  // MODIFICATION: handleSubmit sends the new selectedVendors structure
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setShowWarning(false);
     setShowSuccess(false);
 
-    // Basic validation
     if (!formData.name || !formData.date) {
       setWarningMessage("Please fill in at least the event name and date.");
       setShowWarning(true);
@@ -381,17 +367,22 @@ export default function AddEventForm() {
     }
 
     try {
-      // Build the API URL
       const API_URL = process.env.REACT_APP_API_URL;
 
-      // Format documents BEFORE sending (upload separately if needed)
       const formattedDocs = documents.map((docFile) => ({
         name: docFile.name,
-        url: docFile.url || "", // if already uploaded
+        // Assuming backend handles upload based on file object, not URL yet
+        // url: docFile.url || '',
         uploaded_by: user.id,
+        // Include file object itself if backend expects it for upload
+        // file: docFile
       }));
 
-      // Prepare request body
+      const vendorRequestsToSend = selectedVendors.map((selection) => ({
+        vendor_id: selection.vendor.vendor_id,
+        service_requested: selection.service,
+      }));
+
       const requestBody = {
         name: formData.name,
         theme: formData.theme || null,
@@ -403,21 +394,38 @@ export default function AddEventForm() {
           : null,
         venue: formData.venue || null,
         planner_id: user.id,
-        selectedVendors: selectedVendors.map((v) => ({
-          vendor_id: v.vendor_id,
-        })),
+        selectedVendors: vendorRequestsToSend,
+        // Handle documents based on backend expectations.
+        // If backend expects metadata first:
         documents: formattedDocs,
+        // If backend expects files in FormData, adjust fetch call.
       };
 
-      // Call backend API
+      // *** NOTE: If backend needs actual file uploads, use FormData ***
+      // const formDataPayload = new FormData();
+      // formDataPayload.append('eventData', JSON.stringify(requestBody)); // Send metadata
+      // documents.forEach((file, index) => {
+      //   formDataPayload.append(`documents[${index}]`, file, file.name); // Send files
+      // });
+      // const response = await fetch(`${API_URL}/api/events`, {
+      //   method: 'POST',
+      //   headers: {
+      //     // 'Content-Type': 'multipart/form-data', // Browser sets this automatically with FormData
+      //     Authorization: `Bearer ${user.id}`, // Or access token
+      //   },
+      //   body: formDataPayload,
+      // });
+
+      // Using JSON body as before (assuming backend handles uploads separately or expects metadata)
       const response = await fetch(`${API_URL}/api/events`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${user.id}`, // you can also pass access_token if backend verifies it
+          Authorization: `Bearer ${user.id}`, // Or access token
         },
         body: JSON.stringify(requestBody),
       });
+
 
       const data = await response.json();
 
@@ -425,8 +433,7 @@ export default function AddEventForm() {
         throw new Error(data.error || "Failed to create event");
       }
 
-      // Success 🎉
-      setFormData((prev) => ({ ...prev, event_id: data.event.event_id }));
+      // Success
       setSuccessMessage(
         `Event "${formData.name}" created successfully${
           selectedVendors.length > 0
@@ -435,6 +442,10 @@ export default function AddEventForm() {
         }`
       );
       setShowSuccess(true);
+      // Optional: Clear form or navigate
+      // setSelectedVendors([]);
+      // setDocuments([]);
+      // setFormData({ name: '', date: '', time: '', theme: { name: '', colors: [], notes: '' }, venue: '', end_time: ''});
     } catch (error) {
       console.error("Error creating event:", error);
       setWarningMessage(
@@ -446,21 +457,20 @@ export default function AddEventForm() {
     }
   };
 
+  // Click outside handler for venue dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showVenueDropdown && !event.target.closest(".form-group")) {
         setShowVenueDropdown(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showVenueDropdown]);
 
   return (
     <>
+      {/* Success and Warning Modals */}
       {showSuccess && (
         <div
           style={{
@@ -496,7 +506,6 @@ export default function AddEventForm() {
             <button
               onClick={() => {
                 setShowSuccess(false);
-                // Navigate to dashboard when closing the success message
                 navigate("/dashboard");
               }}
               style={{
@@ -527,7 +536,6 @@ export default function AddEventForm() {
                 padding: "0 1rem",
               }}
             >
-              {/* ===== FIX #3: Display the dynamic success message ===== */}
               {successMessage}
             </p>
           </div>
@@ -620,15 +628,15 @@ export default function AddEventForm() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="form-input"
+                className={`form-input ${formData.name ? "has-value" : ""}`}
                 required
               />
               <label className="form-label">Event Name</label>
             </div>
 
             {/* Event Date and Time */}
-            <div style={{ display: "flex", gap: "1rem" }}>
-              <div className="form-group" style={{ flex: 1 }}>
+            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+              <div className="form-group" style={{ flex: 1, minWidth: "150px" }}>
                 <FaCalendarAlt className="form-icon" />
                 <input
                   type="date"
@@ -636,41 +644,43 @@ export default function AddEventForm() {
                   value={formData.date}
                   min={new Date().toISOString().split("T")[0]}
                   onChange={handleChange}
-                  className="form-input"
+                  className={`form-input ${formData.date ? "has-value" : ""}`}
                   required
+                  style={{ paddingTop: '14px' }} // Adjust padding if label overlaps
                 />
                 <label className="form-label">Date</label>
               </div>
 
-              <div className="form-group" style={{ flex: 1 }}>
+              <div className="form-group" style={{ flex: 1, minWidth: "150px" }}>
                 <FaClock className="form-icon" />
                 <input
                   type="time"
                   name="time"
                   value={formData.time}
                   onChange={handleChange}
-                  className="form-input"
+                  className={`form-input ${formData.time ? "has-value" : ""}`}
+                  style={{ paddingTop: '14px' }} // Adjust padding if label overlaps
                 />
                 <label className="form-label">Time (Optional)</label>
               </div>
             </div>
 
             {/* Theme and Venue */}
-            <div style={{ display: "flex", gap: "1rem" }}>
-              <div className="form-group" style={{ flex: 1 }}>
+            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+              <div className="form-group" style={{ flex: 1, minWidth: "150px" }}>
                 <input
                   type="text"
                   name="theme"
                   value={formData.theme.name}
                   onChange={handleChange}
-                  className="form-input"
+                  className={`form-input ${formData.theme.name ? "has-value" : ""}`}
                 />
                 <label className="form-label">Theme (Optional)</label>
               </div>
 
               <div
                 className="form-group"
-                style={{ flex: 1, position: "relative" }}
+                style={{ flex: 1, position: "relative", minWidth: "150px" }}
               >
                 <div style={{ position: "relative" }}>
                   <input
@@ -678,7 +688,7 @@ export default function AddEventForm() {
                     name="venue"
                     value={formData.venue}
                     onChange={handleChange}
-                    className="form-input"
+                    className={`form-input ${formData.venue ? "has-value" : ""}`}
                     disabled={usingVenueVendor}
                     onFocus={() =>
                       usingVenueVendor && setShowVenueDropdown(true)
@@ -688,7 +698,7 @@ export default function AddEventForm() {
                         ? {
                             backgroundColor: "#f5f5f5",
                             cursor: "pointer",
-                            paddingRight: "35px",
+                            paddingRight: "60px", // Increased padding for buttons
                           }
                         : {}
                     }
@@ -708,67 +718,39 @@ export default function AddEventForm() {
                           }
                           style={{
                             position: "absolute",
-                            right: "30px",
+                            right: "40px", // Adjusted position
                             top: "50%",
                             transform: "translateY(-50%)",
-                            background: "none",
-                            border: "none",
-                            color: "#666",
-                            cursor: "pointer",
-                            fontSize: "0.8rem",
-                            padding: "2px 5px",
-                            borderRadius: "4px",
-                            transition: "all 0.2s",
+                            background: "none", border: "none", color: "#666",
+                            cursor: "pointer", fontSize: "0.8rem", padding: "2px 5px",
+                            borderRadius: "4px", transition: "all 0.2s",
                           }}
-                          onMouseOver={(e) =>
-                            (e.target.style.background = "rgba(0,0,0,0.05)")
-                          }
-                          onMouseOut={(e) =>
-                            (e.target.style.background = "transparent")
-                          }
+                          onMouseOver={(e) => e.target.style.background = "rgba(0,0,0,0.05)"}
+                          onMouseOut={(e) => e.target.style.background = "transparent"}
                           title="Select a different venue"
                         >
-                          ▼
+                          {showVenueDropdown ? <FaArrowUp /> : <FaArrowDown />}
                         </button>
                         {showVenueDropdown && (
                           <div
                             style={{
-                              position: "absolute",
-                              top: "100%",
-                              left: 0,
-                              right: 0,
-                              backgroundColor: "white",
-                              border: "1px solid #ddd",
-                              borderRadius: "4px",
-                              boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                              zIndex: 1000,
-                              maxHeight: "200px",
-                              overflowY: "auto",
-                              marginTop: "4px",
+                              position: "absolute", top: "100%", left: 0, right: 0,
+                              backgroundColor: "white", border: "1px solid #ddd",
+                              borderRadius: "4px", boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+                              zIndex: 1000, maxHeight: "200px", overflowY: "auto", marginTop: "4px",
                             }}
                           >
-                            {selectedVenueVendor.venue_names.map(
-                              (venue, idx) => (
+                            {selectedVenueVendor.venue_names.map( (venue, idx) => (
                                 <div
                                   key={idx}
                                   onClick={() => {
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      venue,
-                                    }));
+                                    setFormData((prev) => ({ ...prev, venue, }));
                                     setSelectedVenueIndex(idx);
                                     setShowVenueDropdown(false);
                                   }}
-                                  style={{
-                                    padding: "8px 12px",
-                                    cursor: "pointer",
-                                    backgroundColor:
-                                      idx === selectedVenueIndex
-                                        ? "#f0f0f0"
-                                        : "transparent",
-                                    ":hover": {
-                                      backgroundColor: "#f5f5f5",
-                                    },
+                                  style={{ padding: "8px 12px", cursor: "pointer",
+                                    backgroundColor: idx === selectedVenueIndex ? "#f0f0f0" : "transparent",
+                                    hover: { backgroundColor: "#f5f5f5", },
                                   }}
                                 >
                                   {venue}
@@ -784,32 +766,19 @@ export default function AddEventForm() {
                       type="button"
                       onClick={() => {
                         setUsingVenueVendor(false);
+                        setSelectedVenueVendor(null);
                         setFormData((prev) => ({ ...prev, venue: "" }));
                         setShowVenueDropdown(false);
                       }}
                       style={{
-                        position: "absolute",
-                        right: "10px",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        background: "none",
-                        border: "none",
-                        color: "#666",
-                        cursor: "pointer",
-                        fontSize: "1rem",
-                        padding: "5px",
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "all 0.2s",
+                        position: "absolute", right: "10px", top: "50%",
+                        transform: "translateY(-50%)", background: "none", border: "none",
+                        color: "#666", cursor: "pointer", fontSize: "1rem", padding: "5px",
+                        borderRadius: "50%", display: "flex", alignItems: "center",
+                        justifyContent: "center", transition: "all 0.2s",
                       }}
-                      onMouseOver={(e) =>
-                        (e.target.style.background = "rgba(0,0,0,0.05)")
-                      }
-                      onMouseOut={(e) =>
-                        (e.target.style.background = "transparent")
-                      }
+                      onMouseOver={(e) => e.target.style.background = "rgba(0,0,0,0.05)"}
+                      onMouseOut={(e) => e.target.style.background = "transparent"}
                       title="Use custom venue name instead"
                     >
                       <FaTimes />
@@ -827,7 +796,8 @@ export default function AddEventForm() {
                 name="end_time"
                 value={formData.end_time}
                 onChange={handleChange}
-                className="form-input"
+                className={`form-input ${formData.end_time ? "has-value" : ""}`}
+                style={{ paddingTop: '14px' }} // Adjust padding if label overlaps
               />
               <label className="form-label">End Time (Optional)</label>
             </div>
@@ -835,12 +805,10 @@ export default function AddEventForm() {
             {/* Vendors Section */}
             <div className="optional-section">
               <h3>
-                <FaUsers /> Vendors{" "}
-                <span className="optional-tag">Optional</span>
+                <FaUsers /> Vendors <span className="optional-tag">Optional</span>
               </h3>
               <p className="section-description">
-                Add vendors to your event to keep everything organized in one
-                place
+                Add vendors to your event to keep everything organized
               </p>
 
               <div className="vendor-search-container">
@@ -848,15 +816,15 @@ export default function AddEventForm() {
                   <FaSearch className="search-icon" />
                   <input
                     type="text"
-                    placeholder="Search for vendors by name or category"
+                    placeholder="Search vendors by name or service"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     className="search-input"
                     disabled={isLoading}
                   />
                   {(isSearching || isLoading) && (
-                    <div className="search-loading">
-                      <div className="spinner"></div>
+                    <div className="search-loading" style={{ position: 'absolute', right: '35px', top: '50%', transform: 'translateY(-50%)'}}>
+                      <div className="spinner"></div> {/* Add CSS for spinner */}
                     </div>
                   )}
                   {!isSearching && searchInput && (
@@ -888,38 +856,15 @@ export default function AddEventForm() {
                 </select>
               </div>
 
-              {searchError && (
-                <div className="search-error">
-                  <FaTimes className="error-icon" /> {searchError}
-                </div>
-              )}
+              {searchError && <div className="search-error">{searchError}</div>}
 
               {isLoading ? (
-                <div className="loading">
-                  <div className="spinner"></div>
-                  <p>Loading vendors...</p>
-                </div>
+                <div className="loading">Loading vendors...</div>
               ) : isSearching ? (
-                <div className="loading">
-                  <div className="spinner"></div>
-                  <p>Searching vendors...</p>
-                </div>
+                 <div className="loading">Searching vendors...</div>
               ) : filteredVendors.length === 0 ? (
                 <div className="no-results">
-                  <p>No vendors found matching your search.</p>
-                  {searchTerm && (
-                    <button
-                      type="button"
-                      className="clear-filters"
-                      onClick={() => {
-                        setSearchInput("");
-                        setSearchTerm("");
-                        setSelectedCategory("All");
-                      }}
-                    >
-                      Clear all filters
-                    </button>
-                  )}
+                  No vendors found matching your criteria.
                 </div>
               ) : (
                 <div className="vendor-grid">
@@ -929,166 +874,141 @@ export default function AddEventForm() {
                       showAllVendors ? filteredVendors.length : VENDORS_PER_PAGE
                     )
                     .map((vendor) => {
-                      const isSelected = selectedVendors.some(
-                        (v) => v.vendor_id === vendor.vendor_id
-                      );
+                      const services =
+                        vendor.service_type
+                          ?.split(",")
+                          .map((s) => s.trim())
+                          .filter(Boolean) || [];
 
                       return (
-                        <div
-                          key={vendor.vendor_id}
-                          className="vendor-card"
-                          onClick={(e) => {
-                            if (
-                              !e.target.closest(
-                                ".add-vendor-btn, .undo-request-btn"
-                              )
-                            ) {
-                              handleVendorCardClick(vendor.vendor_id);
-                            }
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
+                        <div key={vendor.vendor_id} className="vendor-card">
                           <div className="vendor-info">
                             <h4>{vendor.business_name}</h4>
-                            <div className="vendor-category">
-                              {vendor.service_type}
+                            <div className="vendor-categories-list">
+                              {services.map((service) => (
+                                <span
+                                  key={service}
+                                  className="vendor-category-tag"
+                                >
+                                  {service}
+                                </span>
+                              ))}
                             </div>
                             <div className="vendor-description">
-                              {vendor.description ||
-                                "No description available."}
+                              {vendor.description || "No description available."}
                             </div>
                           </div>
                           <div className="vendor-actions">
                             <button
                               type="button"
-                              className={`add-vendor-btn ${
-                                isSelected ? "added" : ""
-                              } ${isSelected ? "selected" : ""}`}
+                              className="view-profile-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleSelectVendor(vendor);
+                                handleViewProfileClick(vendor.vendor_id);
                               }}
-                              disabled={isSelected}
-                              title={isSelected ? "Vendor selected" : ""}
                             >
-                              {isSelected ? (
-                                <>
-                                  <FaCheck /> Selected
-                                </>
-                              ) : (
-                                <>
-                                  <FaPlus /> Select Vendor
-                                </>
-                              )}
+                              View Profile
                             </button>
-                            {isSelected && (
-                              <button
-                                type="button"
-                                className="undo-request-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  handleRemoveVendor(vendor);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    handleRemoveVendor(vendor);
-                                  }
-                                }}
-                                title="Remove from selection"
-                              >
-                                Undo
-                              </button>
-                            )}
+                            <div className="vendor-service-buttons">
+                              {services.map((service) => {
+                                const key = `${vendor.vendor_id}-${service}`;
+                                const isSelected = selectedVendors.some(
+                                  (s) =>
+                                    s.vendor.vendor_id === vendor.vendor_id &&
+                                    s.service === service
+                                );
+
+                                return (
+                                  <div
+                                    key={key}
+                                    className="vendor-service-action"
+                                  >
+                                    {isSelected ? (
+                                      <>
+                                        <button
+                                          disabled
+                                          className="add-vendor-btn added selected"
+                                        >
+                                          <FaCheck /> Selected as {service}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="undo-request-btn"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveVendor(vendor, service);
+                                          }}
+                                        >
+                                          <FaTimes />
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        className="add-vendor-btn"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleSelectVendor(vendor, service);
+                                        }}
+                                      >
+                                        <FaPlus /> Select as {service}
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
                       );
                     })}
-
-                  {!showAllVendors &&
-                    filteredVendors.length > VENDORS_PER_PAGE && (
-                      <div
-                        className="view-all-container"
-                        style={{
-                          width: "100%",
-                          textAlign: "center",
-                          marginTop: "1rem",
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className="view-all-btn"
-                          onClick={() => setShowAllVendors(true)}
-                          style={{
-                            background: "transparent",
-                            border: "1px solid #ddd",
-                            padding: "0.5rem 1rem",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            color: "#666",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            margin: "0 auto",
-                          }}
-                        >
-                          View All {filteredVendors.length} Vendors{" "}
-                          <FaArrowDown style={{ fontSize: "0.8rem" }} />
-                        </button>
-                      </div>
-                    )}
-
-                  {showAllVendors &&
-                    filteredVendors.length > VENDORS_PER_PAGE && (
-                      <div
-                        className="view-less-container"
-                        style={{
-                          width: "100%",
-                          textAlign: "center",
-                          marginTop: "1rem",
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className="view-less-btn"
-                          onClick={() => setShowAllVendors(false)}
-                          style={{
-                            background: "transparent",
-                            border: "1px solid #ddd",
-                            padding: "0.5rem 1rem",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            color: "#666",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            margin: "0 auto",
-                          }}
-                        >
-                          Show Less <FaArrowUp style={{ fontSize: "0.8rem" }} />
-                        </button>
-                      </div>
-                    )}
                 </div>
               )}
+               {/* View All / Show Less buttons */}
+                 {!showAllVendors && filteredVendors.length > VENDORS_PER_PAGE && (
+                    <div style={{ width: "100%", textAlign: "center", marginTop: "1rem" }}>
+                      <button type="button" className="view-all-btn" onClick={() => setShowAllVendors(true)} style={{ /* button styles */ }}>
+                         View All {filteredVendors.length} Vendors <FaArrowDown style={{ fontSize: "0.8rem" }} />
+                      </button>
+                    </div>
+                  )}
+                 {showAllVendors && filteredVendors.length > VENDORS_PER_PAGE && (
+                    <div style={{ width: "100%", textAlign: "center", marginTop: "1rem" }}>
+                      <button type="button" className="view-less-btn" onClick={() => setShowAllVendors(false)} style={{ /* button styles */ }}>
+                         Show Less <FaArrowUp style={{ fontSize: "0.8rem" }} />
+                      </button>
+                    </div>
+                  )}
 
+
+              {/* Updated selected vendors list display */}
               {selectedVendors.length > 0 && (
                 <div className="selected-vendors">
                   <h3 className="selected-title">Selected Vendors</h3>
                   <ul className="selected-vendors-list">
-                    {selectedVendors.map((v) => (
-                      <li key={v.vendor_id} className="selected-vendor-item">
+                    {selectedVendors.map((selection, index) => (
+                      <li
+                        key={`${selection.vendor.vendor_id}-${index}`} // Use index for unique key if vendor+service isn't guaranteed unique temporarily
+                        className="selected-vendor-item"
+                      >
                         <div>
-                          <span className="vendor-name">{v.business_name}</span>
-                          <span className="vendor-type">{v.service_type}</span>
+                          <span className="vendor-name">
+                            {selection.vendor.business_name}
+                          </span>
+                          <span className="vendor-type">
+                            Selected as: {selection.service}
+                          </span>{" "}
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleRemoveVendor(v)}
+                          onClick={() =>
+                            handleRemoveVendor(
+                              selection.vendor,
+                              selection.service
+                            )
+                          }
                           className="remove-vendor-btn"
-                          title="Remove vendor"
+                          title="Remove vendor selection"
                         >
                           <FaTimes />
                         </button>
@@ -1106,8 +1026,7 @@ export default function AddEventForm() {
                 <span className="optional-tag">Optional</span>
               </h3>
               <p className="section-description">
-                Upload contracts, invoices, or other important files related to
-                your event
+                Upload contracts, invoices, or other important files
               </p>
 
               <div className="file-upload-area">
@@ -1135,11 +1054,13 @@ export default function AddEventForm() {
                   <ul className="documents-container">
                     {documents.map((doc, idx) => (
                       <li key={idx} className="document-item">
+                       <div className="file-info">
                         <FaFileAlt className="file-icon" />
                         <span className="file-name">{doc.name}</span>
                         <span className="file-size">
                           ({(doc.size / 1024).toFixed(1)} KB)
                         </span>
+                       </div>
                         <button
                           type="button"
                           onClick={() => handleRemoveDocument(doc)}
@@ -1164,6 +1085,7 @@ export default function AddEventForm() {
                     setShowWarning(false);
                     navigate("/dashboard");
                   }}
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </button>
