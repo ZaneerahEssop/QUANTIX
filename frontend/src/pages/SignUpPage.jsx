@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../client";
 import { useNavigate, Link } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
 import "../App.css";
 import "../AuthPages.css";
 
@@ -11,6 +12,10 @@ function SignUpPage() {
   const [showConflict, setShowConflict] = useState(false);
   const [conflictText, setConflictText] = useState("");
   const navigate = useNavigate();
+
+  const handleBackToLanding = () => {
+    navigate('/');
+  };
 
   useEffect(() => {
     if (process.env.NODE_ENV === 'test') {
@@ -91,6 +96,24 @@ function SignUpPage() {
   return (
     <div className="auth-bg">
       <div className="auth-container">
+        <button 
+          onClick={handleBackToLanding}
+          className="back-button"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#333',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            marginBottom: '0.5rem',
+            fontSize: '0.9rem',
+            padding: '0.25rem 0.5rem'
+          }}
+        >
+          <FaArrowLeft style={{ marginRight: '6px', fontSize: '0.8rem'}} />
+          Back to Home
+        </button>
         <h1>
           Welcome to <span className="accent-text">Event-ually Perfect</span>
         </h1>

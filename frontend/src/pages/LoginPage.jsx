@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../client';
 import '../AuthPages.css';
+import { FaArrowLeft } from 'react-icons/fa';
 
 function LoginPage() {
   const [session, setSession] = useState(null);
@@ -125,9 +126,31 @@ function LoginPage() {
     }
   };
 
+  const handleBackToLanding = () => {
+    navigate('/');
+  };
+
   return (
     <div className="auth-bg">
       <div className="auth-container">
+        <button 
+          onClick={handleBackToLanding}
+          className="back-button"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#333',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            marginBottom: '0.5rem',
+            fontSize: '0.9rem',
+            padding: '0.25rem 0.5rem',
+          }}
+        >
+          <FaArrowLeft style={{ marginRight: '6px', fontSize: '0.8rem' }} />
+          Back to Home
+        </button>
         <h1>
           Welcome to <span className="accent-text">Event-ually Perfect</span>
         </h1>
