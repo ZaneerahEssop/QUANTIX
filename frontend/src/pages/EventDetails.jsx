@@ -494,30 +494,31 @@ const VendorBookingNotes = ({
   onUpdateNotes,
   prices,
   onUpdatePrices,
+  onSaveNotes, // ✨ ADDED: Prop to save data to backend
 }) => {
   const [priceErrors, setPriceErrors] = useState({});
-  const [editingVendorId, setEditingVendorId] = useState(null);
+  const [editingVendorId, setEditingVendorId] = useState(null); // ✨ FIX: This ID is now the instance_key
 
-  const handleNotesChange = (vendorId, notes) => {
-    onUpdateNotes({ ...bookingNotes, [vendorId]: notes });
+  const handleNotesChange = (vendorInstanceKey, notes) => {
+    onUpdateNotes({ ...bookingNotes, [vendorInstanceKey]: notes });
   };
 
-  const handlePriceChange = (vendorId, price) => {
+  const handlePriceChange = (vendorInstanceKey, price) => {
     const lowerPrice = price.toLowerCase();
     const isValidText = lowerPrice.includes(
       "e.g., 1500.00 or Contact for quote"
     );
 
     if (isValidText) {
-      onUpdatePrices({ ...prices, [vendorId]: price });
+      onUpdatePrices({ ...prices, [vendorInstanceKey]: price });
       return;
     }
     // Clear any previous error
-    setPriceErrors((prev) => ({ ...prev, [vendorId]: "" }));
+    setPriceErrors((prev) => ({ ...prev, [vendorInstanceKey]: "" }));
 
     // Allow empty value (for clearing)
     if (price === "") {
-      onUpdatePrices({ ...prices, [vendorId]: "" });
+      onUpdatePrices({ ...prices, [vendorInstanceKey]: "" });
       return;
     }
 
@@ -525,7 +526,7 @@ const VendorBookingNotes = ({
     if (/[a-zA-Z]/.test(price) && !isValidText) {
       setPriceErrors((prev) => ({
         ...prev,
-        [vendorId]: 'Please enter a valid amount or "Contact for quote"',
+        [vendorInstanceKey]: 'Please enter a valid amount or "Contact for quote"',
       }));
       return;
     }
@@ -541,9 +542,9 @@ const VendorBookingNotes = ({
       if (numericValue > 1000000) {
         setPriceErrors((prev) => ({
           ...prev,
-          [vendorId]: "Price cannot exceed R 1,000,000",
+          [vendorInstanceKey]: "Price cannot exceed R 1,000,000",
         }));
-        onUpdatePrices({ ...prices, [vendorId]: "" }); // ← Clear the price
+        onUpdatePrices({ ...prices, [vendorInstanceKey]: "" }); // ← Clear the price
         return;
       }
 
@@ -551,16 +552,16 @@ const VendorBookingNotes = ({
       if (numericValue < 0) {
         setPriceErrors((prev) => ({
           ...prev,
-          [vendorId]: "Price cannot be negative",
+          [vendorInstanceKey]: "Price cannot be negative",
         }));
         return;
       }
     }
 
-    onUpdatePrices({ ...prices, [vendorId]: sanitizedPrice });
+    onUpdatePrices({ ...prices, [vendorInstanceKey]: sanitizedPrice });
   };
 
-  const handlePriceBlur = (vendorId, price) => {
+  const handlePriceBlur = (vendorInstanceKey, price) => {
     // Format the price on blur only if it's a pure number
     if (price && !/[a-zA-Z]/.test(price)) {
       const numericValue = parseFloat(price.replace(/,/g, ""));
@@ -571,7 +572,7 @@ const VendorBookingNotes = ({
           maximumFractionDigits: 2,
         }).format(numericValue);
 
-        onUpdatePrices({ ...prices, [vendorId]: `R ${formattedPrice}` });
+        onUpdatePrices({ ...prices, [vendorInstanceKey]: `R ${formattedPrice}` });
       }
     }
   };
@@ -589,19 +590,34 @@ const VendorBookingNotes = ({
             <div className="vendor-notes-grid">
               {/* ✨ FIX: Iterate over vendors *within* this category */}
               {groupedVendors[category].map((vendor) => {
-                const isCardEditing = editingVendorId === vendor.vendor_id;
+                // ✨ FIX: Use instance_key for editing state
+                const isCardEditing = editingVendorId === vendor.instance_key;
 
                 return (
-                  <div key={vendor.vendor_id} className="vendor-note-item">
+                  // ✨ FIX: Use instance_key as the React key
+                  <div key={vendor.instance_key} className="vendor-note-item">
                     <div className="vendor-note-header">
                       <h4>
                         {vendor.business_name}
+                        {/* ✨ MODIFIED: Button now handles Save and Edit */}
                         <button
-                          onClick={() =>
-                            setEditingVendorId(
-                              isCardEditing ? null : vendor.vendor_id
-                            )
-                          }
+                          onClick={() => {
+                            if (isCardEditing) {
+                              // This is the SAVE action
+                              // Only save if it's an existing request (not a 'new-')
+                              if (!vendor.instance_key.startsWith("new-")) {
+                                onSaveNotes(
+                                  vendor.instance_key, // This is the request_id
+                                  bookingNotes[vendor.instance_key],
+                                  prices[vendor.instance_key]
+                                );
+                              }
+                              setEditingVendorId(null); // Exit editing mode
+                            } else {
+                              // This is the EDIT action
+                              setEditingVendorId(vendor.instance_key);
+                            }
+                          }}
                           className="edit-vendor-button"
                           title={isCardEditing ? "Save" : "Edit"}
                         >
@@ -619,26 +635,29 @@ const VendorBookingNotes = ({
                             <input
                               type="text"
                               placeholder="e.g., 1500.00 or Contact for quote"
-                              value={prices[vendor.vendor_id] || ""}
+                              // ✨ FIX: Use instance_key
+                              value={prices[vendor.instance_key] || ""}
                               onChange={(e) =>
                                 handlePriceChange(
-                                  vendor.vendor_id,
+                                  vendor.instance_key,
                                   e.target.value
                                 )
                               }
                               onBlur={(e) =>
                                 handlePriceBlur(
-                                  vendor.vendor_id,
+                                  vendor.instance_key,
                                   e.target.value
                                 )
                               }
+                              // ✨ FIX: Use instance_key
                               className={`price-input ${
-                                priceErrors[vendor.vendor_id] ? "error" : ""
+                                priceErrors[vendor.instance_key] ? "error" : ""
                               }`}
                             />
-                            {priceErrors[vendor.vendor_id] && (
+                            {/* ✨ FIX: Use instance_key */}
+                            {priceErrors[vendor.instance_key] && (
                               <div className="price-error-message">
-                                {priceErrors[vendor.vendor_id]}
+                                {priceErrors[vendor.instance_key]}
                               </div>
                             )}
                             <div className="price-validation-info">
@@ -650,7 +669,8 @@ const VendorBookingNotes = ({
                           </div>
                         ) : (
                           <div className="price-display">
-                            {prices[vendor.vendor_id] || "No price entered"}
+                            {/* ✨ FIX: Use instance_key */}
+                            {prices[vendor.instance_key] || "No price entered"}
                           </div>
                         )}
                       </div>
@@ -660,10 +680,11 @@ const VendorBookingNotes = ({
                         {isCardEditing ? (
                           <textarea
                             placeholder="Add notes, contact details, requirements, deadlines..."
-                            value={bookingNotes[vendor.vendor_id] || ""}
+                            // ✨ FIX: Use instance_key
+                            value={bookingNotes[vendor.instance_key] || ""}
                             onChange={(e) =>
                               handleNotesChange(
-                                vendor.vendor_id,
+                                vendor.instance_key,
                                 e.target.value
                               )
                             }
@@ -672,7 +693,8 @@ const VendorBookingNotes = ({
                           />
                         ) : (
                           <div className="notes-display">
-                            {bookingNotes[vendor.vendor_id] || "No notes added"}
+                            {/* ✨ FIX: Use instance_key */}
+                            {bookingNotes[vendor.instance_key] || "No notes added"}
                           </div>
                         )}
                       </div>
@@ -736,12 +758,14 @@ const PriceComparison = ({ groupedVendors, prices, bookingNotes }) => {
         const vendorsWithPrices = groupedVendors[category]
           .filter(
             (vendor) =>
-              prices[vendor.vendor_id] && prices[vendor.vendor_id] !== ""
+              // ✨ FIX: Use instance_key
+              prices[vendor.instance_key] && prices[vendor.instance_key] !== ""
           )
           .map((vendor) => ({
             ...vendor,
-            price: prices[vendor.vendor_id],
-            notes: bookingNotes[vendor.vendor_id] || "",
+            // ✨ FIX: Use instance_key
+            price: prices[vendor.instance_key],
+            notes: bookingNotes[vendor.instance_key] || "",
           }))
           .sort((a, b) => {
             const priceA = extractPriceValue(a.price);
@@ -772,7 +796,8 @@ const PriceComparison = ({ groupedVendors, prices, bookingNotes }) => {
               </div>
               {vendorsWithPrices.map((vendor, index) => (
                 <div
-                  key={vendor.vendor_id}
+                  // ✨ FIX: Use instance_key
+                  key={vendor.instance_key}
                   className={`comparison-row ${index === 0 ? "best-price" : ""}`}
                 >
                   <span className="vendor-name">{vendor.business_name}</span>
@@ -982,9 +1007,23 @@ const EventDetails = () => {
       );
 
       if (response.ok) {
-        const requestsData = await response.json();
-        // Assuming API returns 'service_requested' in each request object
-        setVendorRequests(requestsData || []);
+        const requestsData = (await response.json()) || [];
+        setVendorRequests(requestsData);
+
+        // =================================================================
+        // ✨ NEW: Populate notes and prices state from fetched data
+        // =================================================================
+        const notes = {};
+        const prices = {};
+
+        requestsData.forEach((req) => {
+          notes[req.request_id] = req.booking_notes || "";
+          prices[req.request_id] = req.quoted_price || "";
+        });
+
+        setVendorBookingNotes(notes);
+        setVendorPrices(prices);
+        // =================================================================
       }
     } catch (error) {
       console.error("Error fetching vendor requests:", error);
@@ -1152,6 +1191,61 @@ const EventDetails = () => {
       )
     );
   };
+
+  // =================================================================
+  // ✨ NEW FUNCTION: handleSaveVendorNotes
+  // =================================================================
+  const handleSaveVendorNotes = async (requestId, notes, price) => {
+    // Don't save if in read-only mode or if it's a new, unsaved request
+    if (isReadOnly || !requestId || requestId.startsWith("new-")) return;
+
+    try {
+      const payload = {
+        // Send null if the value is empty, which matches the DB
+        booking_notes: notes || null,
+        quoted_price: price || null,
+      };
+
+      const response = await fetch(
+        `${API_BASE}/api/vendor-requests/${requestId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Failed to update vendor details");
+      }
+
+      const updatedRequest = await response.json();
+
+      // Update local state just for this one item to avoid a full refetch
+      setVendorBookingNotes((prev) => ({
+        ...prev,
+        [requestId]: updatedRequest.request.booking_notes,
+      }));
+      setVendorPrices((prev) => ({
+        ...prev,
+        [requestId]: updatedRequest.request.quoted_price,
+      }));
+
+      // Show success message
+      setModalMessage("Vendor notes and price updated!");
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Error saving vendor notes:", error);
+      setModalMessage(`Error: ${error.message}`);
+      setShowSuccessModal(true);
+    }
+  };
+  // =================================================================
+  // END OF NEW FUNCTION
+  // =================================================================
 
   // ✨ MODIFICATION: handleSaveVendors now sends 'service_requested'
   const handleSaveVendors = async () => {
@@ -1679,11 +1773,18 @@ const EventDetails = () => {
       )}
 
       <div className="event-header">
-        <button 
-          onClick={() => navigate(currentUser?.role === 'vendor' ? "/vendor-dashboard" : "/dashboard")} 
+        <button
+          onClick={() =>
+            navigate(
+              currentUser?.role === "vendor"
+                ? "/vendor-dashboard"
+                : "/dashboard"
+            )
+          }
           className="back-button"
         >
-          <FaArrowLeft /> Back to {currentUser?.role === 'vendor' ? 'Vendor' : 'Planner'} Dashboard
+          <FaArrowLeft /> Back to{" "}
+          {currentUser?.role === "vendor" ? "Vendor" : "Planner"} Dashboard
         </button>
         <div className="button-group">
           <button
@@ -1975,7 +2076,13 @@ const EventDetails = () => {
                               href={photo.links?.html}
                               target="_blank"
                               rel="noreferrer noopener"
-                              style={{ color: "#555", textDecoration: "none" }}
+                              // =================================================================
+                              // ✨ SYNTAX FIX 1
+                              // =================================================================
+                              style={{
+                                color: "#555",
+                                textDecoration: "none",
+                              }}
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 try {
@@ -1990,7 +2097,13 @@ const EventDetails = () => {
                               href="https://unsplash.com"
                               target="_blank"
                               rel="noreferrer noopener"
-                              style={{ color: "#999", textDecoration: "none" }}
+                              // =================================================================
+                              // ✨ SYNTAX FIX 2 (This is the one from your error log)
+                              // =================================================================
+                              style={{
+                                color: "#999",
+                                textDecoration: "none",
+                              }}
                             >
                               Unsplash
                             </a>
@@ -2527,6 +2640,7 @@ const EventDetails = () => {
                             onUpdateNotes={setVendorBookingNotes}
                             prices={vendorPrices}
                             onUpdatePrices={setVendorPrices}
+                            onSaveNotes={handleSaveVendorNotes} // ✨ ADDED: Pass save function
                           />
 
                           <PriceComparison
