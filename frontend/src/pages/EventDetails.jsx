@@ -24,9 +24,7 @@ import {
   searchUnsplashPhotos,
   registerUnsplashDownload,
 } from "../services/unsplash";
-//import { eventNames } from "../../../Backend/server";
 
-// --- Sub-components (EventSchedule, EventTheme, GuestManagement) with individual edit controls ---
 const EventSchedule = ({
   schedule,
   onUpdate,
@@ -48,7 +46,7 @@ const EventSchedule = ({
     <div className="schedule-section">
       <div className="section-header">
         <h2>Schedule</h2>
-        {/* ✨ FIX: Edit button is now hidden in read-only mode */}
+
         {!isReadOnly && (
           <button onClick={onToggleEdit} className="edit-button">
             {isEditing ? <FaSave /> : <FaEdit />}{" "}
@@ -90,13 +88,12 @@ const EventSchedule = ({
       ) : (
         <div className="schedule-list">
           {schedule && schedule.length > 0 ? (
-            // Sort schedule items by time before rendering
+            // Sort schedule items by time
             [...schedule]
               .sort((a, b) => {
-                // Convert time strings to minutes since midnight for comparison
                 const timeToMinutes = (timeStr) => {
                   if (!timeStr) return 0;
-                  const [hours, minutes] = timeStr.split(':').map(Number);
+                  const [hours, minutes] = timeStr.split(":").map(Number);
                   return hours * 60 + (minutes || 0);
                 };
                 return timeToMinutes(a.time) - timeToMinutes(b.time);
@@ -162,7 +159,6 @@ const EventTheme = ({
     <div className="theme-section">
       <div className="section-header">
         <h2>Event Theme</h2>
-        {/* ✨ FIX: Edit button is now hidden in read-only mode */}
         {!isReadOnly && (
           <button onClick={onToggleEdit} className="edit-button">
             {isEditing ? <FaSave /> : <FaEdit />}{" "}
@@ -356,7 +352,6 @@ const GuestManagement = ({
     <div className="guests-section">
       <div className="section-header">
         <h2>Guest Management</h2>
-        {/* ✨ FIX: Edit button is now hidden in read-only mode */}
         {!isReadOnly && (
           <button onClick={onToggleEdit} className="edit-button">
             {isEditing ? <FaSave /> : <FaEdit />}{" "}
@@ -496,19 +491,16 @@ const SuccessModal = ({ message, onClose }) => {
   );
 };
 
-// =================================================================
-// ✨ MODIFIED COMPONENT: VendorBookingNotes (Groups by Category)
-// =================================================================
 const VendorBookingNotes = ({
-  groupedVendors, // ✨ FIX: Changed prop from 'vendors'
+  groupedVendors,
   bookingNotes,
   onUpdateNotes,
   prices,
   onUpdatePrices,
-  onSaveNotes, // ✨ ADDED: Prop to save data to backend
+  onSaveNotes,
 }) => {
   const [priceErrors, setPriceErrors] = useState({});
-  const [editingVendorId, setEditingVendorId] = useState(null); // ✨ FIX: This ID is now the instance_key
+  const [editingVendorId, setEditingVendorId] = useState(null);
 
   const handleNotesChange = (vendorInstanceKey, notes) => {
     onUpdateNotes({ ...bookingNotes, [vendorInstanceKey]: notes });
@@ -524,20 +516,19 @@ const VendorBookingNotes = ({
       onUpdatePrices({ ...prices, [vendorInstanceKey]: price });
       return;
     }
-    // Clear any previous error
+
     setPriceErrors((prev) => ({ ...prev, [vendorInstanceKey]: "" }));
 
-    // Allow empty value (for clearing)
     if (price === "") {
       onUpdatePrices({ ...prices, [vendorInstanceKey]: "" });
       return;
     }
 
-    // Allow "Contact for quote"  text
     if (/[a-zA-Z]/.test(price) && !isValidText) {
       setPriceErrors((prev) => ({
         ...prev,
-        [vendorInstanceKey]: 'Please enter a valid amount or "Contact for quote"',
+        [vendorInstanceKey]:
+          'Please enter a valid amount or "Contact for quote"',
       }));
       return;
     }
@@ -583,7 +574,10 @@ const VendorBookingNotes = ({
           maximumFractionDigits: 2,
         }).format(numericValue);
 
-        onUpdatePrices({ ...prices, [vendorInstanceKey]: `R ${formattedPrice}` });
+        onUpdatePrices({
+          ...prices,
+          [vendorInstanceKey]: `R ${formattedPrice}`,
+        });
       }
     }
   };
@@ -591,41 +585,32 @@ const VendorBookingNotes = ({
   return (
     <div className="vendor-booking-notes-section">
       <h3>Vendor Booking Details</h3>
-      {/* ✨ FIX: Iterate over categories */}
       {Object.keys(groupedVendors)
         .sort()
         .map((category) => (
           <div key={category} className="vendor-category-group">
-            {/* ✨ FIX: Add a header for the category */}
             <h4 className="vendor-category-header">{category}</h4>
             <div className="vendor-notes-grid">
-              {/* ✨ FIX: Iterate over vendors *within* this category */}
               {groupedVendors[category].map((vendor) => {
-                // ✨ FIX: Use instance_key for editing state
                 const isCardEditing = editingVendorId === vendor.instance_key;
 
                 return (
-                  // ✨ FIX: Use instance_key as the React key
                   <div key={vendor.instance_key} className="vendor-note-item">
                     <div className="vendor-note-header">
                       <h4>
                         {vendor.business_name}
-                        {/* ✨ MODIFIED: Button now handles Save and Edit */}
                         <button
                           onClick={() => {
                             if (isCardEditing) {
-                              // This is the SAVE action
-                              // Only save if it's an existing request (not a 'new-')
                               if (!vendor.instance_key.startsWith("new-")) {
                                 onSaveNotes(
-                                  vendor.instance_key, // This is the request_id
+                                  vendor.instance_key,
                                   bookingNotes[vendor.instance_key],
                                   prices[vendor.instance_key]
                                 );
                               }
                               setEditingVendorId(null); // Exit editing mode
                             } else {
-                              // This is the EDIT action
                               setEditingVendorId(vendor.instance_key);
                             }
                           }}
@@ -635,7 +620,6 @@ const VendorBookingNotes = ({
                           {isCardEditing ? <FaSave /> : <FaEdit />}
                         </button>
                       </h4>
-                      {/* We don't need the category span anymore since it's in the header */}
                     </div>
 
                     <div className="vendor-note-fields">
@@ -646,7 +630,6 @@ const VendorBookingNotes = ({
                             <input
                               type="text"
                               placeholder="e.g., 1500.00 or Contact for quote"
-                              // ✨ FIX: Use instance_key
                               value={prices[vendor.instance_key] || ""}
                               onChange={(e) =>
                                 handlePriceChange(
@@ -660,12 +643,10 @@ const VendorBookingNotes = ({
                                   e.target.value
                                 )
                               }
-                              // ✨ FIX: Use instance_key
                               className={`price-input ${
                                 priceErrors[vendor.instance_key] ? "error" : ""
                               }`}
                             />
-                            {/* ✨ FIX: Use instance_key */}
                             {priceErrors[vendor.instance_key] && (
                               <div className="price-error-message">
                                 {priceErrors[vendor.instance_key]}
@@ -680,7 +661,6 @@ const VendorBookingNotes = ({
                           </div>
                         ) : (
                           <div className="price-display">
-                            {/* ✨ FIX: Use instance_key */}
                             {prices[vendor.instance_key] || "No price entered"}
                           </div>
                         )}
@@ -691,7 +671,6 @@ const VendorBookingNotes = ({
                         {isCardEditing ? (
                           <textarea
                             placeholder="Add notes, contact details, requirements, deadlines..."
-                            // ✨ FIX: Use instance_key
                             value={bookingNotes[vendor.instance_key] || ""}
                             onChange={(e) =>
                               handleNotesChange(
@@ -704,8 +683,8 @@ const VendorBookingNotes = ({
                           />
                         ) : (
                           <div className="notes-display">
-                            {/* ✨ FIX: Use instance_key */}
-                            {bookingNotes[vendor.instance_key] || "No notes added"}
+                            {bookingNotes[vendor.instance_key] ||
+                              "No notes added"}
                           </div>
                         )}
                       </div>
@@ -720,11 +699,7 @@ const VendorBookingNotes = ({
   );
 };
 
-// =================================================================
-// ✨ MODIFIED COMPONENT: PriceComparison (Groups by Category)
-// =================================================================
 const PriceComparison = ({ groupedVendors, prices, bookingNotes }) => {
-  // ✨ FIX: Changed prop from 'vendors'
   const extractPriceValue = (priceString) => {
     if (!priceString || priceString.toLowerCase().includes("contact"))
       return Infinity;
@@ -747,7 +722,6 @@ const PriceComparison = ({ groupedVendors, prices, bookingNotes }) => {
     }).format(priceValue);
   };
 
-  // ✨ FIX: Check if there are any categories at all
   const categories = Object.keys(groupedVendors);
 
   if (categories.length === 0) {
@@ -763,18 +737,14 @@ const PriceComparison = ({ groupedVendors, prices, bookingNotes }) => {
     <div className="price-comparison-section">
       <h3>Price Comparison</h3>
 
-      {/* ✨ FIX: Iterate over each category */}
       {categories.sort().map((category) => {
-        // ✨ FIX: Run the comparison logic *per category*
         const vendorsWithPrices = groupedVendors[category]
           .filter(
             (vendor) =>
-              // ✨ FIX: Use instance_key
               prices[vendor.instance_key] && prices[vendor.instance_key] !== ""
           )
           .map((vendor) => ({
             ...vendor,
-            // ✨ FIX: Use instance_key
             price: prices[vendor.instance_key],
             notes: bookingNotes[vendor.instance_key] || "",
           }))
@@ -784,7 +754,6 @@ const PriceComparison = ({ groupedVendors, prices, bookingNotes }) => {
             return priceA - priceB;
           });
 
-        // ✨ FIX: If this category has no prices, show a message for it
         if (vendorsWithPrices.length === 0) {
           return (
             <div key={category} className="comparison-category-group">
@@ -794,22 +763,21 @@ const PriceComparison = ({ groupedVendors, prices, bookingNotes }) => {
           );
         }
 
-        // ✨ FIX: Render the table for this category
         return (
           <div key={category} className="comparison-category-group">
             <h4 className="vendor-category-header">{category}</h4>
             <div className="comparison-table">
               <div className="comparison-header">
                 <span>Vendor</span>
-                {/* ✨ FIX: Removed 'Service' column, as it's in the header */}
                 <span>Price</span>
                 <span>Notes</span>
               </div>
               {vendorsWithPrices.map((vendor, index) => (
                 <div
-                  // ✨ FIX: Use instance_key
                   key={vendor.instance_key}
-                  className={`comparison-row ${index === 0 ? "best-price" : ""}`}
+                  className={`comparison-row ${
+                    index === 0 ? "best-price" : ""
+                  }`}
                 >
                   <span className="vendor-name">{vendor.business_name}</span>
                   <span className="price">
@@ -832,7 +800,6 @@ const PriceComparison = ({ groupedVendors, prices, bookingNotes }) => {
             {vendorsWithPrices.length > 1 && (
               <div className="comparison-summary">
                 <p>
-                  {/* ✨ FIX: Clarified which category this best value is for */}
                   <strong>Best value ({category}):</strong>{" "}
                   {vendorsWithPrices[0].business_name} -{" "}
                   {formatPriceDisplay(vendorsWithPrices[0].price)}
@@ -845,9 +812,162 @@ const PriceComparison = ({ groupedVendors, prices, bookingNotes }) => {
     </div>
   );
 };
-// =================================================================
-// END OF MODIFIED COMPONENTS
-// =================================================================
+
+const EventDocuments = ({
+  eventId,
+  eventName,
+  isReadOnly,
+  isEditing,
+  onDeleteDocument,
+}) => {
+  const [documents, setDocuments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchDocumentsFromStorage = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const safeEventName = eventName
+        .replace(/\s+/g, "_")
+        .replace(/[^\w-]/g, "");
+      const folderPath = `events/${eventId}/${safeEventName}/`;
+
+      // List files from Supabase Storage
+      const { data: files, error } = await supabase.storage
+        .from("event-documents")
+        .list(folderPath);
+
+      if (error) {
+        throw error;
+      }
+
+      if (files && files.length > 0) {
+        // Get public URLs for each file
+        const documentsWithUrls = files.map((file) => {
+          const filePath = `${folderPath}${file.name}`;
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from("event-documents").getPublicUrl(filePath);
+
+          return {
+            name: file.name,
+            url: publicUrl,
+            path: filePath,
+            uploaded_at: file.created_at,
+            size: file.metadata?.size || 0,
+          };
+        });
+
+        setDocuments(documentsWithUrls);
+      } else {
+        setDocuments([]);
+      }
+    } catch (err) {
+      console.error("Error fetching documents from storage:", err);
+      setError("Failed to load documents");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [eventId, eventName]);
+
+  useEffect(() => {
+    if (eventId && eventName) {
+      fetchDocumentsFromStorage();
+    }
+  }, [eventId, eventName, fetchDocumentsFromStorage]);
+
+  const handleDeleteFromStorage = async (document) => {
+    if (
+      !window.confirm(`Are you sure you want to delete "${document.name}"?`)
+    ) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.storage
+        .from("event-documents")
+        .remove([document.path]);
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchDocumentsFromStorage();
+
+      if (onDeleteDocument) {
+        onDeleteDocument(document);
+      }
+    } catch (err) {
+      console.error("Error deleting document from storage:", err);
+      alert(`Failed to delete document: ${err.message}`);
+    }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  if (isLoading) {
+    return <div className="loading">Loading documents...</div>;
+  }
+
+  if (error) {
+    return <div className="error">{error}</div>;
+  }
+
+  return (
+    <div className="documents-list">
+      {documents.length > 0 ? (
+        <ul>
+          {documents.map((doc, index) => (
+            <li key={index} className="document-item">
+              <div className="document-info">
+                <a
+                  href={doc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="document-link"
+                >
+                  <FaFilePdf />
+                  <span className="document-name">{doc.name}</span>
+                </a>
+                <div className="document-meta">
+                  {doc.size > 0 && (
+                    <span className="file-size">
+                      ({formatFileSize(doc.size)})
+                    </span>
+                  )}
+                  {doc.uploaded_at && (
+                    <span className="upload-date">
+                      {new Date(doc.uploaded_at).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {isEditing && !isReadOnly && (
+                <button
+                  onClick={() => handleDeleteFromStorage(doc)}
+                  className="delete-doc"
+                  title="Delete document"
+                >
+                  <FaTimes />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No documents found in storage for this event.</p>
+      )}
+    </div>
+  );
+};
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -881,7 +1001,6 @@ const EventDetails = () => {
     }
   }, [location]);
 
-  // Keep activeView in sync with activeTab
   useEffect(() => {
     setActiveView(activeTab);
   }, [activeTab]);
@@ -904,11 +1023,8 @@ const EventDetails = () => {
   const [allVendors, setAllVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-
-  // ✨ MODIFICATION: selectedVendors now stores { vendor, service }
   const [selectedVendors, setSelectedVendors] = useState([]);
 
-  const [documents, setDocuments] = useState([]);
   const [schedule, setSchedule] = useState([]);
   const [guests, setGuests] = useState([]);
   const initialGuestsRef = useRef([]);
@@ -932,29 +1048,25 @@ const EventDetails = () => {
   useEffect(() => {
     if (eventId && activeView) {
       localStorage.setItem(`event_${eventId}_activeTab`, activeView);
-      // Update URL to reflect the active tab
       const url = new URL(window.location);
-      if (activeView !== 'overview') {
-        url.searchParams.set('tab', activeView);
+      if (activeView !== "overview") {
+        url.searchParams.set("tab", activeView);
       } else {
-        url.searchParams.delete('tab');
+        url.searchParams.delete("tab");
       }
-      window.history.replaceState({}, '', url);
+      window.history.replaceState({}, "", url);
     }
   }, [activeView, eventId]);
 
-  // Load saved tab from localStorage or URL on component mount
   useEffect(() => {
     if (!eventId) return;
-    
-    // First check URL for tab parameter
+
     const urlParams = new URLSearchParams(window.location.search);
-    const tabFromUrl = urlParams.get('tab');
-    
+    const tabFromUrl = urlParams.get("tab");
+
     if (tabFromUrl) {
       setActiveView(tabFromUrl);
     } else {
-      // If no tab in URL, check localStorage
       const savedTab = localStorage.getItem(`event_${eventId}_activeTab`);
       if (savedTab) {
         setActiveView(savedTab);
@@ -978,12 +1090,10 @@ const EventDetails = () => {
   }, [isReadOnly]);
 
   const handleVendorCardClick = (vendorId) => {
-    // Create a return URL that includes the tab parameter
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set("tab", "vendors");
     const returnTo = `${window.location.pathname}?${searchParams.toString()}`;
 
-    // Store the current scroll position
     sessionStorage.setItem("vendorListScroll", window.scrollY);
 
     navigate(`/vendors/${vendorId}/services?readonly=true`, {
@@ -1042,7 +1152,6 @@ const EventDetails = () => {
     fetchVendors();
   }, [fetchVendors]);
 
-  // ✨ MODIFICATION: Moved fetchVendorRequests to useCallback
   const fetchVendorRequests = useCallback(async () => {
     try {
       if (!eventId) return;
@@ -1055,9 +1164,6 @@ const EventDetails = () => {
         const requestsData = (await response.json()) || [];
         setVendorRequests(requestsData);
 
-        // =================================================================
-        // ✨ NEW: Populate notes and prices state from fetched data
-        // =================================================================
         const notes = {};
         const prices = {};
 
@@ -1068,7 +1174,6 @@ const EventDetails = () => {
 
         setVendorBookingNotes(notes);
         setVendorPrices(prices);
-        // =================================================================
       }
     } catch (error) {
       console.error("Error fetching vendor requests:", error);
@@ -1127,7 +1232,6 @@ const EventDetails = () => {
 
         setEventData(fetchedEventData);
         setSchedule(fetchedEventData.schedule || []);
-        // Load schedule from dedicated endpoint
         try {
           const schedResp = await fetch(
             `${API_URL}/api/events/${eventId}/schedule`
@@ -1163,11 +1267,6 @@ const EventDetails = () => {
 
         setEventData(updatedEventData);
         setTheme(themeData || { name: "", colors: [], notes: "" });
-        setDocuments(fetchedEventData.documents || []);
-
-        // Note: We no longer initialize selectedVendors from eventData.vendors
-        // selectedVendors is *only* for new, unsaved selections.
-        // setSelectedVendors(fetchedEventData.vendors || []); // This line is removed.
 
         const startTime = new Date(fetchedEventData.start_time);
         const year = startTime.getFullYear();
@@ -1191,10 +1290,8 @@ const EventDetails = () => {
     };
 
     fetchData();
-    // We remove fetchVendorRequests from here as it's in its own useEffect
   }, [eventId, navigate, API_URL, isReadOnly]);
 
-  // ✨ MODIFICATION: handleSelectVendor now accepts a service
   const handleSelectVendor = (vendor, service) => {
     // Check if this specific vendor + service is already selected
     if (
@@ -1224,7 +1321,6 @@ const EventDetails = () => {
     ]);
   };
 
-  // ✨ MODIFICATION: handleRemoveVendor now accepts a service
   const handleRemoveVendor = (vendorToRemove, serviceToRemove) => {
     setSelectedVendors((prev) =>
       prev.filter(
@@ -1237,9 +1333,6 @@ const EventDetails = () => {
     );
   };
 
-  // =================================================================
-  // ✨ NEW FUNCTION: handleSaveVendorNotes
-  // =================================================================
   const handleSaveVendorNotes = async (requestId, notes, price) => {
     // Don't save if in read-only mode or if it's a new, unsaved request
     if (isReadOnly || !requestId || requestId.startsWith("new-")) return;
@@ -1288,11 +1381,7 @@ const EventDetails = () => {
       setShowSuccessModal(true);
     }
   };
-  // =================================================================
-  // END OF NEW FUNCTION
-  // =================================================================
 
-  // ✨ MODIFICATION: handleSaveVendors now sends 'service_requested'
   const handleSaveVendors = async () => {
     if (isReadOnly) return;
     if (selectedVendors.length === 0) {
@@ -1314,7 +1403,7 @@ const EventDetails = () => {
             event_id: eventId,
             vendor_id: vendor.vendor_id,
             requester_id: user.id,
-            service_requested: service, // <-- ✨ NEW FIELD
+            service_requested: service,
           };
 
           const response = await fetch(`${API_URL}/api/vendor-requests`, {
@@ -1356,7 +1445,6 @@ const EventDetails = () => {
         );
       }
 
-      // ✨ MODIFICATION: Clear selections and re-fetch requests from DB
       await fetchVendorRequests();
       setSelectedVendors([]);
       setIsVendorsEditing(false);
@@ -1513,7 +1601,6 @@ const EventDetails = () => {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Map UI items to API shape, composing ISO start_time from selected event date + item.time
       const dateForItems =
         formData && formData.date
           ? formData.date
@@ -1672,113 +1759,72 @@ const EventDetails = () => {
   };
 
   const handleFileUpload = async (e) => {
-  if (isReadOnly) return;
-  const files = Array.from(e.target.files);
-  if (files.length === 0) return;
+    if (isReadOnly) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
-  setIsUploading(true);
-  setUploadProgress(0);
-  const newDocs = [];
-  const totalFiles = files.length;
+    setIsUploading(true);
+    setUploadProgress(0);
+    const totalFiles = files.length;
 
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
 
-    for (let i = 0; i < totalFiles; i++) {
-      const file = files[i];
-      const fileExt = file.name.split('.').pop();
-      // Create a unique filename to prevent collisions
-      const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-      const filePath = `${eventId}/${fileName}`;
+      // Create the folder path in storage bucket
+      const safeEventName = formData.name
+        .replace(/\s+/g, "_")
+        .replace(/[^\w-]/g, "");
+      const folderPath = `events/${eventId}/${safeEventName}/`;
 
-      // Upload to event-documents bucket
-      const { error: uploadError } = await supabase.storage
-        .from('event-documents')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      for (let i = 0; i < totalFiles; i++) {
+        const file = files[i];
+        const filePath = `${folderPath}${file.name}`;
 
-      if (uploadError) {
-        throw uploadError;
+        // Upload to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from("event-documents")
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        setUploadProgress(Math.round(((i + 1) / totalFiles) * 100));
       }
 
-      // Get the public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from('event-documents')
-        .getPublicUrl(filePath);
-
-      newDocs.push({
-        name: file.name,
-        url: publicUrl,
-        path: filePath, // Store the path for future reference
-        uploaded_at: new Date().toISOString()
-      });
-
-      setUploadProgress(Math.round(((i + 1) / totalFiles) * 100));
+      setModalMessage(`Successfully uploaded ${totalFiles} file(s)!`);
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Error uploading files to storage:", error);
+      setModalMessage(`Upload failed: ${error.message}`);
+      setShowSuccessModal(true);
+    } finally {
+      setIsUploading(false);
+      e.target.value = null;
     }
+  };
 
-    // Update the documents array in your events table
-    const { error: updateError } = await supabase
-      .from('events')
-      .update({
-        documents: [...documents, ...newDocs],
-        updated_at: new Date().toISOString()
-      })
-      .eq('event_id', eventId);
+  const handleDeleteDocument = async (docToDelete) => {
+    if (!window.confirm("Are you sure you want to delete this document?"))
+      return;
 
-    if (updateError) throw updateError;
+    try {
+      // Delete from Supabase Storage
+      const { error: storageError } = await supabase.storage
+        .from("event-documents")
+        .remove([docToDelete.path]);
 
-    // Update local state
-    setDocuments(prev => [...prev, ...newDocs]);
-    setModalMessage('Documents uploaded successfully!');
-    setShowSuccessModal(true);
+      if (storageError) throw storageError;
 
-  } catch (error) {
-    console.error('Error uploading files:', error);
-    setModalMessage(`Upload failed: ${error.message}`);
-    setShowSuccessModal(true);
-  } finally {
-    setIsUploading(false);
-    e.target.value = null; // Reset file input
-  }
-};
-
-// Add this function to handle document deletion
-const handleDeleteDocument = async (docToDelete) => {
-  if (!window.confirm('Are you sure you want to delete this document?')) return;
-
-  try {
-    // First, delete the file from storage
-    const { error: deleteStorageError } = await supabase.storage
-      .from('event-documents')
-      .remove([docToDelete.path]);
-
-    if (deleteStorageError) throw deleteStorageError;
-
-    // Then update the documents array in the database
-    const { error: updateError } = await supabase
-      .from('events')
-      .update({
-        documents: documents.filter(doc => doc.url !== docToDelete.url),
-        updated_at: new Date().toISOString()
-      })
-      .eq('event_id', eventId);
-
-    if (updateError) throw updateError;
-
-    // Update local state
-    setDocuments(prev => prev.filter(doc => doc.url !== docToDelete.url));
-    setModalMessage('Document deleted successfully!');
-    setShowSuccessModal(true);
-
-  } catch (error) {
-    console.error('Error deleting document:', error);
-    setModalMessage(`Failed to delete document: ${error.message}`);
-    setShowSuccessModal(true);
-  }
-};
+      setModalMessage("Document deleted successfully!");
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Error deleting document from storage:", error);
+      setModalMessage(`Failed to delete document: ${error.message}`);
+      setShowSuccessModal(true);
+    }
+  };
   if (isLoading) return <div className="loading">Loading event details...</div>;
   if (!eventData)
     return (
@@ -1804,14 +1850,10 @@ const handleDeleteDocument = async (docToDelete) => {
     });
   };
 
-  // ✨ FIX: Removed unused 'acceptedVendorsInfo' variable
-  // (This logic is handled by filtering vendorRequests directly in the JSX)
-
   const pendingRequests = vendorRequests.filter(
     (req) => req.status === "pending"
   );
 
-  // ✨ FIX: This variable is now used by the JSX
   const rejectedRequests = vendorRequests.filter(
     (req) => req.status === "rejected"
   );
@@ -1860,21 +1902,18 @@ const handleDeleteDocument = async (docToDelete) => {
           >
             Event Overview
           </button>
-          {/* ✨ FIX: Renamed button */}
           <button
             onClick={() => setActiveView("guests")}
             className={`new-button ${activeView === "guests" ? "active" : ""}`}
           >
             Guest List
           </button>
-          {/* ✨ FIX: Renamed button */}
           <button
             onClick={() => setActiveView("vendors")}
             className={`new-button ${activeView === "vendors" ? "active" : ""}`}
           >
             Vendor List
           </button>
-          {/* ✨ FIX: Renamed button */}
           <button
             onClick={() => setActiveView("documents")}
             className={`new-button ${
@@ -1894,7 +1933,6 @@ const handleDeleteDocument = async (docToDelete) => {
       <div className="event-main-details-section">
         <div className="section-header">
           <h2>Event Details</h2>
-          {/* ✨ FIX: Edit button is now hidden in read-only mode */}
           {!isReadOnly && (
             <button
               onClick={() =>
@@ -2006,7 +2044,6 @@ const handleDeleteDocument = async (docToDelete) => {
                 isReadOnly={isReadOnly}
               />
             </section>
-            {/* ✨ FIX: Unsplash section is now hidden in read-only mode */}
             {!isReadOnly && (
               <section>
                 <div className="section-header">
@@ -2141,9 +2178,6 @@ const handleDeleteDocument = async (docToDelete) => {
                               href={photo.links?.html}
                               target="_blank"
                               rel="noreferrer noopener"
-                              // =================================================================
-                              // ✨ SYNTAX FIX 1
-                              // =================================================================
                               style={{
                                 color: "#555",
                                 textDecoration: "none",
@@ -2162,9 +2196,6 @@ const handleDeleteDocument = async (docToDelete) => {
                               href="https://unsplash.com"
                               target="_blank"
                               rel="noreferrer noopener"
-                              // =================================================================
-                              // ✨ SYNTAX FIX 2 (This is the one from your error log)
-                              // =================================================================
                               style={{
                                 color: "#999",
                                 textDecoration: "none",
@@ -2367,7 +2398,6 @@ const handleDeleteDocument = async (docToDelete) => {
                           return matchesSearch && matchesCategory;
                         })
                         .map((vendor) => {
-                          // ✨ MODIFICATION: Get all services
                           const services =
                             vendor.service_type
                               .split(",")
@@ -2375,15 +2405,11 @@ const handleDeleteDocument = async (docToDelete) => {
                               .filter(Boolean) || [];
 
                           return (
-                            <div
-                              key={vendor.vendor_id}
-                              className="vendor-card"
-                            >
+                            <div key={vendor.vendor_id} className="vendor-card">
                               <div className="vendor-card-content">
                                 <div className="vendor-info">
                                   <h4>{vendor.business_name}</h4>
                                 </div>
-                                {/* ✨ MODIFICATION: Show services as tags */}
                                 <div className="vendor-categories-list">
                                   {services.map((service) => (
                                     <span
@@ -2402,7 +2428,6 @@ const handleDeleteDocument = async (docToDelete) => {
                                     "No description available."}
                                 </div>
                               </div>
-                              {/* ✨ MODIFICATION: New actions UI */}
                               <div className="vendor-actions">
                                 <button
                                   type="button"
@@ -2503,16 +2528,11 @@ const handleDeleteDocument = async (docToDelete) => {
                   </div>
                 ) : (
                   <div>
-                    {/* This 'view' mode now correctly reflects the grouped data
-                        from the 'vendor-management-tools' section below,
-                        but we can show a simpler list of confirmed vendors here.
-                    */}
                     {vendorRequests.filter((req) => req.status === "accepted")
                       .length > 0 && (
                       <div className="confirmed-vendors-container">
                         <h4>Confirmed Vendors</h4>
                         <ul className="vendors-list-with-actions">
-                          {/* We map over vendorRequests to show the specific service */}
                           {vendorRequests
                             .filter(
                               (req) => req.status === "accepted" && req.vendor
@@ -2574,7 +2594,6 @@ const handleDeleteDocument = async (docToDelete) => {
                                 <div className="vendor-details">
                                   <small>
                                     Service:{" "}
-                                    {/* ✨ Show specific requested service */}
                                     {request.service_requested || "Unknown"}
                                   </small>
                                 </div>
@@ -2590,7 +2609,6 @@ const handleDeleteDocument = async (docToDelete) => {
                       </div>
                     )}
 
-                    {/* ✨ FIX: Added UI for rejected requests */}
                     {rejectedRequests.length > 0 && (
                       <div className="vendor-requests-container">
                         <h4>Other Requests</h4>
@@ -2634,93 +2652,78 @@ const handleDeleteDocument = async (docToDelete) => {
                   </div>
                 )}
 
-                {/* ================================================================= */}
-                {/* ✨ MODIFIED SECTION: Hides Booking/Price from ReadOnly Users */}
-                {/* ================================================================= */}
-                {(!isReadOnly &&
-                  (vendorRequests.length > 0 ||
-                    selectedVendors.length > 0)) && (
-                  <div className="vendor-management-tools">
-                    {(() => {
-                      // ✨ FIX: 1. Get items from vendorRequests
-                      const vendorsFromRequests = vendorRequests
-                        .filter(
-                          (req) =>
-                            req.vendor &&
-                            (req.status === "accepted" ||
-                              req.status === "pending")
-                        )
-                        .map((req) => ({
-                          ...req.vendor, // Spread vendor data (id, name, etc.)
-                          service_type: req.service_requested, // CRITICAL: Override service_type
-                          request_status: req.status,
-                          // Use request_id as a unique key for this instance
-                          instance_key: req.request_id,
-                        }));
+                {!isReadOnly &&
+                  (vendorRequests.length > 0 || selectedVendors.length > 0) && (
+                    <div className="vendor-management-tools">
+                      {(() => {
+                        const vendorsFromRequests = vendorRequests
+                          .filter(
+                            (req) =>
+                              req.vendor &&
+                              (req.status === "accepted" ||
+                                req.status === "pending")
+                          )
+                          .map((req) => ({
+                            ...req.vendor, // Spread vendor data (id, name, etc.)
+                            service_type: req.service_requested,
+                            request_status: req.status,
+                            // Use request_id as a unique key for this instance
+                            instance_key: req.request_id,
+                          }));
 
-                      // ✨ FIX: 2. Get items from newly selected vendors
-                      const vendorsFromSelections = selectedVendors.map(
-                        (sel, idx) => ({
-                          ...sel.vendor,
-                          service_type: sel.service, // CRITICAL: Use the selected service
-                          request_status: "selected",
-                          // Create a temporary unique key
-                          instance_key: `new-${sel.vendor.vendor_id}-${idx}`,
-                        })
-                      );
+                        const vendorsFromSelections = selectedVendors.map(
+                          (sel, idx) => ({
+                            ...sel.vendor,
+                            service_type: sel.service,
+                            request_status: "selected",
+                            // Create a temporary unique key
+                            instance_key: `new-${sel.vendor.vendor_id}-${idx}`,
+                          })
+                        );
 
-                      // ✨ FIX: 3. Combine them
-                      const allRelevantVendors = [
-                        ...vendorsFromRequests,
-                        ...vendorsFromSelections,
-                      ];
+                        const allRelevantVendors = [
+                          ...vendorsFromRequests,
+                          ...vendorsFromSelections,
+                        ];
 
-                      // ✨ FIX: 4. Group them by the *single* service_type
-                      const groupedVendors = allRelevantVendors.reduce(
-                        (acc, vendor) => {
-                          // 'vendor.service_type' is now a single string like "Photographer"
-                          let category =
-                            vendor.service_type || "Uncategorized";
-                          category =
-                            category.charAt(0).toUpperCase() +
-                            category.slice(1);
+                        const groupedVendors = allRelevantVendors.reduce(
+                          (acc, vendor) => {
+                            let category =
+                              vendor.service_type || "Uncategorized";
+                            category =
+                              category.charAt(0).toUpperCase() +
+                              category.slice(1);
 
-                          if (!acc[category]) {
-                            acc[category] = [];
-                          }
+                            if (!acc[category]) {
+                              acc[category] = [];
+                            }
+                            acc[category].push(vendor);
+                            return acc;
+                          },
+                          {}
+                        );
 
-                          // Now we push the vendor *instance*
-                          // This allows the same vendor to appear in multiple categories
-                          acc[category].push(vendor);
-                          return acc;
-                        },
-                        {}
-                      );
+                        return (
+                          <>
+                            <VendorBookingNotes
+                              groupedVendors={groupedVendors}
+                              bookingNotes={vendorBookingNotes}
+                              onUpdateNotes={setVendorBookingNotes}
+                              prices={vendorPrices}
+                              onUpdatePrices={setVendorPrices}
+                              onSaveNotes={handleSaveVendorNotes}
+                            />
 
-                      return (
-                        <>
-                          <VendorBookingNotes
-                            groupedVendors={groupedVendors} // ✨ FIX: Pass grouped data
-                            bookingNotes={vendorBookingNotes}
-                            onUpdateNotes={setVendorBookingNotes}
-                            prices={vendorPrices}
-                            onUpdatePrices={setVendorPrices}
-                            onSaveNotes={handleSaveVendorNotes} // ✨ ADDED: Pass save function
-                          />
-
-                          <PriceComparison
-                            groupedVendors={groupedVendors} // ✨ FIX: Pass grouped data
-                            prices={vendorPrices}
-                            bookingNotes={vendorBookingNotes}
-                          />
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
-                {/* ================================================================= */}
-                {/* END OF MODIFIED SECTION */}
-                {/* ================================================================= */}
+                            <PriceComparison
+                              groupedVendors={groupedVendors}
+                              prices={vendorPrices}
+                              bookingNotes={vendorBookingNotes}
+                            />
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
               </>
             )}
           </section>
@@ -2729,7 +2732,6 @@ const handleDeleteDocument = async (docToDelete) => {
           <section className="documents-section">
             <div className="section-header">
               <h2>Documents</h2>
-              {/* ✨ FIX: Edit button is now hidden in read-only mode */}
               {!isReadOnly && (
                 <button
                   onClick={() => setIsDocumentsEditing(!isDocumentsEditing)}
@@ -2740,10 +2742,11 @@ const handleDeleteDocument = async (docToDelete) => {
                 </button>
               )}
             </div>
+
             {isDocumentsEditing && (
               <div className="upload-area">
                 <label className="upload-button">
-                  <FaUpload /> Upload Documents (PDF, DOCX)
+                  <FaUpload /> Upload Documents
                   <input
                     type="file"
                     multiple
@@ -2760,34 +2763,14 @@ const handleDeleteDocument = async (docToDelete) => {
                 )}
               </div>
             )}
-            <div className="documents-list">
-              {documents && documents.length > 0 ? (
-                <ul>
-                  {documents.map((doc, index) => (
-                    <li key={index} className="document-item">
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <FaFilePdf /> {doc.name}
-                      </a>
-                      {isDocumentsEditing && (
-                        <button
-                          onClick={() => handleDeleteDocument(doc)}
-                          className="delete-doc"
-                          title="Delete document"
-                        >
-                          <FaTimes />
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No documents uploaded yet</p>
-              )}
-            </div>
+
+            <EventDocuments
+              eventId={eventId}
+              eventName={formData.name}
+              isReadOnly={isReadOnly}
+              isEditing={isDocumentsEditing}
+              onDeleteDocument={handleDeleteDocument}
+            />
           </section>
         )}
       </div>
