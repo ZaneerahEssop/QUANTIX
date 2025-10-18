@@ -11,6 +11,7 @@
   --peach: #FFDAB9;
 }
 
+
 body{
   background: linear-gradient(135deg, var(--blush) 0%, var(--peach) 100%);
   margin: 0;
