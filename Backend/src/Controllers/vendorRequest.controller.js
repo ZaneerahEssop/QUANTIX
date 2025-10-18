@@ -2,11 +2,14 @@ const supabase = require("../Config/supabase");
 
 const createVendorRequest = async (req, res) => {
   try {
-    const { event_id, vendor_id, requester_id } = req.body;
+    // ✨ MODIFICATION: Get 'service_requested' from the request body
+    const { event_id, vendor_id, requester_id, service_requested } = req.body;
 
-    if (!event_id || !vendor_id || !requester_id) {
+    // ✨ MODIFICATION: Add 'service_requested' to the validation
+    if (!event_id || !vendor_id || !requester_id || !service_requested) {
       return res.status(400).json({
-        error: "Event ID and Vendor ID and Requester ID are required",
+        error:
+          "Event ID, Vendor ID, Requester ID, and Service Requested are required",
       });
     }
 
@@ -14,11 +17,21 @@ const createVendorRequest = async (req, res) => {
       event_id,
       vendor_id,
       requester_id,
+      service_requested, // ✨ MODIFICATION: Log the new field
     });
 
     const { data, error } = await supabase
       .from("vendor_requests")
-      .insert([{ event_id, vendor_id, requester_id, status: "pending" }])
+      // ✨ MODIFICATION: Insert the 'service_requested' field
+      .insert([
+        {
+          event_id,
+          vendor_id,
+          requester_id,
+          service_requested,
+          status: "pending",
+        },
+      ])
       .select()
       .single();
 
@@ -48,6 +61,7 @@ const getVendorRequestByVendorId = async (req, res) => {
         status,
         requester_id,
         event_id,
+        service_requested, 
         events:event_id (
           event_id,
           name,
@@ -92,6 +106,7 @@ const getVendorRequestByEventId = async (req, res) => {
         status,
         created_at,
         vendor_id,
+        service_requested, 
         vendor:vendor_id (
           vendor_id,
           business_name,
@@ -121,11 +136,17 @@ const getVendorRequestByEventId = async (req, res) => {
 const updateVendorRequest = async (req, res) => {
   try {
     const { id } = req.params;
-    const { event_id, vendor_id, status } = req.body;
+    // Note: We only update status here. We don't let people change the
+    // event, vendor, or service of an *existing* request.
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ error: "Status is required" });
+    }
 
     const { data, error } = await supabase
       .from("vendor_requests")
-      .update({ event_id, vendor_id, status })
+      .update({ status }) // ✨ MODIFICATION: Only update what's intended
       .eq("request_id", id)
       .select()
       .single();

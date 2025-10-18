@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { supabase } from '../client';
 import '../ProfileForm.css';
 import '../App.css';
@@ -32,6 +32,7 @@ const StarRating = ({ rating, onRatingChange, readOnly = false }) => {
 const VendorServices = ({ session }) => {
   const { vendorId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [vendorData, setVendorData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,6 +49,41 @@ const VendorServices = ({ session }) => {
   const loggedInUserId = session?.user?.id;
   const targetVendorId = vendorId || loggedInUserId;
   const isOwner = loggedInUserId === targetVendorId;
+
+  // Handle back button navigation
+  const handleBack = () => {
+    const state = location.state || {};
+    const searchParams = new URLSearchParams(window.location.search);
+    const isReadOnly = searchParams.get('readonly') === 'true';
+    
+    // If we're in read-only mode (viewing from event details)
+    if (isReadOnly) {
+      // Create a URL with both tab=vendors and edit=true parameters
+      const createReturnUrl = (baseUrl) => {
+        const url = new URL(baseUrl, window.location.origin);
+        url.searchParams.set('tab', 'vendors');
+        url.searchParams.set('edit', 'true');
+        return url.toString();
+      };
+      
+      // If we have a specific return URL, use it as base and add our params
+      if (state.returnTo) {
+        window.location.href = createReturnUrl(state.returnTo);
+        return;
+      }
+      // If we have an eventId, construct the URL with our params
+      else if (state.eventId) {
+        const url = new URL(`/events/${state.eventId}`, window.location.origin);
+        url.searchParams.set('tab', 'vendors');
+        url.searchParams.set('edit', 'true');
+        window.location.href = url.toString();
+        return;
+      }
+    }
+    
+    // Default back behavior for other cases
+    window.history.back();
+  };
   const isPlannerView = !isOwner;
 
   const fetchReviews = useCallback(async () => {
@@ -193,7 +229,7 @@ const VendorServices = ({ session }) => {
           marginBottom: '20px'
         }}>
           <button 
-            onClick={() => window.history.back()} 
+            onClick={handleBack}
             className="back-to-dashboard"
             style={{
               display: 'inline-flex',
