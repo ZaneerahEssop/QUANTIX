@@ -128,12 +128,160 @@ img {
     font-size: 0.9rem !important;
   }
 }
+  /* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+}
+
+.modal-close-x-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-close-x-btn:hover {
+  color: #333;
+}
 `;
 
 // Add the styles to the document head
 const styleSheet = document.createElement("style");
 styleSheet.innerText = responsiveStyles;
 document.head.appendChild(styleSheet);
+
+const SuccessModal = ({ message, onClose }) => {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="modal-close-x-btn">
+          &times;
+        </button>
+        <p>{message}</p>
+        <button
+          onClick={onClose}
+          style={{
+            marginTop: "1.5rem",
+            backgroundColor: "#E8B180",
+            color: "white",
+            border: "none",
+            padding: "0.75rem 1.5rem",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontWeight: "500",
+            transition: "background-color 0.2s",
+          }}
+          onMouseOver={(e) =>
+            (e.currentTarget.style.backgroundColor = "#D89F73")
+          }
+          onMouseOut={(e) =>
+            (e.currentTarget.style.backgroundColor = "#E8B180")
+          }
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Confirmation Modal Component
+const ConfirmationModal = ({ message, onConfirm, onCancel }) => {
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <h3 style={{ marginTop: 0, color: "#333" }}>Confirm Deletion</h3>
+        <p
+          style={{
+            margin: "1rem 0",
+            fontSize: "1rem",
+            color: "#666",
+            lineHeight: "1.5",
+          }}
+        >
+          {message}
+        </p>
+        <div
+          style={{
+            display: "flex",
+            gap: "1rem",
+            justifyContent: "center",
+            marginTop: "1.5rem",
+          }}
+        >
+          <button
+            onClick={onCancel}
+            style={{
+              backgroundColor: "#6c757d",
+              color: "white",
+              border: "none",
+              padding: "0.75rem 1.5rem",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "500",
+              transition: "background-color 0.2s",
+              flex: 1,
+            }}
+            onMouseOver={(e) =>
+              (e.currentTarget.style.backgroundColor = "#5a6268")
+            }
+            onMouseOut={(e) =>
+              (e.currentTarget.style.backgroundColor = "#6c757d")
+            }
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              backgroundColor: "#dc3545",
+              color: "white",
+              border: "none",
+              padding: "0.75rem 1.5rem",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "500",
+              transition: "background-color 0.2s",
+              flex: 1,
+            }}
+            onMouseOver={(e) =>
+              (e.currentTarget.style.backgroundColor = "#c82333")
+            }
+            onMouseOut={(e) =>
+              (e.currentTarget.style.backgroundColor = "#dc3545")
+            }
+          >
+            Delete Event
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function PlannerDashboard({ session }) {
   const navigate = useNavigate();
@@ -152,6 +300,14 @@ export default function PlannerDashboard({ session }) {
   const [conversationItems, setConversationItems] = useState([]);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [eventToDelete, setEventToDelete] = useState(null);
+  const [confirmModalMessage, setConfirmModalMessage] = useState("");
+
+  const API_URL = process.env.REACT_APP_API_URL;
 
   // Load conversations for the planner
   const loadConversations = useCallback(async () => {
@@ -335,8 +491,6 @@ export default function PlannerDashboard({ session }) {
     }
   };
 
-  const API_URL = process.env.REACT_APP_API_URL;
-
   console.log("Current URL:", window.location.href);
   console.log("Using API_URL:", API_URL);
   // Prevent scrolling until page is fully loaded
@@ -466,6 +620,50 @@ export default function PlannerDashboard({ session }) {
     fetchTasks();
   }, [session, API_URL]); // Added API_URL to dependency array
 
+  const confirmDeleteEvent = (eventId, eventName) => {
+    setEventToDelete(eventId);
+    setConfirmModalMessage(
+      `Are you sure you want to delete "${eventName}"? This action cannot be undone.`
+    );
+    setShowConfirmModal(true);
+  };
+
+  // Function to actually delete the event
+  const deleteEvent = async () => {
+    if (!eventToDelete) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/events/${eventToDelete}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete event");
+      }
+
+      // Remove the event from local state
+      setEvents((prevEvents) =>
+        prevEvents.filter((event) => event.event_id !== eventToDelete)
+      );
+
+      // Show success modal
+      setModalMessage("Event deleted successfully!");
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      setModalMessage(`Error deleting event: ${error.message}`);
+      setShowSuccessModal(true);
+    } finally {
+      // Reset confirmation modal state
+      setShowConfirmModal(false);
+      setEventToDelete(null);
+    }
+  };
+
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!newTask.trim() || !session?.user?.id) {
@@ -577,38 +775,6 @@ export default function PlannerDashboard({ session }) {
     }
   };
 
-  const deleteEvent = async (eventId) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this event? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
-    try {
-      const response = await fetch(`${API_URL}/api/events/${eventId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to delete event");
-      }
-
-      setEvents((prevEvents) =>
-        prevEvents.filter((event) => event.event_id !== eventId)
-      );
-
-      alert("Event deleted successfully!");
-    } catch (error) {
-      console.error("Error deleting event:", error);
-      alert("Error deleting event");
-    }
-  };
-
   const handleAddEvent = (e) => {
     e.preventDefault();
     navigate("/add-event");
@@ -705,7 +871,24 @@ export default function PlannerDashboard({ session }) {
       }}
     >
       <Navbar session={session} />
+      {showConfirmModal && (
+        <ConfirmationModal
+          message={confirmModalMessage}
+          onConfirm={deleteEvent}
+          onCancel={() => {
+            setShowConfirmModal(false);
+            setEventToDelete(null);
+          }}
+        />
+      )}
 
+      {/* Success/Error Modal */}
+      {showSuccessModal && (
+        <SuccessModal
+          message={modalMessage}
+          onClose={() => setShowSuccessModal(false)}
+        />
+      )}
       {/* Responsive Container */}
       <div className="dashboard-responsive-container">
         <div
@@ -954,7 +1137,10 @@ export default function PlannerDashboard({ session }) {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    deleteEvent(event.event_id);
+                                    confirmDeleteEvent(
+                                      event.event_id,
+                                      event.name
+                                    );
                                   }}
                                   style={{
                                     backgroundColor: "#ffebee",
