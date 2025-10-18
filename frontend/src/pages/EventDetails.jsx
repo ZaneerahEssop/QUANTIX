@@ -1693,7 +1693,7 @@ const EventDetails = () => {
       const filePath = `${eventId}/${fileName}`;
 
       // Upload to event-documents bucket
-      const { data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('event-documents')
         .upload(filePath, file, {
           cacheControl: '3600',

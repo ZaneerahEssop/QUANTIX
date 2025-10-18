@@ -23,7 +23,14 @@ export default function AddEventForm() {
 
   // Function to handle vendor profile button click
   const handleViewProfileClick = (vendorId) => {
-    // Navigate to the vendor's profile page, likely read-only
+    // Save current form state to sessionStorage before navigating
+    sessionStorage.setItem('eventFormData', JSON.stringify(formData));
+    sessionStorage.setItem('selectedVendors', JSON.stringify(selectedVendors));
+    sessionStorage.setItem('eventDocuments', JSON.stringify(documents));
+    // Set a flag to indicate we're going to a vendor profile
+    sessionStorage.setItem('viewingVendorProfile', 'true');
+    
+    // Navigate to the vendor's profile page
     navigate(`/vendors/${vendorId}/services?readonly=true`);
   };
 
@@ -78,11 +85,81 @@ export default function AddEventForm() {
   const [searchError, setSearchError] = useState(null);
   const searchTimeoutRef = useRef(null);
 
+  // Function to clear all form data and storage
+  const clearFormData = () => {
+    // Clear localStorage
+    localStorage.removeItem('eventFormData');
+    localStorage.removeItem('selectedVendors');
+    localStorage.removeItem('eventDocuments');
+    
+    // Clear sessionStorage but keep the initialization flag
+    const initialized = sessionStorage.getItem('hasInitialized');
+    sessionStorage.clear();
+    if (initialized) {
+      sessionStorage.setItem('hasInitialized', initialized);
+    }
+    
+    // Reset all form state
+    setFormData({
+      name: "",
+      date: "",
+      time: "",
+      theme: { name: "", colors: [], notes: "" },
+      venue: "",
+      end_time: "",
+    });
+    
+    setSelectedVendors([]);
+    setDocuments([]);
+    setSearchInput("");
+    setSearchTerm("");
+    setSelectedCategory("All");
+  };
+
   // New state for pop-up messages
   const [warningMessage, setWarningMessage] = useState("");
   const [showWarning, setShowWarning] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Handle form data persistence on mount/unmount
+  useEffect(() => {
+    // Check if we're returning from a vendor profile
+    const wasViewingVendorProfile = sessionStorage.getItem('viewingVendorProfile') === 'true';
+    
+    if (wasViewingVendorProfile) {
+      // Restore form data from sessionStorage if available
+      const savedFormData = sessionStorage.getItem('eventFormData');
+      const savedVendors = sessionStorage.getItem('selectedVendors');
+      const savedDocs = sessionStorage.getItem('eventDocuments');
+
+      if (savedFormData) setFormData(JSON.parse(savedFormData));
+      if (savedVendors) setSelectedVendors(JSON.parse(savedVendors));
+      if (savedDocs) setDocuments(JSON.parse(savedDocs));
+      
+      // Clear the viewing flag
+      sessionStorage.removeItem('viewingVendorProfile');
+    } else if (!sessionStorage.getItem('hasInitialized')) {
+      // Only clear form data if this is the first load and we're not returning from vendor profile
+      clearFormData();
+      sessionStorage.setItem('hasInitialized', 'true');
+    }
+
+    // Clean up function - clear data when unmounting if not navigating to vendor profile
+    return () => {
+      // Only clear if we're not in the middle of a vendor profile view
+      const isNavigatingToVendorProfile = sessionStorage.getItem('viewingVendorProfile') === 'true';
+      
+      if (!isNavigatingToVendorProfile) {
+        // Clear all session storage except the initialization flag
+        const initialized = sessionStorage.getItem('hasInitialized');
+        sessionStorage.clear();
+        if (initialized) {
+          sessionStorage.setItem('hasInitialized', initialized);
+        }
+      }
+    };
+  }, []);
 
   // Save form data to localStorage whenever it changes
   useEffect(() => {
@@ -98,15 +175,6 @@ export default function AddEventForm() {
   useEffect(() => {
     localStorage.setItem('eventDocuments', JSON.stringify(documents));
   }, [documents]);
-
-  // Clear saved form data when component unmounts (optional, uncomment if needed)
-  // useEffect(() => {
-  //   return () => {
-  //     localStorage.removeItem('eventFormData');
-  //     localStorage.removeItem('selectedVendors');
-  //     localStorage.removeItem('eventDocuments');
-  //   };
-  // }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -442,10 +510,25 @@ export default function AddEventForm() {
         }`
       );
       setShowSuccess(true);
-      // Optional: Clear form or navigate
-      // setSelectedVendors([]);
-      // setDocuments([]);
-      // setFormData({ name: '', date: '', time: '', theme: { name: '', colors: [], notes: '' }, venue: '', end_time: ''});
+      
+      // Clear form data
+      setSelectedVendors([]);
+      setDocuments([]);
+      setFormData({
+        name: '',
+        date: '',
+        time: '',
+        theme: '',
+        venue: '',
+        end_time: '',
+        venue_notes: ''
+      });
+      setSearchInput('');
+      setSearchTerm('');
+      setSelectedCategory('All');
+      setUsingVenueVendor(false);
+      setSelectedVenueVendor(null);
+      setSelectedVenueIndex(0);
     } catch (error) {
       console.error("Error creating event:", error);
       setWarningMessage(
@@ -605,19 +688,92 @@ export default function AddEventForm() {
             >
               {warningMessage}
             </p>
-          </div>
         </div>
-      )}
+      </div>
+    )}
+    {showWarning && (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 10000,
+          animation: "fadeIn 0.3s ease-out",
+          pointerEvents: "auto",
+          backdropFilter: "blur(2px)",
+        }}
+      >
+        <div
+          style={{
+            background: "white",
+            borderRadius: "16px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+            padding: "2.5rem 3rem",
+            position: "relative",
+            minWidth: "350px",
+            maxWidth: "90%",
+            textAlign: "center",
+            border: "2px solid #E5ACBF",
+            zIndex: 10001,
+          }}
+        >
+          <button
+            onClick={() => setShowWarning(false)}
+            style={{
+              position: "absolute",
+              top: "0.75rem",
+              right: "1rem",
+              background: "none",
+              border: "none",
+              fontSize: "1.5rem",
+              cursor: "pointer",
+              color: "#666",
+              padding: "0.25rem 0.5rem",
+              lineHeight: 1,
+              fontWeight: "bold",
+              transition: "color 0.2s",
+            }}
+            onMouseOver={(e) => (e.target.style.color = "#E5ACBF")}
+            onMouseOut={(e) => (e.target.style.color = "#666")}
+          >
+            &times;
+          </button>
+          <p
+            style={{
+              margin: "1rem 0 0",
+              color: "#333",
+              fontWeight: 500,
+              fontSize: "1.1rem",
+              padding: "0 1rem",
+            }}
+          >
+            {warningMessage}
+          </p>
+        </div>
+      </div>
+    )}
 
-      <div className="profile-container">
-        <button className="back-button" onClick={() => navigate("/dashboard")}>
-          <FaArrowLeft /> Back to Dashboard
-        </button>
+    <div className="profile-container">
+      <button 
+        className="back-button" 
+        onClick={() => {
+          clearFormData();
+          navigate("/dashboard");
+        }}
+      >
+        <FaArrowLeft /> Back to Dashboard
+      </button>
 
-        <h1>
-          Create a New <span className="accent-text">Event</span>
-        </h1>
-        <p>Plan your perfect event by adding details, vendors, and documents</p>
+      <h1>
+        Create a New <span className="accent-text">Event</span>
+      </h1>
+      <p>Plan your perfect event by adding details, vendors, and documents</p>
 
         <div className="form-sections">
           <form className="profile-form" onSubmit={handleSubmit}>
@@ -965,20 +1121,78 @@ export default function AddEventForm() {
                 </div>
               )}
                {/* View All / Show Less buttons */}
-                 {!showAllVendors && filteredVendors.length > VENDORS_PER_PAGE && (
-                    <div style={{ width: "100%", textAlign: "center", marginTop: "1rem" }}>
-                      <button type="button" className="view-all-btn" onClick={() => setShowAllVendors(true)} style={{ /* button styles */ }}>
-                         View All {filteredVendors.length} Vendors <FaArrowDown style={{ fontSize: "0.8rem" }} />
-                      </button>
-                    </div>
-                  )}
-                 {showAllVendors && filteredVendors.length > VENDORS_PER_PAGE && (
-                    <div style={{ width: "100%", textAlign: "center", marginTop: "1rem" }}>
-                      <button type="button" className="view-less-btn" onClick={() => setShowAllVendors(false)} style={{ /* button styles */ }}>
-                         Show Less <FaArrowUp style={{ fontSize: "0.8rem" }} />
-                      </button>
-                    </div>
-                  )}
+                 <div style={{ width: "100%", textAlign: "center", margin: "1.5rem 0" }}>
+                   {!showAllVendors && filteredVendors.length > VENDORS_PER_PAGE && (
+                     <button 
+                       type="button" 
+                       className="view-all-btn" 
+                       onClick={() => setShowAllVendors(true)}
+                       style={{
+                         background: '#E5ACBF',
+                         color: 'white',
+                         border: 'none',
+                         padding: '0.6rem 1.5rem',
+                         borderRadius: '25px',
+                         cursor: 'pointer',
+                         fontSize: '0.9rem',
+                         fontWeight: 500,
+                         display: 'inline-flex',
+                         alignItems: 'center',
+                         gap: '0.5rem',
+                         transition: 'all 0.2s ease-in-out',
+                         boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                       }}
+                       onMouseOver={(e) => {
+                         e.currentTarget.style.background = '#d49aad';
+                         e.currentTarget.style.transform = 'translateY(-2px)';
+                         e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                       }}
+                       onMouseOut={(e) => {
+                         e.currentTarget.style.background = '#E5ACBF';
+                         e.currentTarget.style.transform = 'translateY(0)';
+                         e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+                       }}
+                     >
+                       View All {filteredVendors.length} Vendors 
+                       <FaArrowDown style={{ fontSize: "0.8rem" }} />
+                     </button>
+                   )}
+                   {showAllVendors && filteredVendors.length > VENDORS_PER_PAGE && (
+                     <button 
+                       type="button" 
+                       className="view-less-btn" 
+                       onClick={() => setShowAllVendors(false)}
+                       style={{
+                         background: '#f5f5f5',
+                         color: '#666',
+                         border: '1px solid #ddd',
+                         padding: '0.6rem 1.5rem',
+                         borderRadius: '25px',
+                         cursor: 'pointer',
+                         fontSize: '0.9rem',
+                         fontWeight: 500,
+                         display: 'inline-flex',
+                         alignItems: 'center',
+                         gap: '0.5rem',
+                         transition: 'all 0.2s ease-in-out',
+                         boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+                       }}
+                       onMouseOver={(e) => {
+                         e.currentTarget.style.background = '#e9e9e9';
+                         e.currentTarget.style.transform = 'translateY(-2px)';
+                         e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                       }}
+                       onMouseOut={(e) => {
+                         e.currentTarget.style.background = '#f5f5f5';
+                         e.currentTarget.style.transform = 'translateY(0)';
+                         e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.05)';
+                       }}
+                     >
+                       Show Less
+                       <FaArrowUp style={{ fontSize: "0.8rem" }} />
+                     </button>
+                   )}
+                 </div>
 
 
               {/* Updated selected vendors list display */}
@@ -1083,6 +1297,7 @@ export default function AddEventForm() {
                   className="cancel-btn"
                   onClick={() => {
                     setShowWarning(false);
+                    clearFormData();
                     navigate("/dashboard");
                   }}
                   disabled={isSubmitting}
