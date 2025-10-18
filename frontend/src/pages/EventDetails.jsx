@@ -90,12 +90,23 @@ const EventSchedule = ({
       ) : (
         <div className="schedule-list">
           {schedule && schedule.length > 0 ? (
-            schedule.map((item, index) => (
-              <div key={index} className="schedule-item">
-                <span className="schedule-time">{item.time}</span>
-                <span className="schedule-activity">{item.activity}</span>
-              </div>
-            ))
+            // Sort schedule items by time before rendering
+            [...schedule]
+              .sort((a, b) => {
+                // Convert time strings to minutes since midnight for comparison
+                const timeToMinutes = (timeStr) => {
+                  if (!timeStr) return 0;
+                  const [hours, minutes] = timeStr.split(':').map(Number);
+                  return hours * 60 + (minutes || 0);
+                };
+                return timeToMinutes(a.time) - timeToMinutes(b.time);
+              })
+              .map((item, index) => (
+                <div key={index} className="schedule-item">
+                  <span className="schedule-time">{item.time}</span>
+                  <span className="schedule-activity">{item.activity}</span>
+                </div>
+              ))
           ) : (
             <p>No schedule items have been added yet.</p>
           )}
