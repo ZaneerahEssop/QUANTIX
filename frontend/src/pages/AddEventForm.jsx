@@ -1124,7 +1124,7 @@ export default function AddEventForm() {
                     Drag & drop files here or click to browse
                   </p>
                   <p className="upload-hint">
-                    Maximum file size: 10MB per file
+                    Maximum file size: 10MB per file (PDF , DOCX)
                   </p>
                 </label>
               </div>

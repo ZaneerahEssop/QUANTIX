@@ -1367,93 +1367,113 @@ const EventDetails = () => {
   };
 
   const handleFileUpload = async (e) => {
-    if (isReadOnly) return;
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+  if (isReadOnly) return;
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
 
-    setIsUploading(true);
-    setUploadProgress(0);
-    const newDocs = [];
-    const totalFiles = files.length;
+  setIsUploading(true);
+  setUploadProgress(0);
+  const newDocs = [];
+  const totalFiles = files.length;
 
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-      for (let i = 0; i < totalFiles; i++) {
-        const file = files[i];
-        const safeEventName = formData.name
-          .replace(/\s+/g, "_")
-          .replace(/[^\w-]/g, "");
-        const filePath = `events/${eventId}/${safeEventName}/${file.name}`;
+    for (let i = 0; i < totalFiles; i++) {
+      const file = files[i];
+      const fileExt = file.name.split('.').pop();
+      // Create a unique filename to prevent collisions
+      const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      const filePath = `${eventId}/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from("event-documents")
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("event-documents").getPublicUrl(filePath);
-
-        newDocs.push({
-          name: file.name,
-          url: publicUrl,
-          uploaded_at: new Date().toISOString(),
+      // Upload to event-documents bucket
+      const { data, error: uploadError } = await supabase.storage
+        .from('event-documents')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
         });
-        setUploadProgress(Math.round(((i + 1) / totalFiles) * 100));
+
+      if (uploadError) {
+        throw uploadError;
       }
 
-      if (newDocs.length > 0) {
-        const { error } = await supabase
-          .from("events")
-          .update({
-            documents: [...documents, ...newDocs],
-            updated_at: new Date().toISOString(),
-          })
-          .eq("event_id", eventId);
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('event-documents')
+        .getPublicUrl(filePath);
 
-        if (error) throw error;
+      newDocs.push({
+        name: file.name,
+        url: publicUrl,
+        path: filePath, // Store the path for future reference
+        uploaded_at: new Date().toISOString()
+      });
 
-        setDocuments((prev) => [...prev, ...newDocs]);
-      }
-    } catch (error) {
-      console.error("Error uploading files:", error);
-      alert(`An error occurred during upload: ${error.message}`);
-    } finally {
-      setIsUploading(false);
-      e.target.value = null;
+      setUploadProgress(Math.round(((i + 1) / totalFiles) * 100));
     }
-  };
 
-  const handleDeleteDocument = async (docToDelete) => {
-    if (!window.confirm("Are you sure you want to delete this document?"))
-      return;
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+    // Update the documents array in your events table
+    const { error: updateError } = await supabase
+      .from('events')
+      .update({
+        documents: [...documents, ...newDocs],
+        updated_at: new Date().toISOString()
+      })
+      .eq('event_id', eventId);
 
-      const { error } = await supabase
-        .from("events")
-        .update({
-          documents: documents.filter((doc) => doc.url !== docToDelete.url),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("event_id", eventId);
+    if (updateError) throw updateError;
 
-      if (error) throw error;
+    // Update local state
+    setDocuments(prev => [...prev, ...newDocs]);
+    setModalMessage('Documents uploaded successfully!');
+    setShowSuccessModal(true);
 
-      setDocuments((prev) => prev.filter((doc) => doc.url !== docToDelete.url));
-    } catch (error) {
-      console.error("Error deleting document reference:", error);
-    }
-  };
+  } catch (error) {
+    console.error('Error uploading files:', error);
+    setModalMessage(`Upload failed: ${error.message}`);
+    setShowSuccessModal(true);
+  } finally {
+    setIsUploading(false);
+    e.target.value = null; // Reset file input
+  }
+};
 
+// Add this function to handle document deletion
+const handleDeleteDocument = async (docToDelete) => {
+  if (!window.confirm('Are you sure you want to delete this document?')) return;
+
+  try {
+    // First, delete the file from storage
+    const { error: deleteStorageError } = await supabase.storage
+      .from('event-documents')
+      .remove([docToDelete.path]);
+
+    if (deleteStorageError) throw deleteStorageError;
+
+    // Then update the documents array in the database
+    const { error: updateError } = await supabase
+      .from('events')
+      .update({
+        documents: documents.filter(doc => doc.url !== docToDelete.url),
+        updated_at: new Date().toISOString()
+      })
+      .eq('event_id', eventId);
+
+    if (updateError) throw updateError;
+
+    // Update local state
+    setDocuments(prev => prev.filter(doc => doc.url !== docToDelete.url));
+    setModalMessage('Document deleted successfully!');
+    setShowSuccessModal(true);
+
+  } catch (error) {
+    console.error('Error deleting document:', error);
+    setModalMessage(`Failed to delete document: ${error.message}`);
+    setShowSuccessModal(true);
+  }
+};
   if (isLoading) return <div className="loading">Loading event details...</div>;
   if (!eventData)
     return (
@@ -2341,7 +2361,7 @@ const EventDetails = () => {
             {isDocumentsEditing && (
               <div className="upload-area">
                 <label className="upload-button">
-                  <FaUpload /> Upload Documents
+                  <FaUpload /> Upload Documents (PDF, DOCX)
                   <input
                     type="file"
                     multiple
