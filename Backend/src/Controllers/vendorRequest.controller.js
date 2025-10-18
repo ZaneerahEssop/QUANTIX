@@ -62,6 +62,8 @@ const getVendorRequestByVendorId = async (req, res) => {
         requester_id,
         event_id,
         service_requested, 
+        booking_notes, 
+        quoted_price, 
         events:event_id (
           event_id,
           name,
@@ -107,6 +109,8 @@ const getVendorRequestByEventId = async (req, res) => {
         created_at,
         vendor_id,
         service_requested, 
+        booking_notes, 
+        quoted_price, 
         vendor:vendor_id (
           vendor_id,
           business_name,
@@ -133,31 +137,59 @@ const getVendorRequestByEventId = async (req, res) => {
   }
 };
 
+// =================================================================
+// ✨ MODIFIED FUNCTION: updateVendorRequest
+// =================================================================
 const updateVendorRequest = async (req, res) => {
   try {
-    const { id } = req.params;
-    // Note: We only update status here. We don't let people change the
-    // event, vendor, or service of an *existing* request.
-    const { status } = req.body;
+    const { id } = req.params; // This is the request_id
+    
+    // Accept status, booking_notes, or quoted_price
+    const { status, booking_notes, quoted_price } = req.body;
 
-    if (!status) {
-      return res.status(400).json({ error: "Status is required" });
+    const updateData = {};
+
+    // Conditionally add fields to the update object if they were provided
+    // We check for 'undefined' to allow setting fields to 'null' or an empty string
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+    if (booking_notes !== undefined) {
+      updateData.booking_notes = booking_notes;
+    }
+    if (quoted_price !== undefined) {
+      updateData.quoted_price = quoted_price;
+    }
+
+    // Check if any valid field was provided
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        error: "At least one field (status, booking_notes, quoted_price) is required",
+      });
     }
 
     const { data, error } = await supabase
       .from("vendor_requests")
-      .update({ status }) // ✨ MODIFICATION: Only update what's intended
+      .update(updateData) // Update with the dynamically built object
       .eq("request_id", id)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase update error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+    
     res.json({ success: true, request: data });
   } catch (err) {
     console.error("Error updating vendor request:", err.message);
     res.status(500).json({ error: "Failed to update vendor request" });
   }
 };
+// =================================================================
+// END OF MODIFIED FUNCTION
+// =================================================================
+
 
 module.exports = {
   createVendorRequest,
