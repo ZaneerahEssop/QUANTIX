@@ -28,14 +28,20 @@ export default function AddEventForm() {
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    date: "",
-    time: "",
-    theme: { name: "", colors: [], notes: "" },
-    venue: "",
-    end_time: "",
-  });
+  // Load saved form data from localStorage on component mount
+  const loadFormData = () => {
+    const savedData = localStorage.getItem('eventFormData');
+    return savedData ? JSON.parse(savedData) : {
+      name: "",
+      date: "",
+      time: "",
+      theme: { name: "", colors: [], notes: "" },
+      venue: "",
+      end_time: "",
+    };
+  };
+
+  const [formData, setFormData] = useState(loadFormData());
   const vendorCategories = [
     "Catering",
     "Flowers",
@@ -48,8 +54,11 @@ export default function AddEventForm() {
   const [allVendors, setAllVendors] = useState([]);
   const [filteredVendors, setFilteredVendors] = useState([]);
 
-  // ✨ MODIFICATION: selectedVendors now stores { vendor, service }
-  const [selectedVendors, setSelectedVendors] = useState([]);
+  // MODIFICATION: selectedVendors now stores { vendor, service }
+  const [selectedVendors, setSelectedVendors] = useState(() => {
+    const savedVendors = localStorage.getItem('selectedVendors');
+    return savedVendors ? JSON.parse(savedVendors) : [];
+  });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -58,7 +67,10 @@ export default function AddEventForm() {
   const [showAllVendors, setShowAllVendors] = useState(false);
   const VENDORS_PER_PAGE = 6;
   const [isSearching, setIsSearching] = useState(false);
-  const [documents, setDocuments] = useState([]);
+  const [documents, setDocuments] = useState(() => {
+    const savedDocs = localStorage.getItem('eventDocuments');
+    return savedDocs ? JSON.parse(savedDocs) : [];
+  });
   const [usingVenueVendor, setUsingVenueVendor] = useState(false);
   const [selectedVenueVendor, setSelectedVenueVendor] = useState(null);
   const [selectedVenueIndex, setSelectedVenueIndex] = useState(0);
@@ -72,6 +84,30 @@ export default function AddEventForm() {
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('eventFormData', JSON.stringify(formData));
+  }, [formData]);
+
+  // Save selected vendors to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('selectedVendors', JSON.stringify(selectedVendors));
+  }, [selectedVendors]);
+
+  // Save documents to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('eventDocuments', JSON.stringify(documents));
+  }, [documents]);
+
+  // Clear saved form data when component unmounts (optional, uncomment if needed)
+  // useEffect(() => {
+  //   return () => {
+  //     localStorage.removeItem('eventFormData');
+  //     localStorage.removeItem('selectedVendors');
+  //     localStorage.removeItem('eventDocuments');
+  //   };
+  // }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -82,13 +118,16 @@ export default function AddEventForm() {
     }
 
     if (name === "theme") {
-      setFormData((prev) => ({
-        ...prev,
-        theme: {
-          ...prev.theme,
-          name: value,
-        },
-      }));
+      setFormData((prev) => {
+        const newData = {
+          ...prev,
+          theme: {
+            ...prev.theme,
+            name: value,
+          },
+        };
+        return newData;
+      });
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -226,7 +265,7 @@ export default function AddEventForm() {
     filterVendors();
   }, [searchTerm, selectedCategory, allVendors]);
 
-  // ✨ MODIFICATION: handleSelectVendor now accepts 'service'
+  // MODIFICATION: handleSelectVendor now accepts 'service'
   const handleSelectVendor = (vendor, service) => {
     if (
       selectedVendors.some(
@@ -254,7 +293,7 @@ export default function AddEventForm() {
     }
   };
 
-  // ✨ MODIFICATION: handleRemoveVendor now accepts 'service'
+  // MODIFICATION: handleRemoveVendor now accepts 'service'
   const handleRemoveVendor = (vendorToRemove, serviceToRemove) => {
     const vendorName = vendorToRemove.business_name || "Vendor";
 
@@ -293,7 +332,7 @@ export default function AddEventForm() {
     }
   };
 
-  // ✨ MODIFICATION: handleSubmit sends the new selectedVendors structure
+  // MODIFICATION: handleSubmit sends the new selectedVendors structure
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
