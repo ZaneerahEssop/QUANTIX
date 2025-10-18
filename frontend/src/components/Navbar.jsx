@@ -199,9 +199,10 @@ const Navbar = ({ session, showOnlyLogout }) => {
               <button
                 onClick={toggleSearch}
                 className="nav-button search-button"
-                title="Search Vendors"
+                aria-label="Search for vendors"
               >
-                <FaSearch />
+                <FaSearch style={{ marginRight: '8px' }} />
+                Search for Vendors
               </button>
             )}
           </div>

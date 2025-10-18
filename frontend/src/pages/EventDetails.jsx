@@ -16,7 +16,7 @@ import {
   FaTrash,
   FaUpload,
 } from "react-icons/fa";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "../client";
 import "../styling/eventDetails.css";
 import ContractManagement from "../components/ContractManagement";
@@ -485,81 +485,92 @@ const SuccessModal = ({ message, onClose }) => {
   );
 };
 
-const VendorBookingNotes = ({ 
-  vendors, bookingNotes, onUpdateNotes, prices, onUpdatePrices, isEditing 
+// =================================================================
+// ✨ MODIFIED COMPONENT: VendorBookingNotes (Groups by Category)
+// =================================================================
+const VendorBookingNotes = ({
+  groupedVendors, // ✨ FIX: Changed prop from 'vendors'
+  bookingNotes,
+  onUpdateNotes,
+  prices,
+  onUpdatePrices,
 }) => {
   const [priceErrors, setPriceErrors] = useState({});
+  const [editingVendorId, setEditingVendorId] = useState(null);
+
   const handleNotesChange = (vendorId, notes) => {
     onUpdateNotes({ ...bookingNotes, [vendorId]: notes });
   };
 
-    const handlePriceChange = (vendorId, price) => {
-      const lowerPrice = price.toLowerCase();
-      const isValidText = lowerPrice.includes("e.g., 1500.00 or Contact for quote")
-  
+  const handlePriceChange = (vendorId, price) => {
+    const lowerPrice = price.toLowerCase();
+    const isValidText = lowerPrice.includes(
+      "e.g., 1500.00 or Contact for quote"
+    );
+
     if (isValidText) {
       onUpdatePrices({ ...prices, [vendorId]: price });
       return;
     }
     // Clear any previous error
-    setPriceErrors(prev => ({ ...prev, [vendorId]: '' }));
-    
+    setPriceErrors((prev) => ({ ...prev, [vendorId]: "" }));
+
     // Allow empty value (for clearing)
-    if (price === '') {
-      onUpdatePrices({ ...prices, [vendorId]: '' });
+    if (price === "") {
+      onUpdatePrices({ ...prices, [vendorId]: "" });
       return;
     }
 
     // Allow "Contact for quote"  text
     if (/[a-zA-Z]/.test(price) && !isValidText) {
-      setPriceErrors(prev => ({ 
-        ...prev, 
-        [vendorId]: 'Please enter a valid amount or "Contact for quote"' 
+      setPriceErrors((prev) => ({
+        ...prev,
+        [vendorId]: 'Please enter a valid amount or "Contact for quote"',
       }));
       return;
     }
 
     // Validation: Only allow numbers, decimal point, and commas
-    const sanitizedPrice = price.replace(/[^\d.,]/g, '');
-    
+    const sanitizedPrice = price.replace(/[^\d.,]/g, "");
+
     // Check if it's a valid number format
-    const numericValue = parseFloat(sanitizedPrice.replace(/,/g, ''));
-    
+    const numericValue = parseFloat(sanitizedPrice.replace(/,/g, ""));
+
     if (!isNaN(numericValue)) {
       // Check maximum value
       if (numericValue > 1000000) {
-        setPriceErrors(prev => ({ 
-          ...prev, 
-          [vendorId]: 'Price cannot exceed R 1,000,000' 
+        setPriceErrors((prev) => ({
+          ...prev,
+          [vendorId]: "Price cannot exceed R 1,000,000",
         }));
-        onUpdatePrices({ ...prices, [vendorId]: '' }); // ← Clear the price
+        onUpdatePrices({ ...prices, [vendorId]: "" }); // ← Clear the price
         return;
       }
-      
+
       // Check for reasonable minimum (optional)
       if (numericValue < 0) {
-        setPriceErrors(prev => ({ 
-          ...prev, 
-          [vendorId]: 'Price cannot be negative' 
+        setPriceErrors((prev) => ({
+          ...prev,
+          [vendorId]: "Price cannot be negative",
         }));
         return;
       }
     }
-    
+
     onUpdatePrices({ ...prices, [vendorId]: sanitizedPrice });
   };
 
   const handlePriceBlur = (vendorId, price) => {
     // Format the price on blur only if it's a pure number
     if (price && !/[a-zA-Z]/.test(price)) {
-      const numericValue = parseFloat(price.replace(/,/g, ''));
+      const numericValue = parseFloat(price.replace(/,/g, ""));
       if (!isNaN(numericValue)) {
         // Format with thousand separators and R symbol
-        const formattedPrice = new Intl.NumberFormat('en-ZA', {
+        const formattedPrice = new Intl.NumberFormat("en-ZA", {
           minimumFractionDigits: 2,
-          maximumFractionDigits: 2
+          maximumFractionDigits: 2,
         }).format(numericValue);
-        
+
         onUpdatePrices({ ...prices, [vendorId]: `R ${formattedPrice}` });
       }
     }
@@ -568,107 +579,145 @@ const VendorBookingNotes = ({
   return (
     <div className="vendor-booking-notes-section">
       <h3>Vendor Booking Details</h3>
-      <div className="vendor-notes-grid">
-        {vendors.map((vendor) => (
-          <div key={vendor.vendor_id} className="vendor-note-item">
-            <div className="vendor-note-header">
-              <h4>{vendor.business_name}</h4>
-              <span className="vendor-category">{vendor.service_type}</span>
-            </div>
-            
-            <div className="vendor-note-fields">
-              <div className="form-group">
-                <label>Quoted Price</label>
-                {isEditing ? (
-                  <div className="price-input-container">
-                    <input
-                      type="text"
-                      placeholder="e.g., 1500.00 or Contact for quote"
-                      value={prices[vendor.vendor_id] || ""}
-                      onChange={(e) => handlePriceChange(vendor.vendor_id, e.target.value)}
-                      onBlur={(e) => handlePriceBlur(vendor.vendor_id, e.target.value)}
-                      className={`price-input ${priceErrors[vendor.vendor_id] ? 'error' : ''}`}
-                    />
-                    {priceErrors[vendor.vendor_id] && (
-                      <div className="price-error-message">
-                        {priceErrors[vendor.vendor_id]}
+      {/* ✨ FIX: Iterate over categories */}
+      {Object.keys(groupedVendors)
+        .sort()
+        .map((category) => (
+          <div key={category} className="vendor-category-group">
+            {/* ✨ FIX: Add a header for the category */}
+            <h4 className="vendor-category-header">{category}</h4>
+            <div className="vendor-notes-grid">
+              {/* ✨ FIX: Iterate over vendors *within* this category */}
+              {groupedVendors[category].map((vendor) => {
+                const isCardEditing = editingVendorId === vendor.vendor_id;
+
+                return (
+                  <div key={vendor.vendor_id} className="vendor-note-item">
+                    <div className="vendor-note-header">
+                      <h4>
+                        {vendor.business_name}
+                        <button
+                          onClick={() =>
+                            setEditingVendorId(
+                              isCardEditing ? null : vendor.vendor_id
+                            )
+                          }
+                          className="edit-vendor-button"
+                          title={isCardEditing ? "Save" : "Edit"}
+                        >
+                          {isCardEditing ? <FaSave /> : <FaEdit />}
+                        </button>
+                      </h4>
+                      {/* We don't need the category span anymore since it's in the header */}
+                    </div>
+
+                    <div className="vendor-note-fields">
+                      <div className="form-group">
+                        <label>Quoted Price</label>
+                        {isCardEditing ? (
+                          <div className="price-input-container">
+                            <input
+                              type="text"
+                              placeholder="e.g., 1500.00 or Contact for quote"
+                              value={prices[vendor.vendor_id] || ""}
+                              onChange={(e) =>
+                                handlePriceChange(
+                                  vendor.vendor_id,
+                                  e.target.value
+                                )
+                              }
+                              onBlur={(e) =>
+                                handlePriceBlur(
+                                  vendor.vendor_id,
+                                  e.target.value
+                                )
+                              }
+                              className={`price-input ${
+                                priceErrors[vendor.vendor_id] ? "error" : ""
+                              }`}
+                            />
+                            {priceErrors[vendor.vendor_id] && (
+                              <div className="price-error-message">
+                                {priceErrors[vendor.vendor_id]}
+                              </div>
+                            )}
+                            <div className="price-validation-info">
+                              <small>
+                                Enter amount (max R 1,000,000) or "Contact for
+                                quote"
+                              </small>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="price-display">
+                            {prices[vendor.vendor_id] || "No price entered"}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <div className="price-validation-info">
-                      <small>Enter amount (max R 1,000,000) or "Contact for quote"</small>
+
+                      <div className="form-group">
+                        <label>Booking Notes</label>
+                        {isCardEditing ? (
+                          <textarea
+                            placeholder="Add notes, contact details, requirements, deadlines..."
+                            value={bookingNotes[vendor.vendor_id] || ""}
+                            onChange={(e) =>
+                              handleNotesChange(
+                                vendor.vendor_id,
+                                e.target.value
+                              )
+                            }
+                            rows="3"
+                            className="notes-textarea"
+                          />
+                        ) : (
+                          <div className="notes-display">
+                            {bookingNotes[vendor.vendor_id] || "No notes added"}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="price-display">
-                    {prices[vendor.vendor_id] || "No price entered"}
-                  </div>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label>Booking Notes</label>
-                {isEditing ? (
-                  <textarea
-                    placeholder="Add notes, contact details, requirements, deadlines..."
-                    value={bookingNotes[vendor.vendor_id] || ""}
-                    onChange={(e) => handleNotesChange(vendor.vendor_id, e.target.value)}
-                    rows="3"
-                    className="notes-textarea"
-                  />
-                ) : (
-                  <div className="notes-display">
-                    {bookingNotes[vendor.vendor_id] || "No notes added"}
-                  </div>
-                )}
-              </div>
+                );
+              })}
             </div>
           </div>
         ))}
-      </div>
     </div>
   );
 };
 
-const PriceComparison = ({ vendors, prices, bookingNotes }) => {
+// =================================================================
+// ✨ MODIFIED COMPONENT: PriceComparison (Groups by Category)
+// =================================================================
+const PriceComparison = ({ groupedVendors, prices, bookingNotes }) => {
+  // ✨ FIX: Changed prop from 'vendors'
   const extractPriceValue = (priceString) => {
-    if (!priceString || priceString.toLowerCase().includes('contact')) return Infinity;
-    
+    if (!priceString || priceString.toLowerCase().includes("contact"))
+      return Infinity;
+
     // Extract numbers from price string
-    const numbers = priceString.replace(/[^0-9.]/g, '');
+    const numbers = priceString.replace(/[^0-9.]/g, "");
     return parseFloat(numbers) || Infinity;
   };
-  const vendorsWithPrices = vendors
-    .filter(vendor => prices[vendor.vendor_id] && prices[vendor.vendor_id] !== "")
-    .map(vendor => ({
-      ...vendor,
-      price: prices[vendor.vendor_id],
-      notes: bookingNotes[vendor.vendor_id] || ""
-    }))
-    .sort((a, b) => {
-      // Simple price extraction for sorting (handles formats like "$1,500", "1500", "Contact for quote")
-      const priceA = extractPriceValue(a.price);
-      const priceB = extractPriceValue(b.price);
-      return priceA - priceB;
-    });
-
-  
 
   const formatPriceDisplay = (price) => {
     if (!price) return "No price";
-    if (price.toLowerCase().includes('contact')) return price;
-    
+    if (price.toLowerCase().includes("contact")) return price;
+
     const priceValue = extractPriceValue(price);
     if (priceValue === Infinity) return price;
-    
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR'
+
+    return new Intl.NumberFormat("en-ZA", {
+      style: "currency",
+      currency: "ZAR",
     }).format(priceValue);
   };
 
+  // ✨ FIX: Check if there are any categories at all
+  const categories = Object.keys(groupedVendors);
 
-
-  if (vendorsWithPrices.length === 0) {
+  if (categories.length === 0) {
     return (
       <div className="price-comparison-section">
         <h3>Price Comparison</h3>
@@ -680,40 +729,89 @@ const PriceComparison = ({ vendors, prices, bookingNotes }) => {
   return (
     <div className="price-comparison-section">
       <h3>Price Comparison</h3>
-      <div className="comparison-table">
-        <div className="comparison-header">
-          <span>Vendor</span>
-          <span>Service</span>
-          <span>Price</span>
-          <span>Notes</span>
-        </div>
-        {vendorsWithPrices.map((vendor, index) => (
-          <div key={vendor.vendor_id} className={`comparison-row ${index === 0 ? 'best-price' : ''}`}>
-            <span className="vendor-name">{vendor.business_name}</span>
-            <span className="service-type">{vendor.service_type}</span>
-            <span className="price">{formatPriceDisplay(vendor.price)}</span>
-            <span className="notes-preview">
-              {vendor.notes ? (
-                <div title={vendor.notes}>
-                  {vendor.notes.length > 50 ? `${vendor.notes.substring(0, 50)}...` : vendor.notes}
+
+      {/* ✨ FIX: Iterate over each category */}
+      {categories.sort().map((category) => {
+        // ✨ FIX: Run the comparison logic *per category*
+        const vendorsWithPrices = groupedVendors[category]
+          .filter(
+            (vendor) =>
+              prices[vendor.vendor_id] && prices[vendor.vendor_id] !== ""
+          )
+          .map((vendor) => ({
+            ...vendor,
+            price: prices[vendor.vendor_id],
+            notes: bookingNotes[vendor.vendor_id] || "",
+          }))
+          .sort((a, b) => {
+            const priceA = extractPriceValue(a.price);
+            const priceB = extractPriceValue(b.price);
+            return priceA - priceB;
+          });
+
+        // ✨ FIX: If this category has no prices, show a message for it
+        if (vendorsWithPrices.length === 0) {
+          return (
+            <div key={category} className="comparison-category-group">
+              <h4 className="vendor-category-header">{category}</h4>
+              <p>No prices entered for this category.</p>
+            </div>
+          );
+        }
+
+        // ✨ FIX: Render the table for this category
+        return (
+          <div key={category} className="comparison-category-group">
+            <h4 className="vendor-category-header">{category}</h4>
+            <div className="comparison-table">
+              <div className="comparison-header">
+                <span>Vendor</span>
+                {/* ✨ FIX: Removed 'Service' column, as it's in the header */}
+                <span>Price</span>
+                <span>Notes</span>
+              </div>
+              {vendorsWithPrices.map((vendor, index) => (
+                <div
+                  key={vendor.vendor_id}
+                  className={`comparison-row ${index === 0 ? "best-price" : ""}`}
+                >
+                  <span className="vendor-name">{vendor.business_name}</span>
+                  <span className="price">
+                    {formatPriceDisplay(vendor.price)}
+                  </span>
+                  <span className="notes-preview">
+                    {vendor.notes ? (
+                      <div title={vendor.notes}>
+                        {vendor.notes.length > 50
+                          ? `${vendor.notes.substring(0, 50)}...`
+                          : vendor.notes}
+                      </div>
+                    ) : (
+                      "No notes"
+                    )}
+                  </span>
                 </div>
-              ) : (
-                "No notes"
-              )}
-            </span>
+              ))}
+            </div>
+            {vendorsWithPrices.length > 1 && (
+              <div className="comparison-summary">
+                <p>
+                  {/* ✨ FIX: Clarified which category this best value is for */}
+                  <strong>Best value ({category}):</strong>{" "}
+                  {vendorsWithPrices[0].business_name} -{" "}
+                  {formatPriceDisplay(vendorsWithPrices[0].price)}
+                </p>
+              </div>
+            )}
           </div>
-        ))}
-      </div>
-      {vendorsWithPrices.length > 1 && (
-        <div className="comparison-summary">
-          <p>
-            <strong>Best value:</strong> {vendorsWithPrices[0].business_name} - {formatPriceDisplay(vendorsWithPrices[0].price)}
-          </p>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 };
+// =================================================================
+// END OF MODIFIED COMPONENTS
+// =================================================================
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -721,10 +819,37 @@ const EventDetails = () => {
   const isReadOnly = searchParams.get("readonly") === "true";
   const eventId = id;
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [eventData, setEventData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeView, setActiveView] = useState("overview");
+  const [activeTab, setActiveTab] = useState("overview");
+
+  // Handle tab activation from URL, location state, or activeView
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabFromUrl = urlParams.get("tab");
+    const shouldEdit = urlParams.get("edit") === "true";
+
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+      setActiveView(tabFromUrl);
+
+      // If the URL has edit=true and we're on the vendors tab, enable editing
+      if (tabFromUrl === "vendors" && shouldEdit) {
+        setIsVendorsEditing(true);
+      }
+    } else if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      setActiveView(location.state.activeTab);
+    }
+  }, [location]);
+
+  // Keep activeView in sync with activeTab
+  useEffect(() => {
+    setActiveView(activeTab);
+  }, [activeTab]);
+
   const [formData, setFormData] = useState({
     name: "",
     date: "",
@@ -743,7 +868,10 @@ const EventDetails = () => {
   const [allVendors, setAllVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+
+  // ✨ MODIFICATION: selectedVendors now stores { vendor, service }
   const [selectedVendors, setSelectedVendors] = useState([]);
+
   const [documents, setDocuments] = useState([]);
   const [schedule, setSchedule] = useState([]);
   const [guests, setGuests] = useState([]);
@@ -762,6 +890,7 @@ const EventDetails = () => {
   const [unsplashPage, setUnsplashPage] = useState(1);
   const [vendorBookingNotes, setVendorBookingNotes] = useState({});
   const [vendorPrices, setVendorPrices] = useState({});
+  const [activeView, setActiveView] = useState("overview");
 
   const API_URL = process.env.REACT_APP_API_URL;
   const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
@@ -779,7 +908,24 @@ const EventDetails = () => {
   }, [isReadOnly]);
 
   const handleVendorCardClick = (vendorId) => {
-    navigate(`/vendors/${vendorId}/services?readonly=true`);
+    // Create a return URL that includes the tab parameter
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set("tab", "vendors");
+    const returnTo = `${window.location.pathname}?${searchParams.toString()}`;
+
+    // Store the current scroll position
+    sessionStorage.setItem("vendorListScroll", window.scrollY);
+
+    navigate(`/vendors/${vendorId}/services?readonly=true`, {
+      state: {
+        from: "event-details",
+        eventId: eventId,
+        returnTo: returnTo,
+        activeTab: "vendors",
+        preserveScroll: true,
+      },
+      replace: false,
+    });
   };
 
   const formatGuestStatusForUI = (dbStatus) => {
@@ -826,26 +972,28 @@ const EventDetails = () => {
     fetchVendors();
   }, [fetchVendors]);
 
-  useEffect(() => {
-    const fetchVendorRequests = async () => {
-      try {
-        if (!eventId) return;
+  // ✨ MODIFICATION: Moved fetchVendorRequests to useCallback
+  const fetchVendorRequests = useCallback(async () => {
+    try {
+      if (!eventId) return;
 
-        const response = await fetch(
-          `${API_BASE}/api/vendor-requests/event/${eventId}`
-        );
+      const response = await fetch(
+        `${API_BASE}/api/vendor-requests/event/${eventId}`
+      );
 
-        if (response.ok) {
-          const requestsData = await response.json();
-          setVendorRequests(requestsData || []);
-        }
-      } catch (error) {
-        console.error("Error fetching vendor requests:", error);
+      if (response.ok) {
+        const requestsData = await response.json();
+        // Assuming API returns 'service_requested' in each request object
+        setVendorRequests(requestsData || []);
       }
-    };
-
-    fetchVendorRequests();
+    } catch (error) {
+      console.error("Error fetching vendor requests:", error);
+    }
   }, [eventId, API_BASE]);
+
+  useEffect(() => {
+    fetchVendorRequests();
+  }, [fetchVendorRequests]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -932,7 +1080,10 @@ const EventDetails = () => {
         setEventData(updatedEventData);
         setTheme(themeData || { name: "", colors: [], notes: "" });
         setDocuments(fetchedEventData.documents || []);
-        setSelectedVendors(fetchedEventData.vendors || []);
+
+        // Note: We no longer initialize selectedVendors from eventData.vendors
+        // selectedVendors is *only* for new, unsaved selections.
+        // setSelectedVendors(fetchedEventData.vendors || []); // This line is removed.
 
         const startTime = new Date(fetchedEventData.start_time);
         const year = startTime.getFullYear();
@@ -956,28 +1107,59 @@ const EventDetails = () => {
     };
 
     fetchData();
+    // We remove fetchVendorRequests from here as it's in its own useEffect
   }, [eventId, navigate, API_URL, isReadOnly]);
 
-  const handleSelectVendor = (vendor) => {
-    if (selectedVendors.some((v) => v.vendor_id === vendor.vendor_id)) return;
+  // ✨ MODIFICATION: handleSelectVendor now accepts a service
+  const handleSelectVendor = (vendor, service) => {
+    // Check if this specific vendor + service is already selected
+    if (
+      selectedVendors.some(
+        (v) => v.vendor.vendor_id === vendor.vendor_id && v.service === service
+      )
+    )
+      return;
+
+    // Check if this specific vendor + service is already in vendorRequests
+    if (
+      vendorRequests.some(
+        (req) =>
+          req.vendor_id === vendor.vendor_id &&
+          req.service_requested === service
+      )
+    )
+      return; // Already requested
 
     setSelectedVendors((prev) => [
       ...prev,
       {
-        ...vendor,
+        vendor: vendor,
+        service: service,
         request_status: "selected",
       },
     ]);
   };
 
-  const handleRemoveVendor = (vendorToRemove) => {
+  // ✨ MODIFICATION: handleRemoveVendor now accepts a service
+  const handleRemoveVendor = (vendorToRemove, serviceToRemove) => {
     setSelectedVendors((prev) =>
-      prev.filter((v) => v.vendor_id !== vendorToRemove.vendor_id)
+      prev.filter(
+        (v) =>
+          !(
+            v.vendor.vendor_id === vendorToRemove.vendor_id &&
+            v.service === serviceToRemove
+          )
+      )
     );
   };
 
+  // ✨ MODIFICATION: handleSaveVendors now sends 'service_requested'
   const handleSaveVendors = async () => {
     if (isReadOnly) return;
+    if (selectedVendors.length === 0) {
+      setIsVendorsEditing(false);
+      return;
+    }
 
     try {
       const {
@@ -985,18 +1167,16 @@ const EventDetails = () => {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log("Sending vendor requests for vendors:", selectedVendors);
-
-      // Send vendor requests for each selected vendor
-      const requestPromises = selectedVendors.map(async (vendor) => {
+      // Send vendor requests for each item in selectedVendors
+      const requestPromises = selectedVendors.map(async (selection) => {
+        const { vendor, service } = selection;
         try {
           const requestBody = {
             event_id: eventId,
-            vendor_id: vendor.vendor_id, // Use vendor_id instead of id
+            vendor_id: vendor.vendor_id,
             requester_id: user.id,
+            service_requested: service, // <-- ✨ NEW FIELD
           };
-
-          console.log("Request body:", requestBody);
 
           const response = await fetch(`${API_URL}/api/vendor-requests`, {
             method: "POST",
@@ -1009,14 +1189,14 @@ const EventDetails = () => {
           const responseData = await response.json();
 
           return {
-            vendor: vendor.name || vendor.vendor_id,
+            vendor: `${vendor.business_name} (${service})`,
             success: response.ok,
             status: response.status,
             data: responseData,
           };
         } catch (error) {
           return {
-            vendor: vendor.name || vendor.vendor_id,
+            vendor: `${vendor.business_name} (${service})`,
             success: false,
             error: error.message,
           };
@@ -1037,12 +1217,9 @@ const EventDetails = () => {
         );
       }
 
-      // Update local state and exit editing mode
-      setEventData((prev) => ({
-        ...prev,
-        vendors: selectedVendors,
-      }));
-
+      // ✨ MODIFICATION: Clear selections and re-fetch requests from DB
+      await fetchVendorRequests();
+      setSelectedVendors([]);
       setIsVendorsEditing(false);
       setModalMessage(
         `Successfully sent ${selectedVendors.length} vendor request(s)!`
@@ -1298,24 +1475,13 @@ const EventDetails = () => {
 
       await handleGuestUpdates();
 
+      // This loop for vendors seems redundant if handleSaveVendors is the main way
+      // I'm leaving it commented out, as handleSaveVendors is the explicit action.
+      /*
       for (const vendor of selectedVendors) {
-        const vendorResp = await fetch(`${API_URL}/api/vendor-requests`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            event_id: eventId,
-            vendor_id: vendor.vendor_id,
-            requester_id: user.id,
-          }),
-        });
-
-        if (!vendorResp.ok) {
-          const vendorError = await vendorResp.json();
-          throw new Error(
-            vendorError.error || `Failed to request vendor ${vendor.vendor_id}`
-          );
-        }
+        // ... (this logic is now incorrect as selectedVendors structure changed)
       }
+      */
 
       const guestsResponse = await fetch(`${API_URL}/api/guests/${eventId}`);
       const guestsData = await guestsResponse.json();
@@ -1479,15 +1645,14 @@ const EventDetails = () => {
     });
   };
 
-  const acceptedVendorsInfo = vendorRequests
-    .filter((req) => req.status === "accepted")
-    .map((req) => allVendors.find((v) => v.vendor_id === req.vendor_id))
-    .filter(Boolean);
+  // ✨ FIX: Removed unused 'acceptedVendorsInfo' variable
+  // (This logic is handled by filtering vendorRequests directly in the JSX)
 
   const pendingRequests = vendorRequests.filter(
     (req) => req.status === "pending"
   );
 
+  // ✨ FIX: This variable is now used by the JSX
   const rejectedRequests = vendorRequests.filter(
     (req) => req.status === "rejected"
   );
@@ -1514,8 +1679,11 @@ const EventDetails = () => {
       )}
 
       <div className="event-header">
-        <button onClick={() => navigate(-1)} className="back-button">
-          <FaArrowLeft /> Back
+        <button 
+          onClick={() => navigate(currentUser?.role === 'vendor' ? "/vendor-dashboard" : "/dashboard")} 
+          className="back-button"
+        >
+          <FaArrowLeft /> Back to {currentUser?.role === 'vendor' ? 'Vendor' : 'Planner'} Dashboard
         </button>
         <div className="button-group">
           <button
@@ -1943,8 +2111,8 @@ const EventDetails = () => {
                   }}
                   className="edit-button"
                 >
-                  {isVendorsEditing ? <FaSave /> : <FaEdit />}
-                  {isVendorsEditing ? "Save Vendors" : "Edit Vendors"}
+                  {isVendorsEditing ? <FaSave /> : <FaPlus />}
+                  {isVendorsEditing ? "Save Vendors" : "Add Vendors"}
                 </button>
               )}
             </div>
@@ -1961,64 +2129,6 @@ const EventDetails = () => {
               <>
                 {isVendorsEditing ? (
                   <div className="add-vendors-tool">
-                    {isReadOnly && pendingRequests.length > 0 && (
-                      <div className="pending-vendors-container">
-                        <h4>Your Pending Requests</h4>
-                        <div className="vendor-requests-list">
-                          {pendingRequests
-                            .filter(
-                              (request) =>
-                                request.vendor?.vendor_id === currentUser?.id
-                            )
-                            .map((request) => (
-                              <div
-                                key={request.request_id}
-                                className="vendor-request-item"
-                              >
-                                <div className="vendor-request-info">
-                                  <strong>
-                                    Event: {eventData?.name || "Event"}
-                                  </strong>
-                                  <div className="vendor-details">
-                                    <small>Status: Pending</small>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {!isReadOnly && pendingRequests.length > 0 && (
-                      <div className="pending-vendors-container">
-                        <h4>Pending Vendor Requests</h4>
-                        <div className="vendor-requests-list">
-                          {pendingRequests.map((request) => (
-                            <div
-                              key={request.request_id}
-                              className="vendor-request-item"
-                            >
-                              <div className="vendor-request-info">
-                                <strong>
-                                  {request.vendor?.business_name || "Vendor"}
-                                </strong>
-                                <div className="vendor-details">
-                                  <small>
-                                    Service:{" "}
-                                    {request.vendor?.service_type || "Unknown"}
-                                  </small>
-                                </div>
-                              </div>
-                              <div className="vendor-request-actions">
-                                <span className="status-label pending">
-                                  Pending
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                     <div className="vendor-search-container">
                       <div className="search-box">
                         <FaSearch className="search-icon" />
@@ -2060,50 +2170,52 @@ const EventDetails = () => {
                     >
                       {allVendors
                         .filter((vendor) => {
+                          const vendorServices =
+                            vendor.service_type
+                              .toLowerCase()
+                              .split(",")
+                              .map((s) => s.trim()) || [];
                           const matchesSearch =
                             !searchTerm ||
                             vendor.business_name
                               .toLowerCase()
                               .includes(searchTerm.toLowerCase()) ||
-                            vendor.service_type
-                              .toLowerCase()
-                              .includes(searchTerm.toLowerCase());
+                            vendorServices.some((s) =>
+                              s.includes(searchTerm.toLowerCase())
+                            );
                           const matchesCategory =
                             selectedCategory === "All" ||
-                            vendor.service_type.trim().toLowerCase() ===
-                              selectedCategory;
+                            vendorServices.includes(selectedCategory);
                           return matchesSearch && matchesCategory;
                         })
                         .map((vendor) => {
-                          const request = vendorRequests.find(
-                            (r) => r.vendor_id === vendor.vendor_id
-                          );
-                          const status = request ? request.status : null;
+                          // ✨ MODIFICATION: Get all services
+                          const services =
+                            vendor.service_type
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean) || [];
 
                           return (
                             <div
                               key={vendor.vendor_id}
                               className="vendor-card"
-                              onClick={(e) => {
-                                if (
-                                  !e.target.closest(
-                                    ".add-vendor-btn, .undo-request-btn"
-                                  )
-                                ) {
-                                  handleVendorCardClick(vendor.vendor_id);
-                                }
-                              }}
-                              style={{ cursor: "pointer" }}
                             >
                               <div className="vendor-card-content">
                                 <div className="vendor-info">
                                   <h4>{vendor.business_name}</h4>
                                 </div>
-                                <span className="vendor-category">
-                                  {vendor.service_type.toLowerCase() === "venue"
-                                    ? "Venue"
-                                    : vendor.service_type}
-                                </span>
+                                {/* ✨ MODIFICATION: Show services as tags */}
+                                <div className="vendor-categories-list">
+                                  {services.map((service) => (
+                                    <span
+                                      key={service}
+                                      className="vendor-category-tag"
+                                    >
+                                      {service}
+                                    </span>
+                                  ))}
+                                </div>
                                 <div
                                   className="vendor-description"
                                   style={{ textAlign: "center" }}
@@ -2112,57 +2224,99 @@ const EventDetails = () => {
                                     "No description available."}
                                 </div>
                               </div>
+                              {/* ✨ MODIFICATION: New actions UI */}
                               <div className="vendor-actions">
-                                {status === "accepted" ? (
-                                  <button
-                                    type="button"
-                                    className="add-vendor-btn accepted"
-                                    disabled
-                                  >
-                                    <FaCheck /> Accepted
-                                  </button>
-                                ) : status === "pending" ? (
-                                  <button
-                                    type="button"
-                                    className="add-vendor-btn added"
-                                    disabled
-                                  >
-                                    <FaCheck /> Requested
-                                  </button>
-                                ) : selectedVendors.some(
-                                    (v) => v.vendor_id === vendor.vendor_id
-                                  ) ? (
-                                  <>
-                                    <button
-                                      type="button"
-                                      className="add-vendor-btn added selected"
-                                      disabled
-                                    >
-                                      <FaCheck /> Selected
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="undo-request-btn"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRemoveVendor(vendor);
-                                      }}
-                                    >
-                                      <FaTimes /> Undo
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    className="add-vendor-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleSelectVendor(vendor);
-                                    }}
-                                  >
-                                    <FaPlus /> Select Vendor
-                                  </button>
-                                )}
+                                <button
+                                  type="button"
+                                  className="view-profile-btn"
+                                  onClick={() =>
+                                    handleVendorCardClick(vendor.vendor_id)
+                                  }
+                                >
+                                  View Profile
+                                </button>
+                                <div className="vendor-service-buttons">
+                                  {services.map((service) => {
+                                    const key = `${vendor.vendor_id}-${service}`;
+
+                                    // Find existing request
+                                    const request = vendorRequests.find(
+                                      (r) =>
+                                        r.vendor_id === vendor.vendor_id &&
+                                        r.service_requested === service
+                                    );
+                                    const status = request
+                                      ? request.status
+                                      : null;
+
+                                    // Find newly selected request
+                                    const isSelected = selectedVendors.some(
+                                      (s) =>
+                                        s.vendor.vendor_id ===
+                                          vendor.vendor_id &&
+                                        s.service === service
+                                    );
+
+                                    return (
+                                      <div
+                                        key={key}
+                                        className="vendor-service-action"
+                                      >
+                                        {status === "accepted" ? (
+                                          <button
+                                            disabled
+                                            className="add-vendor-btn accepted"
+                                          >
+                                            <FaCheck /> {service} Accepted
+                                          </button>
+                                        ) : status === "pending" ? (
+                                          <button
+                                            disabled
+                                            className="add-vendor-btn added"
+                                          >
+                                            <FaCheck /> {service} Requested
+                                          </button>
+                                        ) : isSelected ? (
+                                          <>
+                                            <button
+                                              disabled
+                                              className="add-vendor-btn added selected"
+                                            >
+                                              <FaCheck /> {service} Selected
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="undo-request-btn"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRemoveVendor(
+                                                  vendor,
+                                                  service
+                                                );
+                                              }}
+                                            >
+                                              <FaTimes />
+                                            </button>
+                                          </>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            className="add-vendor-btn"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleSelectVendor(
+                                                vendor,
+                                                service
+                                              );
+                                            }}
+                                          >
+                                            <FaPlus /> Select as {service}
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             </div>
                           );
@@ -2171,40 +2325,57 @@ const EventDetails = () => {
                   </div>
                 ) : (
                   <div>
-                    {acceptedVendorsInfo.length > 0 && (
+                    {/* This 'view' mode now correctly reflects the grouped data
+                        from the 'vendor-management-tools' section below,
+                        but we can show a simpler list of confirmed vendors here.
+                    */}
+                    {vendorRequests.filter((req) => req.status === "accepted")
+                      .length > 0 && (
                       <div className="confirmed-vendors-container">
                         <h4>Confirmed Vendors</h4>
                         <ul className="vendors-list-with-actions">
-                          {acceptedVendorsInfo.map((vendor) => (
-                            <li
-                              key={vendor.vendor_id}
-                              className="vendor-list-item"
-                            >
-                              <div className="vendor-info">
-                                <strong>{vendor.business_name}</strong>
-                                <span>- {vendor.service_type}</span>
-                              </div>
-                              <div className="vendor-actions">
-                                {currentUser?.role === "planner" ? (
-                                  <button
-                                    onClick={() => setViewingVendor(vendor)}
-                                    className="view-contract-btn"
-                                  >
-                                    View Contract
-                                  </button>
-                                ) : (
-                                  currentUser?.id === vendor.vendor_id && (
+                          {/* We map over vendorRequests to show the specific service */}
+                          {vendorRequests
+                            .filter(
+                              (req) => req.status === "accepted" && req.vendor
+                            )
+                            .map((request) => (
+                              <li
+                                key={request.request_id}
+                                className="vendor-list-item"
+                              >
+                                <div className="vendor-info">
+                                  <strong>
+                                    {request.vendor.business_name}
+                                  </strong>
+                                  <span>- {request.service_requested}</span>
+                                </div>
+                                <div className="vendor-actions">
+                                  {currentUser?.role === "planner" ? (
                                     <button
-                                      onClick={() => setViewingVendor(vendor)}
+                                      onClick={() =>
+                                        setViewingVendor(request.vendor)
+                                      }
                                       className="view-contract-btn"
                                     >
-                                      Manage Contract
+                                      View Contract
                                     </button>
-                                  )
-                                )}
-                              </div>
-                            </li>
-                          ))}
+                                  ) : (
+                                    currentUser?.id ===
+                                      request.vendor.vendor_id && (
+                                      <button
+                                        onClick={() =>
+                                          setViewingVendor(request.vendor)
+                                        }
+                                        className="view-contract-btn"
+                                      >
+                                        Manage Contract
+                                      </button>
+                                    )
+                                  )}
+                                </div>
+                              </li>
+                            ))}
                         </ul>
                       </div>
                     )}
@@ -2225,7 +2396,8 @@ const EventDetails = () => {
                                 <div className="vendor-details">
                                   <small>
                                     Service:{" "}
-                                    {request.vendor?.service_type || "Unknown"}
+                                    {/* ✨ Show specific requested service */}
+                                    {request.service_requested || "Unknown"}
                                   </small>
                                 </div>
                               </div>
@@ -2240,6 +2412,7 @@ const EventDetails = () => {
                       </div>
                     )}
 
+                    {/* ✨ FIX: Added UI for rejected requests */}
                     {rejectedRequests.length > 0 && (
                       <div className="vendor-requests-container">
                         <h4>Other Requests</h4>
@@ -2253,6 +2426,12 @@ const EventDetails = () => {
                                 <strong>
                                   {request.vendor?.business_name || "Vendor"}
                                 </strong>
+                                <div className="vendor-details">
+                                  <small>
+                                    Service:{" "}
+                                    {request.service_requested || "Unknown"}
+                                  </small>
+                                </div>
                               </div>
                               <div className="vendor-request-actions">
                                 <span className="status-label rejected">
@@ -2265,8 +2444,10 @@ const EventDetails = () => {
                       </div>
                     )}
 
-                    {acceptedVendorsInfo.length === 0 &&
-                      pendingRequests.length === 0 && (
+                    {vendorRequests.filter((req) => req.status === "accepted")
+                      .length === 0 &&
+                      pendingRequests.length === 0 &&
+                      rejectedRequests.length === 0 && (
                         <p>
                           No vendors have been added or requested for this
                           event.
@@ -2274,54 +2455,96 @@ const EventDetails = () => {
                       )}
                   </div>
                 )}
-                {/* SECTION FOR BOOKING NOTES AND PRICE COMPARISON */}
-                {(selectedVendors.length > 0 || pendingRequests.length > 0)  && (
+
+                {/* ================================================================= */}
+                {/* ✨ MODIFIED SECTION: Hides Booking/Price from ReadOnly Users */}
+                {/* ================================================================= */}
+                {(!isReadOnly &&
+                  (vendorRequests.length > 0 ||
+                    selectedVendors.length > 0)) && (
                   <div className="vendor-management-tools">
-                    <VendorBookingNotes
-                      vendors={[
-                        // ALL vendors from vendorRequests
-                        ...vendorRequests
-                          .filter(request => request.vendor && (request.status === "accepted" || request.status === "pending"))
-                          .map(request => ({
-                            ...request.vendor,
-                            request_status: request.status
-                          })),
-                        // Any newly selected vendors not in requests
-                        ...selectedVendors.filter(
-                          selected => !vendorRequests.some(req => req.vendor_id === selected.vendor_id)
+                    {(() => {
+                      // ✨ FIX: 1. Get items from vendorRequests
+                      const vendorsFromRequests = vendorRequests
+                        .filter(
+                          (req) =>
+                            req.vendor &&
+                            (req.status === "accepted" ||
+                              req.status === "pending")
                         )
-                      ]}
-  
-                      bookingNotes={vendorBookingNotes}
-                      onUpdateNotes={setVendorBookingNotes}
-                      prices={vendorPrices}
-                      onUpdatePrices={setVendorPrices}
-                      isEditing={isVendorsEditing}
-                    />
-                    
-                    <PriceComparison
-                      vendors={[
-                        // ALL vendors from vendorRequests
-                        ...vendorRequests
-                          .filter(request => request.vendor && (request.status === "accepted" || request.status === "pending"))
-                          .map(request => ({
-                            ...request.vendor,
-                            request_status: request.status
-                          })),
-                        // Any newly selected vendors not in requests
-                        ...selectedVendors.filter(
-                          selected => !vendorRequests.some(req => req.vendor_id === selected.vendor_id)
-                        )
-                      ]}
-                      prices={vendorPrices}
-                      bookingNotes={vendorBookingNotes}
-                    />
+                        .map((req) => ({
+                          ...req.vendor, // Spread vendor data (id, name, etc.)
+                          service_type: req.service_requested, // CRITICAL: Override service_type
+                          request_status: req.status,
+                          // Use request_id as a unique key for this instance
+                          instance_key: req.request_id,
+                        }));
+
+                      // ✨ FIX: 2. Get items from newly selected vendors
+                      const vendorsFromSelections = selectedVendors.map(
+                        (sel, idx) => ({
+                          ...sel.vendor,
+                          service_type: sel.service, // CRITICAL: Use the selected service
+                          request_status: "selected",
+                          // Create a temporary unique key
+                          instance_key: `new-${sel.vendor.vendor_id}-${idx}`,
+                        })
+                      );
+
+                      // ✨ FIX: 3. Combine them
+                      const allRelevantVendors = [
+                        ...vendorsFromRequests,
+                        ...vendorsFromSelections,
+                      ];
+
+                      // ✨ FIX: 4. Group them by the *single* service_type
+                      const groupedVendors = allRelevantVendors.reduce(
+                        (acc, vendor) => {
+                          // 'vendor.service_type' is now a single string like "Photographer"
+                          let category =
+                            vendor.service_type || "Uncategorized";
+                          category =
+                            category.charAt(0).toUpperCase() +
+                            category.slice(1);
+
+                          if (!acc[category]) {
+                            acc[category] = [];
+                          }
+
+                          // Now we push the vendor *instance*
+                          // This allows the same vendor to appear in multiple categories
+                          acc[category].push(vendor);
+                          return acc;
+                        },
+                        {}
+                      );
+
+                      return (
+                        <>
+                          <VendorBookingNotes
+                            groupedVendors={groupedVendors} // ✨ FIX: Pass grouped data
+                            bookingNotes={vendorBookingNotes}
+                            onUpdateNotes={setVendorBookingNotes}
+                            prices={vendorPrices}
+                            onUpdatePrices={setVendorPrices}
+                          />
+
+                          <PriceComparison
+                            groupedVendors={groupedVendors} // ✨ FIX: Pass grouped data
+                            prices={vendorPrices}
+                            bookingNotes={vendorBookingNotes}
+                          />
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
+                {/* ================================================================= */}
+                {/* END OF MODIFIED SECTION */}
+                {/* ================================================================= */}
               </>
             )}
           </section>
-            
         )}
         {activeView === "documents" && (
           <section className="documents-section">

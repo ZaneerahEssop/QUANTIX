@@ -908,3 +908,138 @@ body{
 }
   
 }
+
+/* === Add these styles to AddEventForm.css === */
+
+/* Style for the new View Profile button */
+.view-profile-btn {
+  background-color: #f6f8fa; /* Light grey background */
+  color: #24292e; /* Dark text */
+  border: 1px solid #e1e4e8; /* Light border */
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 10px; /* Space between profile and service buttons */
+}
+
+.view-profile-btn:hover {
+  background-color: #e1e4e8; /* Slightly darker on hover */
+  border-color: #d1d5da;
+}
+
+/* Container for all service-specific buttons */
+.vendor-service-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 0; /* Adjusted from EventDetails */
+}
+
+/* Container for a single service's buttons (e.g., "Selected" + "Undo") */
+.vendor-service-action {
+  display: flex;
+  gap: 5px;
+  width: 100%;
+}
+
+.vendor-service-action .add-vendor-btn,
+.vendor-service-action .undo-request-btn {
+  flex: 1; /* Make buttons share space */
+  /* Make sure padding is consistent */
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* Ensure the main "add-vendor-btn" takes full width if it's alone */
+.vendor-service-action .add-vendor-btn:only-child {
+  width: 100%;
+}
+
+.vendor-service-action .undo-request-btn {
+  flex: 0 1 auto; /* Make undo button only as wide as its content */
+  background-color: #f7f7f7;
+  color: #888;
+   /* Reuse existing styles or define new */
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.75rem 0.75rem; /* Slightly less horizontal padding */
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vendor-service-action .undo-request-btn:hover {
+  background-color: #eee;
+  color: #333;
+  border-color: #ccc;
+}
+
+
+/* Adjust the main vendor-actions container if needed */
+.vendor-actions {
+  flex-direction: column; /* Stack profile button and service buttons */
+  align-items: center;
+  margin-top: auto; /* Push actions to the bottom */
+  padding-top: 1rem; /* Add space above buttons */
+}
+
+/* Replaces the single category span */
+.vendor-categories-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center; /* Center tags */
+  margin: 8px 0; /* Add vertical spacing */
+}
+
+.vendor-category-tag {
+  background-color: #f0f0f0;
+  color: #555;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #e0e0e0; /* Add subtle border */
+}
+
+/* Override .vendor-category if it exists and conflicts */
+.vendor-category {
+    display: none; /* Hide old single category span if still present */
+}
+
+/* Ensure selected vendor list shows service */
+.selected-vendor-item > div {
+  display: flex;
+  flex-direction: column; /* Stack name and service */
+  gap: 0.25rem;
+  flex-grow: 1; /* Allow text to take available space */
+}
+
+/* Ensure alignment in the selected list item */
+@media (min-width: 768px) {
+    .selected-vendor-item {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .selected-vendor-item > div {
+       align-items: flex-start; /* Align text left */
+    }
+     .remove-vendor-btn {
+        align-self: center; /* Vertically center button */
+        flex-shrink: 0; /* Prevent button shrinking */
+     }
+}
