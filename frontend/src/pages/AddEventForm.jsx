@@ -26,7 +26,6 @@ export default function AddEventForm() {
     // Save current form state to sessionStorage before navigating
     sessionStorage.setItem('eventFormData', JSON.stringify(formData));
     sessionStorage.setItem('selectedVendors', JSON.stringify(selectedVendors));
-    sessionStorage.setItem('eventDocuments', JSON.stringify(documents));
     // Set a flag to indicate we're going to a vendor profile
     sessionStorage.setItem('viewingVendorProfile', 'true');
     
@@ -74,10 +73,6 @@ export default function AddEventForm() {
   const [showAllVendors, setShowAllVendors] = useState(false);
   const VENDORS_PER_PAGE = 6;
   const [isSearching, setIsSearching] = useState(false);
-  const [documents, setDocuments] = useState(() => {
-    const savedDocs = localStorage.getItem('eventDocuments');
-    return savedDocs ? JSON.parse(savedDocs) : [];
-  });
   const [usingVenueVendor, setUsingVenueVendor] = useState(false);
   const [selectedVenueVendor, setSelectedVenueVendor] = useState(null);
   const [selectedVenueIndex, setSelectedVenueIndex] = useState(0);
@@ -90,7 +85,6 @@ export default function AddEventForm() {
     // Clear localStorage
     localStorage.removeItem('eventFormData');
     localStorage.removeItem('selectedVendors');
-    localStorage.removeItem('eventDocuments');
     
     // Clear sessionStorage but keep the initialization flag
     const initialized = sessionStorage.getItem('hasInitialized');
@@ -110,7 +104,6 @@ export default function AddEventForm() {
     });
     
     setSelectedVendors([]);
-    setDocuments([]);
     setSearchInput("");
     setSearchTerm("");
     setSelectedCategory("All");
@@ -131,11 +124,9 @@ export default function AddEventForm() {
       // Restore form data from sessionStorage if available
       const savedFormData = sessionStorage.getItem('eventFormData');
       const savedVendors = sessionStorage.getItem('selectedVendors');
-      const savedDocs = sessionStorage.getItem('eventDocuments');
 
       if (savedFormData) setFormData(JSON.parse(savedFormData));
       if (savedVendors) setSelectedVendors(JSON.parse(savedVendors));
-      if (savedDocs) setDocuments(JSON.parse(savedDocs));
       
       // Clear the viewing flag
       sessionStorage.removeItem('viewingVendorProfile');
@@ -171,11 +162,6 @@ export default function AddEventForm() {
     localStorage.setItem('selectedVendors', JSON.stringify(selectedVendors));
   }, [selectedVendors]);
 
-  // Save documents to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('eventDocuments', JSON.stringify(documents));
-  }, [documents]);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -209,26 +195,6 @@ export default function AddEventForm() {
     } else {
       e.target.classList.remove("has-value");
     }
-  };
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    const allowedFiles = files.filter((file) => {
-      if (file.size > 10 * 1024 * 1024) {
-        // 10MB limit
-        setWarningMessage(
-          `File is too large: ${file.name}. Maximum size is 10 MB.`
-        );
-        setShowWarning(true);
-        return false;
-      }
-      return true;
-    });
-    setDocuments((prev) => [...prev, ...allowedFiles]);
-  };
-
-  const handleRemoveDocument = (docToRemove) => {
-    setDocuments(documents.filter((doc) => doc.name !== docToRemove.name));
   };
 
   useEffect(() => {
@@ -437,15 +403,6 @@ export default function AddEventForm() {
     try {
       const API_URL = process.env.REACT_APP_API_URL;
 
-      const formattedDocs = documents.map((docFile) => ({
-        name: docFile.name,
-        // Assuming backend handles upload based on file object, not URL yet
-        // url: docFile.url || '',
-        uploaded_by: user.id,
-        // Include file object itself if backend expects it for upload
-        // file: docFile
-      }));
-
       const vendorRequestsToSend = selectedVendors.map((selection) => ({
         vendor_id: selection.vendor.vendor_id,
         service_requested: selection.service,
@@ -463,37 +420,18 @@ export default function AddEventForm() {
         venue: formData.venue || null,
         planner_id: user.id,
         selectedVendors: vendorRequestsToSend,
-        // Handle documents based on backend expectations.
-        // If backend expects metadata first:
-        documents: formattedDocs,
-        // If backend expects files in FormData, adjust fetch call.
+        documents: [], // Empty array since we're removing document uploads
       };
 
-      // *** NOTE: If backend needs actual file uploads, use FormData ***
-      // const formDataPayload = new FormData();
-      // formDataPayload.append('eventData', JSON.stringify(requestBody)); // Send metadata
-      // documents.forEach((file, index) => {
-      //   formDataPayload.append(`documents[${index}]`, file, file.name); // Send files
-      // });
-      // const response = await fetch(`${API_URL}/api/events`, {
-      //   method: 'POST',
-      //   headers: {
-      //     // 'Content-Type': 'multipart/form-data', // Browser sets this automatically with FormData
-      //     Authorization: `Bearer ${user.id}`, // Or access token
-      //   },
-      //   body: formDataPayload,
-      // });
-
-      // Using JSON body as before (assuming backend handles uploads separately or expects metadata)
+      // Using JSON body for the request
       const response = await fetch(`${API_URL}/api/events`, {
-        method: "POST",
+        method: 'POST',
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${user.id}`, // Or access token
         },
         body: JSON.stringify(requestBody),
       });
-
 
       const data = await response.json();
 
@@ -513,7 +451,6 @@ export default function AddEventForm() {
       
       // Clear form data
       setSelectedVendors([]);
-      setDocuments([]);
       setFormData({
         name: '',
         date: '',
@@ -688,92 +625,25 @@ export default function AddEventForm() {
             >
               {warningMessage}
             </p>
+          </div>
         </div>
-      </div>
-    )}
-    {showWarning && (
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.8)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 10000,
-          animation: "fadeIn 0.3s ease-out",
-          pointerEvents: "auto",
-          backdropFilter: "blur(2px)",
-        }}
-      >
-        <div
-          style={{
-            background: "white",
-            borderRadius: "16px",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-            padding: "2.5rem 3rem",
-            position: "relative",
-            minWidth: "350px",
-            maxWidth: "90%",
-            textAlign: "center",
-            border: "2px solid #E5ACBF",
-            zIndex: 10001,
+      )}
+
+      <div className="profile-container">
+        <button 
+          className="back-button" 
+          onClick={() => {
+            clearFormData();
+            navigate("/dashboard");
           }}
         >
-          <button
-            onClick={() => setShowWarning(false)}
-            style={{
-              position: "absolute",
-              top: "0.75rem",
-              right: "1rem",
-              background: "none",
-              border: "none",
-              fontSize: "1.5rem",
-              cursor: "pointer",
-              color: "#666",
-              padding: "0.25rem 0.5rem",
-              lineHeight: 1,
-              fontWeight: "bold",
-              transition: "color 0.2s",
-            }}
-            onMouseOver={(e) => (e.target.style.color = "#E5ACBF")}
-            onMouseOut={(e) => (e.target.style.color = "#666")}
-          >
-            &times;
-          </button>
-          <p
-            style={{
-              margin: "1rem 0 0",
-              color: "#333",
-              fontWeight: 500,
-              fontSize: "1.1rem",
-              padding: "0 1rem",
-            }}
-          >
-            {warningMessage}
-          </p>
-        </div>
-      </div>
-    )}
+          <FaArrowLeft /> Back to Dashboard
+        </button>
 
-    <div className="profile-container">
-      <button 
-        className="back-button" 
-        onClick={() => {
-          clearFormData();
-          navigate("/dashboard");
-        }}
-      >
-        <FaArrowLeft /> Back to Dashboard
-      </button>
-
-      <h1>
-        Create a New <span className="accent-text">Event</span>
-      </h1>
-      <p>Plan your perfect event by adding details, vendors, and documents</p>
+        <h1>
+          Create a New <span className="accent-text">Event</span>
+        </h1>
+        <p>Plan your perfect event by adding details and vendors</p>
 
         <div className="form-sections">
           <form className="profile-form" onSubmit={handleSubmit}>
@@ -1223,63 +1093,6 @@ export default function AddEventForm() {
                           }
                           className="remove-vendor-btn"
                           title="Remove vendor selection"
-                        >
-                          <FaTimes />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {/* Documents Section */}
-            <div className="optional-section">
-              <h3>
-                <FaFileAlt /> Documents{" "}
-                <span className="optional-tag">Optional</span>
-              </h3>
-              <p className="section-description">
-                Upload contracts, invoices, or other important files
-              </p>
-
-              <div className="file-upload-area">
-                <label className="file-upload-label">
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileChange}
-                    className="file-input"
-                  />
-                  <FaUpload className="upload-icon" />
-                  <h3 className="upload-title">Upload Files</h3>
-                  <p className="upload-subtitle">
-                    Drag & drop files here or click to browse
-                  </p>
-                  <p className="upload-hint">
-                    Maximum file size: 10MB per file (PDF , DOCX)
-                  </p>
-                </label>
-              </div>
-
-              {documents.length > 0 && (
-                <div className="documents-list">
-                  <h3 className="documents-title">Uploaded Files</h3>
-                  <ul className="documents-container">
-                    {documents.map((doc, idx) => (
-                      <li key={idx} className="document-item">
-                       <div className="file-info">
-                        <FaFileAlt className="file-icon" />
-                        <span className="file-name">{doc.name}</span>
-                        <span className="file-size">
-                          ({(doc.size / 1024).toFixed(1)} KB)
-                        </span>
-                       </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveDocument(doc)}
-                          className="remove-document-btn"
-                          title="Remove file"
                         >
                           <FaTimes />
                         </button>
