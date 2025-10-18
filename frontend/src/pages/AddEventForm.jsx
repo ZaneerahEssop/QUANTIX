@@ -8,11 +8,9 @@ import {
   FaCalendarAlt,
   FaCheck,
   FaClock,
-  FaFileAlt,
   FaPlus,
   FaSearch,
   FaTimes,
-  FaUpload,
   FaUsers,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
