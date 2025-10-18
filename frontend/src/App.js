@@ -26,18 +26,47 @@ import VendorServices from "./pages/VendorServices";
 
 export default function App() {
   const [session, setSession] = useState(null);
+  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // ✨ FIX: The special check for the test environment has been removed.
-    // The component will now always attempt to fetch the session,
-    // allowing our Jest mocks to control the outcome during tests.
-
     const fetchSession = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       setSession(session);
+      setLoading(false);
+
+      if (session?.user) {
+        const { data, error } = await supabase
+          .from("users")
+          .select("user_role")
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (!error && data) {
+          setRole(data.user_role);
+          if (
+            window.location.pathname === "/" ||
+            window.location.pathname === "/login"
+          ) {
+            switch (data.user_role) {
+              case "planner":
+                window.location.replace("/dashboard");
+                break;
+              case "vendor":
+                window.location.replace("/vendor-dashboard");
+                break;
+              case "admin":
+                window.location.replace("/admin-dashboard");
+                break;
+              default:
+                console.warn("Unknown user role:", data.user_role);
+                window.location.replace("/login");
+            }
+          }
+        }
+      }
       setLoading(false);
     };
 
@@ -52,6 +81,19 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const getRedirectPath = () => {
+    switch (role) {
+      case "planner":
+        return "/dashboard";
+      case "vendor":
+        return "/vendor-dashboard";
+      case "admin":
+        return "/admin-dashboard";
+      default:
+        return "/login";
+    }
+  };
+
   return (
     <>
       {loading ? (
@@ -65,19 +107,27 @@ export default function App() {
           <Route
             path="/"
             element={
-              session ? <Navigate to="/dashboard" replace /> : <Landing />
+              session ? <Navigate to={getRedirectPath} replace /> : <Landing />
             }
           />
           <Route
             path="/login"
             element={
-              session ? <Navigate to="/dashboard" replace /> : <LoginPage />
+              session ? (
+                <Navigate to={getRedirectPath} replace />
+              ) : (
+                <LoginPage />
+              )
             }
           />
           <Route
             path="/signup"
             element={
-              session ? <Navigate to="/dashboard" replace /> : <SignUpPage />
+              session ? (
+                <Navigate to={getRedirectPath} replace />
+              ) : (
+                <SignUpPage />
+              )
             }
           />
 
