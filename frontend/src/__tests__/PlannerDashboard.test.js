@@ -5,6 +5,9 @@ import PlannerDashboard from "../pages/PlannerDashboard";
 import { supabase } from "../client";
 import chatService from "../services/chatService";
 
+// Mock canvas-confetti
+jest.mock('canvas-confetti', () => jest.fn());
+
 // Mock react-router-dom
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -432,6 +435,8 @@ describe("PlannerDashboard Testing", () => {
 
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalled();
+      expect(mockDelete().eq).toHaveBeenCalledWith("task_id", "1");
+      expect(screen.queryByText("Test Task")).not.toBeInTheDocument();
     }, { timeout: 5000 });
   });
 
