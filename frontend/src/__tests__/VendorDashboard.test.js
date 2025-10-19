@@ -52,12 +52,12 @@ jest.mock("react-calendar", () => {
     return (
       <div data-testid="mock-calendar">
         Mock Calendar
-        <button onClick={() => onChange(new Date('2025-01-01'))}>Change Date</button>
+        <button onClick={() => onChange(new Date("2025-01-01"))}>Change Date</button>
         <div data-testid="tile-content">
-          {tileContent && tileContent({ date: new Date('2025-01-01'), view: 'month' })}
+          {tileContent && tileContent({ date: new Date("2025-01-01"), view: "month" })}
         </div>
         <div data-testid="tile-classes">
-          {tileClassName && tileClassName({ date: new Date('2025-01-01'), view: 'month' })}
+          {tileClassName && tileClassName({ date: new Date("2025-01-01"), view: "month" })}
         </div>
       </div>
     );
@@ -71,41 +71,38 @@ jest.mock("../components/Navbar", () => {
   };
 });
 
-// Mock ChatUI 
+// Mock ChatUI
 jest.mock("../components/ChatUI", () => ({
   __esModule: true,
-  default: function MockChatUI({ 
-    listTitle, 
-    vendors, 
-    onSendMessage, 
-    onSelectVendor, 
-    selectedVendor, 
-    messages, 
-    unreadCount, 
-    showSearch 
+  default: function MockChatUI({
+    listTitle,
+    vendors,
+    onSendMessage,
+    onSelectVendor,
+    selectedVendor,
+    messages,
+    unreadCount,
+    showSearch,
   }) {
-    // Transform the vendors array to match what the component expects for selection
-    const transformedVendors = vendors?.map(vendor => ({
-      id: vendor.id || vendor.conversation_id,
-      name: vendor.name,
-      plannerId: vendor.plannerId || vendor.planner_id,
-      conversationId: vendor.conversationId || vendor.conversation_id
-    })) || [];
+    const transformedVendors =
+      vendors?.map((vendor) => ({
+        id: vendor.id || vendor.conversation_id,
+        name: vendor.name,
+        plannerId: vendor.plannerId || vendor.planner_id,
+        conversationId: vendor.conversationId || vendor.conversation_id,
+      })) || [];
 
     return (
       <div data-testid="chat-ui">
         Mock ChatUI - Title: {listTitle} - Unread: {unreadCount}
         {transformedVendors.length > 0 && (
-          <button 
-            onClick={() => onSelectVendor(transformedVendors[0])}
-            data-testid="select-vendor-button"
-          >
+          <button onClick={() => onSelectVendor(transformedVendors[0])} data-testid="select-vendor-button">
             Select Vendor
           </button>
         )}
         <button onClick={() => onSendMessage({ text: "Test message" })}>Send Message</button>
         <div data-testid="messages-count">Messages: {messages?.length || 0}</div>
-        <div data-testid="selected-vendor">{selectedVendor?.name || 'None'}</div>
+        <div data-testid="selected-vendor">{selectedVendor?.name || "None"}</div>
         <div data-testid="vendors-count">Vendors: {transformedVendors.length}</div>
       </div>
     );
@@ -191,11 +188,11 @@ describe("VendorDashboard Testing", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    jest.setSystemTime(new Date('2024-01-01T12:00:00Z'));
+    jest.setSystemTime(new Date("2024-01-01T12:00:00Z"));
 
     // Mock supabase
-    supabase.auth.getUser.mockResolvedValue({ 
-      data: { user: { ...mockSession.user, user_metadata: {} } } 
+    supabase.auth.getUser.mockResolvedValue({
+      data: { user: { ...mockSession.user, user_metadata: {} } },
     });
     supabase.auth.updateUser.mockResolvedValue({ data: {}, error: null });
 
@@ -203,7 +200,7 @@ describe("VendorDashboard Testing", () => {
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: mockVendorData, error: null }),
     };
-    
+
     supabase.from.mockReturnValue({
       select: jest.fn().mockReturnValue(mockSelectChain),
     });
@@ -268,7 +265,7 @@ describe("VendorDashboard Testing", () => {
 
   test("renders loading state initially", async () => {
     let resolveFetch;
-    const fetchPromise = new Promise(resolve => {
+    const fetchPromise = new Promise((resolve) => {
       resolveFetch = () => resolve({ ok: true, json: () => Promise.resolve(mockRequestsData) });
     });
 
@@ -317,14 +314,14 @@ describe("VendorDashboard Testing", () => {
     });
 
     await waitFor(() => {
-      const welcomeHeading = screen.getByRole('heading', { level: 1 });
+      const welcomeHeading = screen.getByRole("heading", { level: 1 });
       expect(welcomeHeading).toHaveTextContent(/test/i);
     });
   });
 
   test("updates user role if not set", async () => {
-    supabase.auth.getUser.mockResolvedValue({ 
-      data: { user: { ...mockSession.user, user_metadata: {} } } 
+    supabase.auth.getUser.mockResolvedValue({
+      data: { user: { ...mockSession.user, user_metadata: {} } },
     });
 
     await act(async () => {
@@ -343,8 +340,8 @@ describe("VendorDashboard Testing", () => {
   });
 
   test("does not update user role if already set", async () => {
-    supabase.auth.getUser.mockResolvedValue({ 
-      data: { user: { ...mockSession.user, user_metadata: { role: "vendor" } } } 
+    supabase.auth.getUser.mockResolvedValue({
+      data: { user: { ...mockSession.user, user_metadata: { role: "vendor" } } },
     });
 
     await act(async () => {
@@ -361,9 +358,7 @@ describe("VendorDashboard Testing", () => {
   });
 
   test("handles API request failure gracefully", async () => {
-    global.fetch.mockImplementation(() => 
-      Promise.reject(new Error("Network error"))
-    );
+    global.fetch.mockImplementation(() => Promise.reject(new Error("Network error")));
 
     await act(async () => {
       render(
@@ -394,9 +389,9 @@ describe("VendorDashboard Testing", () => {
 
     global.fetch.mockImplementation((url) => {
       if (url.includes("/api/vendor-requests/1")) {
-        return Promise.resolve({ 
-          ok: false, 
-          json: () => Promise.resolve({ error: "Update failed" }) 
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Update failed" }),
         });
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
@@ -415,6 +410,7 @@ describe("VendorDashboard Testing", () => {
           method: "PUT",
         })
       );
+      expect(screen.getByText(/Failed to update request status/i)).toBeInTheDocument();
     });
   });
 
@@ -436,9 +432,7 @@ describe("VendorDashboard Testing", () => {
       fireEvent.click(viewDetailsButtons[0]);
     });
 
-    expect(mockNavigate).toHaveBeenCalledWith(
-      "/viewEvent/2?readonly=true"
-    );
+    expect(mockNavigate).toHaveBeenCalledWith("/viewEvent/2?readonly=true");
   });
 
   test("handles calendar date change", async () => {
@@ -463,18 +457,14 @@ describe("VendorDashboard Testing", () => {
     expect(screen.getByTestId("tile-classes")).toBeInTheDocument();
   });
 
-
-
   test("uses existing conversation ID when available", async () => {
-    // Mock conversation with conversationId for direct selection
     const mockConversationWithId = {
       conversation_id: "existing-conv-id",
-      planner_id: "planner-1", 
+      planner_id: "planner-1",
       planner: { name: "Test Planner" },
       last_message_at: "2024-01-01T10:00:00Z",
     };
-    
-    // The vendor's conversations list
+
     chatService.getUserConversations.mockResolvedValue([mockConversationWithId]);
 
     await act(async () => {
@@ -489,7 +479,6 @@ describe("VendorDashboard Testing", () => {
       expect(screen.getByTestId("chat-ui")).toBeInTheDocument();
     });
 
-    // Wait for conversations to load
     await waitFor(() => {
       expect(screen.getByTestId("vendors-count")).toHaveTextContent("Vendors: 1");
     });
@@ -499,7 +488,6 @@ describe("VendorDashboard Testing", () => {
       fireEvent.click(selectButton);
     });
 
-    // Should use existing conversation ID instead of creating new one
     expect(chatService.getOrCreateConversation).not.toHaveBeenCalled();
     expect(chatService.joinConversation).toHaveBeenCalledWith("existing-conv-id");
   });
@@ -584,6 +572,8 @@ describe("VendorDashboard Testing", () => {
   });
 
   test("filters out past events correctly", async () => {
+    jest.setSystemTime(new Date("2026-01-01T12:00:00Z")); // Set time to future
+
     const pastEventsData = [
       {
         request_id: "past-1",
@@ -717,10 +707,7 @@ describe("VendorDashboard Testing", () => {
     supabase.from.mockReturnValue({
       select: () => ({
         eq: () => ({
-          single: () => Promise.resolve({ 
-            data: { name: "Test Vendor", profile_picture: null }, 
-            error: null 
-          }),
+          single: () => Promise.resolve({ data: { name: "Test Vendor", profile_picture: null }, error: null }),
         }),
       }),
     });
@@ -737,13 +724,10 @@ describe("VendorDashboard Testing", () => {
       expect(screen.getByText(/Test Vendor/i)).toBeInTheDocument();
     });
 
-    // Look for the profile container instead of the image
     const profileContainer = screen.getByText("FaUser").closest('div[style*="border-radius: 50%"]');
     expect(profileContainer).toBeInTheDocument();
-    
-    // Verify the container has the right background color for no image
     expect(profileContainer).toHaveStyle({
-      backgroundColor: "rgb(255, 218, 185)" // #FFDAB9
+      backgroundColor: "rgb(255, 218, 185)", // #FFDAB9
     });
   });
 
@@ -798,7 +782,7 @@ describe("VendorDashboard Testing", () => {
         events: {
           event_id: "time-1",
           name: "Event with malformed time",
-          start_time: "invalid-date-format", // Malformed date
+          start_time: "invalid-date-format",
           venue: "Test Venue",
           planner_id: "test-planner-id",
         },
@@ -824,7 +808,6 @@ describe("VendorDashboard Testing", () => {
     });
 
     await waitFor(() => {
-      //it should handle malformed dates without crashing
       expect(screen.getByText(/No upcoming events/i)).toBeInTheDocument();
     });
   });
@@ -850,7 +833,258 @@ describe("VendorDashboard Testing", () => {
       notificationHandler({ type: "new_message" });
     });
 
-    // Should update unread count
     expect(chatService.onMessageNotification).toHaveBeenCalled();
+  });
+
+  test("renders vendor name and profile picture", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Welcome back, Test Vendor!/i)).toBeInTheDocument();
+      expect(screen.getByAltText("Profile")).toHaveAttribute("src", "test-pic.jpg");
+    });
+  });
+
+  test("renders pending requests", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Test Event")).toBeInTheDocument();
+      expect(screen.getByText("Accept")).toBeInTheDocument();
+      expect(screen.getByText("Reject")).toBeInTheDocument();
+    });
+  });
+
+  test("handles accept request successfully", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Test Event")).toBeInTheDocument();
+    });
+
+    const acceptButton = screen.getByText("Accept");
+    await act(async () => {
+      fireEvent.click(acceptButton);
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/vendor-requests/1"),
+        expect.objectContaining({
+          method: "PUT",
+          body: JSON.stringify({ status: "accepted" }),
+        })
+      );
+      expect(screen.getByText(/Request accepted successfully!/i)).toBeInTheDocument();
+    });
+  });
+
+  test("handles send message", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("chat-ui")).toBeInTheDocument();
+    });
+
+    const selectButton = screen.getByText("Select Vendor");
+    await act(async () => {
+      fireEvent.click(selectButton);
+    });
+
+    const sendButton = screen.getByText("Send Message");
+    await act(async () => {
+      fireEvent.click(sendButton);
+    });
+
+    expect(chatService.sendMessage).toHaveBeenCalledWith(
+      "conv-1",
+      "test-vendor-id",
+      "Test message",
+      "text"
+    );
+    expect(chatService.sendMessageAPI).toHaveBeenCalledWith(
+      "conv-1",
+      "test-vendor-id",
+      "Test message",
+      "text"
+    );
+  });
+
+  test("selects planner without existing conversation and loads messages", async () => {
+    const mockConversationWithoutId = {
+      planner_id: "planner-1",
+      planner: { name: "Test Planner" },
+      last_message_at: "2024-01-01T10:00:00Z",
+    };
+
+    chatService.getUserConversations.mockResolvedValue([mockConversationWithoutId]);
+    chatService.getOrCreateConversation.mockResolvedValue({ conversation_id: "new-conv-id" });
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("vendors-count")).toHaveTextContent("Vendors: 1");
+    });
+
+    const selectButton = screen.getByText("Select Vendor");
+    await act(async () => {
+      fireEvent.click(selectButton);
+    });
+
+    expect(chatService.getOrCreateConversation).toHaveBeenCalledWith("planner-1", "test-vendor-id");
+    expect(chatService.joinConversation).toHaveBeenCalledWith("new-conv-id");
+    expect(chatService.getConversationMessages).toHaveBeenCalledWith("new-conv-id");
+    expect(chatService.markMessagesAsRead).toHaveBeenCalledWith("new-conv-id", "test-vendor-id");
+    expect(screen.getByTestId("selected-vendor")).toHaveTextContent("Test Planner");
+    expect(screen.getByTestId("messages-count")).toHaveTextContent("Messages: 1");
+  });
+
+  test("renders calendar tile with event dots", async () => {
+    const mockRequestsWithTileDate = [
+      {
+        request_id: "6",
+        status: "accepted",
+        events: {
+          event_id: "6",
+          name: "Tile Event",
+          start_time: "2025-01-01T10:00:00",
+          venue: "Tile Venue",
+          planner_id: "test-planner-id",
+        },
+      },
+    ];
+
+    global.fetch.mockImplementation((url) => {
+      if (url.includes("/api/vendor-requests/test-vendor-id")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockRequestsWithTileDate),
+        });
+      }
+      if (url.includes("/api/planners/")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockPlannerData),
+        });
+      }
+      return Promise.resolve({ ok: false });
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      const tileClasses = screen.getByTestId("tile-classes");
+      expect(tileClasses).toHaveTextContent("has-events");
+      const tileContent = screen.getByTestId("tile-content");
+      expect(tileContent).toBeInTheDocument();
+      expect(tileContent.querySelector('div[style*="background-color: rgb(82, 196, 26)"]')).toBeInTheDocument(); // Green dot for upcoming
+    });
+  });
+
+  test("handles event without date or time", async () => {
+    jest.setSystemTime(new Date("2024-01-01T12:00:00Z"));
+
+    const noDateEvent = [
+      {
+        request_id: "8",
+        status: "accepted",
+        events: {
+          event_id: "8",
+          name: "No Date Event",
+          start_time: null,
+          venue: "No Date Venue",
+          planner_id: "test-planner-id",
+        },
+      },
+    ];
+
+    global.fetch.mockImplementation((url) => {
+      if (url.includes("/api/vendor-requests/test-vendor-id")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(noDateEvent),
+        });
+      }
+      if (url.includes("/api/planners/")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockPlannerData),
+        });
+      }
+      return Promise.resolve({ ok: false });
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/No upcoming events/i)).toBeInTheDocument();
+      expect(screen.queryByText("No Date Event")).not.toBeInTheDocument();
+    });
+  });
+
+  test("handles no events on selected calendar date", async () => {
+    global.fetch.mockImplementation((url) => {
+      if (url.includes("/api/vendor-requests/test-vendor-id")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([]),
+        });
+      }
+      return Promise.resolve({ ok: false });
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/No events scheduled for this day./i)).toBeInTheDocument();
+    });
   });
 });
