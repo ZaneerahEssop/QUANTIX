@@ -1,16 +1,14 @@
-// src/components/Navbar.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../client";
 import { FaSearch, FaTimes } from "react-icons/fa";
-import "./Navbar.css"; // Import the new CSS file
+import "./Navbar.css"; 
 
 const Navbar = ({ session, showOnlyLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const isPlannerDashboard = location.pathname === "/dashboard";
 
-  // All your state and useEffect hooks remain the same...
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [vendors, setVendors] = useState([]);
@@ -24,7 +22,6 @@ const Navbar = ({ session, showOnlyLogout }) => {
       } = await supabase.auth.getSession();
       if (!currentSession) return;
 
-      // Use the same API URL as in other parts of your app
       const API_URL = process.env.REACT_APP_API_URL;
 
       const response = await fetch(`${API_URL}/api/vendors`, {
@@ -128,7 +125,6 @@ const Navbar = ({ session, showOnlyLogout }) => {
   };
 
   const handleVendorSelect = (vendor) => {
-    // ✨ CHANGED: Navigate to the new public-facing services page
     navigate(`/vendors/${vendor.vendor_id}/services`);
     setShowSearch(false);
     setSearchTerm("");
