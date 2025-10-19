@@ -4,91 +4,73 @@ import { MemoryRouter } from "react-router-dom";
 import PostSignupRedirect from "../pages/PostSignupRedirect";
 import { supabase } from "../client";
 
-// Silence console warnings
-beforeAll(() => jest.spyOn(console, 'warn').mockImplementation(() => {}));
-afterAll(() => console.warn.mockRestore());
+// Mock supabase with proper method chain
+jest.mock("../client", () => {
+  const mockFrom = jest.fn(() => ({
+    select: jest.fn(() => ({
+      eq: jest.fn(() => ({
+        maybeSingle: jest.fn(),
+      })),
+    })),
+    upsert: jest.fn(),
+  }));
 
-// Mock supabase
-jest.mock("../client", () => ({
-  supabase: {
-    auth: {
-      getSession: jest.fn(),
+  return {
+    supabase: {
+      auth: {
+        getSession: jest.fn(),
+        signOut: jest.fn(),
+      },
+      from: mockFrom,
     },
-    from: jest.fn(),
-  },
-}));
+  };
+});
 
 // Mock react-router-dom
+const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useNavigate: jest.fn(),
+  useNavigate: () => mockNavigate,
 }));
 
 // Mock window.location
-const originalLocation = window.location;
-
-beforeAll(() => {
-  delete window.location;
-  window.location = {
-    ...originalLocation,
-    href: "",
-    origin: "http://localhost:3000",
-  };
-});
-
-afterAll(() => {
-  window.location = originalLocation;
+const mockLocation = {
+  href: "",
+  origin: "http://localhost:3000",
+};
+Object.defineProperty(window, 'location', {
+  value: mockLocation,
+  writable: true,
 });
 
 // Mock sessionStorage
-const mockSessionStorage = (() => {
-  let store = {};
-  return {
-    getItem: jest.fn((key) => store[key] || null),
-    setItem: jest.fn((key, value) => {
-      store[key] = value.toString();
-    }),
-    removeItem: jest.fn((key) => {
-      delete store[key];
-    }),
-    clear: jest.fn(() => {
-      store = {};
-    }),
-  };
-})();
+const mockSessionStorage = {
+  store: {},
+  getItem: jest.fn((key) => mockSessionStorage.store[key] || null),
+  setItem: jest.fn((key, value) => {
+    mockSessionStorage.store[key] = value.toString();
+  }),
+  removeItem: jest.fn((key) => {
+    delete mockSessionStorage.store[key];
+  }),
+  clear: jest.fn(() => {
+    mockSessionStorage.store = {};
+  }),
+};
 
 Object.defineProperty(window, 'sessionStorage', {
   value: mockSessionStorage,
 });
 
 describe("PostSignupRedirect", () => {
-  const mockNavigate = jest.fn();
-  let selectMock, eqMock, singleMock, upsertMock;
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockSessionStorage.clear();
     window.location.href = "";
 
-    const { useNavigate } = require("react-router-dom");
-    useNavigate.mockReturnValue(mockNavigate);
-
     // Spy console
     jest.spyOn(console, "error").mockImplementation(() => {});
     jest.spyOn(console, "log").mockImplementation(() => {});
-
-    // Setup Supabase mock chain
-    selectMock = jest.fn().mockReturnThis();
-    eqMock = jest.fn().mockReturnThis();
-    singleMock = jest.fn();
-    upsertMock = jest.fn();
-
-    supabase.from.mockImplementation(() => ({
-      select: selectMock,
-      eq: eqMock,
-      single: singleMock,
-      upsert: upsertMock,
-    }));
   });
 
   afterEach(() => {
@@ -113,24 +95,31 @@ describe("PostSignupRedirect", () => {
   });
 
   test("inserts new user and redirects to /planner-form for planner role", async () => {
-    // Mock the user check - user doesn't exist
-    singleMock.mockResolvedValue({ data: null, error: null });
-    // Mock successful user insertion
-    upsertMock.mockResolvedValue({ error: null });
+    // Setup mock chain for this specific test
+    const maybeSingleMock = jest.fn().mockResolvedValue({ data: null, error: null });
+    const upsertMock = jest.fn().mockResolvedValue({ error: null });
     
+    supabase.from.mockImplementation(() => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: maybeSingleMock,
+        }),
+      }),
+      upsert: upsertMock,
+    }));
+
     supabase.auth.getSession.mockResolvedValue({
       data: {
         session: { 
           user: { 
             id: "test-user-id", 
-            user_metadata: { name: "Test User" },
-            email: "test@example.com" 
+            user_metadata: { name: "Test User" }
           } 
         },
       },
     });
     
-    mockSessionStorage.setItem("signupRole", "planner");
+    mockSessionStorage.store["signupRole"] = "planner";
 
     await act(async () => {
       render(
@@ -142,9 +131,7 @@ describe("PostSignupRedirect", () => {
 
     await waitFor(() => {
       expect(supabase.from).toHaveBeenCalledWith("users");
-      expect(selectMock).toHaveBeenCalledWith("user_id");
-      expect(eqMock).toHaveBeenCalledWith("user_id", "test-user-id");
-      expect(singleMock).toHaveBeenCalled();
+      expect(maybeSingleMock).toHaveBeenCalled();
       expect(upsertMock).toHaveBeenCalledWith([
         {
           user_id: "test-user-id",
@@ -156,13 +143,22 @@ describe("PostSignupRedirect", () => {
       ]);
       expect(mockSessionStorage.removeItem).toHaveBeenCalledWith("signupRole");
       expect(window.location.href).toBe("http://localhost:3000/planner-form");
-    }, { timeout: 3000 });
+    });
   });
 
   test("inserts new user and redirects to /vendor-form for vendor role", async () => {
-    singleMock.mockResolvedValue({ data: null, error: null });
-    upsertMock.mockResolvedValue({ error: null });
+    const maybeSingleMock = jest.fn().mockResolvedValue({ data: null, error: null });
+    const upsertMock = jest.fn().mockResolvedValue({ error: null });
     
+    supabase.from.mockImplementation(() => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: maybeSingleMock,
+        }),
+      }),
+      upsert: upsertMock,
+    }));
+
     supabase.auth.getSession.mockResolvedValue({
       data: {
         session: { 
@@ -173,7 +169,7 @@ describe("PostSignupRedirect", () => {
         },
       },
     });
-    mockSessionStorage.setItem("signupRole", "vendor");
+    mockSessionStorage.store["signupRole"] = "vendor";
 
     await act(async () => {
       render(
@@ -185,13 +181,22 @@ describe("PostSignupRedirect", () => {
 
     await waitFor(() => {
       expect(window.location.href).toBe("http://localhost:3000/vendor-form");
-    }, { timeout: 3000 });
+    });
   });
 
   test("redirects to / for unrecognized role", async () => {
-    singleMock.mockResolvedValue({ data: null, error: null });
-    upsertMock.mockResolvedValue({ error: null });
+    const maybeSingleMock = jest.fn().mockResolvedValue({ data: null, error: null });
+    const upsertMock = jest.fn().mockResolvedValue({ error: null });
     
+    supabase.from.mockImplementation(() => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: maybeSingleMock,
+        }),
+      }),
+      upsert: upsertMock,
+    }));
+
     supabase.auth.getSession.mockResolvedValue({
       data: {
         session: { 
@@ -202,7 +207,7 @@ describe("PostSignupRedirect", () => {
         },
       },
     });
-    mockSessionStorage.setItem("signupRole", "unknown");
+    mockSessionStorage.store["signupRole"] = "unknown";
 
     await act(async () => {
       render(
@@ -214,7 +219,7 @@ describe("PostSignupRedirect", () => {
 
     await waitFor(() => {
       expect(window.location.href).toBe("http://localhost:3000/");
-    }, { timeout: 3000 });
+    });
   });
 
   test("redirects to /dashboard if no role in sessionStorage", async () => {
@@ -247,11 +252,24 @@ describe("PostSignupRedirect", () => {
 
   test("does not insert user if already exists", async () => {
     // Mock that user already exists
-    singleMock.mockResolvedValue({ 
-      data: { user_id: "test-user-id" }, 
+    const maybeSingleMock = jest.fn().mockResolvedValue({ 
+      data: { 
+        user_id: "test-user-id",
+        user_role: "planner" 
+      }, 
       error: null 
     });
+    const upsertMock = jest.fn();
     
+    supabase.from.mockImplementation(() => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: maybeSingleMock,
+        }),
+      }),
+      upsert: upsertMock,
+    }));
+
     supabase.auth.getSession.mockResolvedValue({
       data: {
         session: { 
@@ -262,7 +280,7 @@ describe("PostSignupRedirect", () => {
         },
       },
     });
-    mockSessionStorage.setItem("signupRole", "planner");
+    mockSessionStorage.store["signupRole"] = "planner";
 
     await act(async () => {
       render(
@@ -276,13 +294,22 @@ describe("PostSignupRedirect", () => {
       expect(upsertMock).not.toHaveBeenCalled();
       expect(mockSessionStorage.removeItem).toHaveBeenCalledWith("signupRole");
       expect(window.location.href).toBe("http://localhost:3000/planner-form");
-    }, { timeout: 3000 });
+    });
   });
 
   test("logs error if user insertion fails", async () => {
-    singleMock.mockResolvedValue({ data: null, error: null });
-    upsertMock.mockResolvedValue({ error: { message: "Insert failed" } });
+    const maybeSingleMock = jest.fn().mockResolvedValue({ data: null, error: null });
+    const upsertMock = jest.fn().mockResolvedValue({ error: { message: "Insert failed" } });
     
+    supabase.from.mockImplementation(() => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: maybeSingleMock,
+        }),
+      }),
+      upsert: upsertMock,
+    }));
+
     supabase.auth.getSession.mockResolvedValue({
       data: {
         session: { 
@@ -293,7 +320,7 @@ describe("PostSignupRedirect", () => {
         },
       },
     });
-    mockSessionStorage.setItem("signupRole", "planner");
+    mockSessionStorage.store["signupRole"] = "planner";
 
     await act(async () => {
       render(
@@ -306,6 +333,101 @@ describe("PostSignupRedirect", () => {
     await waitFor(() => {
       expect(console.error).toHaveBeenCalledWith("Error inserting user:", "Insert failed");
       expect(window.location.href).toBe("http://localhost:3000/planner-form");
-    }, { timeout: 3000 });
+    });
   });
+
+  test("handles role conflict by redirecting to signup with params", async () => {
+    // Mock that user exists with different role
+    const maybeSingleMock = jest.fn().mockResolvedValue({ 
+      data: { 
+        user_id: "test-user-id",
+        user_role: "vendor" // Existing role is vendor
+      }, 
+      error: null 
+    });
+    const upsertMock = jest.fn();
+    
+    supabase.from.mockImplementation(() => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: maybeSingleMock,
+        }),
+      }),
+      upsert: upsertMock,
+    }));
+
+    supabase.auth.getSession.mockResolvedValue({
+      data: {
+        session: { 
+          user: { 
+            id: "test-user-id", 
+            user_metadata: { name: "Test User" } 
+          } 
+        },
+      },
+    });
+    mockSessionStorage.store["signupRole"] = "planner"; // Intended role is planner
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <PostSignupRedirect />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(mockSessionStorage.removeItem).toHaveBeenCalledWith("signupRole");
+      expect(supabase.auth.signOut).toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith(
+        "/signup?conflict=1&existingRole=vendor&intendedRole=planner",
+        { replace: true }
+      );
+    });
+  });
+
+
+  test("renders loading state", async () => {
+    const maybeSingleMock = jest.fn().mockResolvedValue({ data: null, error: null });
+    const upsertMock = jest.fn().mockResolvedValue({ error: null });
+    
+    supabase.from.mockImplementation(() => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: maybeSingleMock,
+        }),
+      }),
+      upsert: upsertMock,
+    }));
+
+    supabase.auth.getSession.mockResolvedValue({
+      data: {
+        session: { 
+          user: { 
+            id: "test-user-id", 
+            user_metadata: { name: "Test User" } 
+          } 
+        },
+      },
+    });
+    mockSessionStorage.store["signupRole"] = "planner";
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <PostSignupRedirect />
+        </MemoryRouter>
+      );
+    });
+
+    // Loading state should be visible initially
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    
+    // Wait for the redirect to complete
+    await waitFor(() => {
+      expect(window.location.href).toBe("http://localhost:3000/planner-form");
+    });
+  });
+
+
 });

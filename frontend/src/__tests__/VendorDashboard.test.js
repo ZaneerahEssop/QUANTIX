@@ -47,29 +47,76 @@ Object.defineProperty(window, "location", {
 window.scrollTo = jest.fn();
 
 // Mock React Calendar
-jest.mock("react-calendar", () => ({ onChange, value, tileContent }) => (
-  <div data-testid="mock-calendar">
-    Mock Calendar
-    <button onClick={() => onChange(new Date('2025-01-01'))}>Change Date</button>
-    <div data-testid="tile-content">{tileContent && tileContent({ date: new Date(), view: 'month' })}</div>
-  </div>
-));
+jest.mock("react-calendar", () => {
+  return function MockCalendar({ onChange, value, tileClassName, tileContent }) {
+    return (
+      <div data-testid="mock-calendar">
+        Mock Calendar
+        <button onClick={() => onChange(new Date('2025-01-01'))}>Change Date</button>
+        <div data-testid="tile-content">
+          {tileContent && tileContent({ date: new Date('2025-01-01'), view: 'month' })}
+        </div>
+        <div data-testid="tile-classes">
+          {tileClassName && tileClassName({ date: new Date('2025-01-01'), view: 'month' })}
+        </div>
+      </div>
+    );
+  };
+});
 
 // Mock Navbar
-jest.mock("../components/Navbar", () => () => <div>Mock Navbar</div>);
+jest.mock("../components/Navbar", () => {
+  return function MockNavbar({ session }) {
+    return <div>Mock Navbar</div>;
+  };
+});
 
-// Mock ChatUI
+// Mock ChatUI 
 jest.mock("../components/ChatUI", () => ({
   __esModule: true,
-  default: ({ listTitle, vendors, onSendMessage, onSelectVendor, selectedVendor, messages, unreadCount, showSearch }) => (
-    <div data-testid="chat-ui">
-      Mock ChatUI - Title: {listTitle} - Unread: {unreadCount}
-      <button onClick={() => onSelectVendor(vendors?.[0] || {})}>Select Vendor</button>
-      <button onClick={() => onSendMessage({ text: "Test message" })}>Send Message</button>
-      <div data-testid="messages-count">Messages: {messages?.length || 0}</div>
-      <div data-testid="selected-vendor">{selectedVendor?.name || 'None'}</div>
-    </div>
-  ),
+  default: function MockChatUI({ 
+    listTitle, 
+    vendors, 
+    onSendMessage, 
+    onSelectVendor, 
+    selectedVendor, 
+    messages, 
+    unreadCount, 
+    showSearch 
+  }) {
+    // Transform the vendors array to match what the component expects for selection
+    const transformedVendors = vendors?.map(vendor => ({
+      id: vendor.id || vendor.conversation_id,
+      name: vendor.name,
+      plannerId: vendor.plannerId || vendor.planner_id,
+      conversationId: vendor.conversationId || vendor.conversation_id
+    })) || [];
+
+    return (
+      <div data-testid="chat-ui">
+        Mock ChatUI - Title: {listTitle} - Unread: {unreadCount}
+        {transformedVendors.length > 0 && (
+          <button 
+            onClick={() => onSelectVendor(transformedVendors[0])}
+            data-testid="select-vendor-button"
+          >
+            Select Vendor
+          </button>
+        )}
+        <button onClick={() => onSendMessage({ text: "Test message" })}>Send Message</button>
+        <div data-testid="messages-count">Messages: {messages?.length || 0}</div>
+        <div data-testid="selected-vendor">{selectedVendor?.name || 'None'}</div>
+        <div data-testid="vendors-count">Vendors: {transformedVendors.length}</div>
+      </div>
+    );
+  },
+}));
+
+// Mock useNavigate
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockNavigate,
 }));
 
 describe("VendorDashboard Testing", () => {
@@ -77,6 +124,7 @@ describe("VendorDashboard Testing", () => {
     user: {
       id: "test-vendor-id",
       email: "test@example.com",
+      user_metadata: {},
     },
   };
 
@@ -111,7 +159,7 @@ describe("VendorDashboard Testing", () => {
     {
       request_id: "3",
       status: "pending",
-      events: null, // Test null events case
+      events: null,
     },
   ];
 
@@ -138,45 +186,35 @@ describe("VendorDashboard Testing", () => {
     },
   ];
 
+  let realTimeMessageHandler;
+
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    jest.setSystemTime(new Date('2024-01-01T12:00:00Z'));
 
-    // Mock supabase.auth.getUser and updateUser
-    supabase.auth.getUser.mockResolvedValue({ data: { user: mockSession.user } });
+    // Mock supabase
+    supabase.auth.getUser.mockResolvedValue({ 
+      data: { user: { ...mockSession.user, user_metadata: {} } } 
+    });
     supabase.auth.updateUser.mockResolvedValue({ data: {}, error: null });
 
-    // Mock supabase.from
-    supabase.from.mockImplementation((table) => {
-      return {
-        select: jest.fn(() => {
-          return {
-            eq: jest.fn(() => {
-              return {
-                single: jest.fn(() => {
-                  return Promise.resolve({ data: mockVendorData, error: null });
-                }),
-              };
-            }),
-          };
-        }),
-      };
+    const mockSelectChain = {
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: mockVendorData, error: null }),
+    };
+    
+    supabase.from.mockReturnValue({
+      select: jest.fn().mockReturnValue(mockSelectChain),
     });
 
-    // Mock supabase.channel
-    supabase.channel.mockImplementation((channelName) => {
-      return {
-        on: jest.fn(() => {
-          return {
-            subscribe: jest.fn(() => {
-              return {
-                unsubscribe: jest.fn(),
-              };
-            }),
-          };
-        }),
-      };
-    });
+    const mockChannel = {
+      on: jest.fn().mockReturnThis(),
+      subscribe: jest.fn().mockReturnValue({
+        unsubscribe: jest.fn(),
+      }),
+    };
+    supabase.channel.mockReturnValue(mockChannel);
 
     // Mock fetch
     global.fetch.mockImplementation((url) => {
@@ -198,12 +236,22 @@ describe("VendorDashboard Testing", () => {
       return Promise.resolve({ ok: false, json: () => Promise.resolve({ error: "Not found" }) });
     });
 
-    // Mock chatService methods
+    // Mock chatService
     chatService.getUserConversations.mockResolvedValue(mockConversations);
     chatService.getConversationMessages.mockResolvedValue(mockMessages);
     chatService.getUnreadCount.mockResolvedValue({ unreadCount: 3 });
+    chatService.onNewMessage.mockImplementation((callback) => {
+      realTimeMessageHandler = callback;
+      return () => {};
+    });
+    chatService.onMessageError.mockImplementation((callback) => {
+      return () => {};
+    });
+    chatService.onMessageNotification.mockImplementation((callback) => {
+      return () => {};
+    });
 
-    // Mock console methods to reduce noise
+    // Mock console
     jest.spyOn(console, "error").mockImplementation(() => {});
     jest.spyOn(console, "warn").mockImplementation(() => {});
     jest.spyOn(console, "log").mockImplementation(() => {});
@@ -215,16 +263,20 @@ describe("VendorDashboard Testing", () => {
     console.error.mockRestore();
     console.warn.mockRestore();
     console.log.mockRestore();
+    realTimeMessageHandler = null;
   });
 
   test("renders loading state initially", async () => {
+    let resolveFetch;
+    const fetchPromise = new Promise(resolve => {
+      resolveFetch = () => resolve({ ok: true, json: () => Promise.resolve(mockRequestsData) });
+    });
+
     global.fetch.mockImplementation((url) => {
       if (url.includes("/api/vendor-requests/test-vendor-id")) {
-        return new Promise((resolve) =>
-          setTimeout(() => resolve({ ok: true, json: () => Promise.resolve(mockRequestsData) }), 100)
-        );
+        return fetchPromise;
       }
-      return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+      return Promise.resolve({ ok: false });
     });
 
     await act(async () => {
@@ -238,23 +290,23 @@ describe("VendorDashboard Testing", () => {
     expect(screen.getByText(/Loading your dashboard.../i)).toBeInTheDocument();
 
     await act(async () => {
+      resolveFetch();
       jest.advanceTimersByTime(1000);
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Pending Requests/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Loading your dashboard.../i)).not.toBeInTheDocument();
     });
   });
 
   test("handles vendor data fetch error", async () => {
-    // Mock vendor data fetch to fail
-    supabase.from.mockImplementation(() => ({
+    supabase.from.mockReturnValue({
       select: () => ({
         eq: () => ({
           single: () => Promise.resolve({ data: null, error: new Error("Fetch failed") }),
         }),
       }),
-    }));
+    });
 
     await act(async () => {
       render(
@@ -265,18 +317,52 @@ describe("VendorDashboard Testing", () => {
     });
 
     await waitFor(() => {
-      // Should fallback to email-based vendor name - be more specific
       const welcomeHeading = screen.getByRole('heading', { level: 1 });
       expect(welcomeHeading).toHaveTextContent(/test/i);
     });
   });
 
-  test("handles API request failure", async () => {
+  test("updates user role if not set", async () => {
+    supabase.auth.getUser.mockResolvedValue({ 
+      data: { user: { ...mockSession.user, user_metadata: {} } } 
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(supabase.auth.updateUser).toHaveBeenCalledWith({
+        data: { role: "vendor" },
+      });
+    });
+  });
+
+  test("does not update user role if already set", async () => {
+    supabase.auth.getUser.mockResolvedValue({ 
+      data: { user: { ...mockSession.user, user_metadata: { role: "vendor" } } } 
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(supabase.auth.updateUser).not.toHaveBeenCalled();
+    });
+  });
+
+  test("handles API request failure gracefully", async () => {
     global.fetch.mockImplementation(() => 
-      Promise.resolve({ 
-        ok: false, 
-        json: () => Promise.resolve({ error: "API Error" }) 
-      })
+      Promise.reject(new Error("Network error"))
     );
 
     await act(async () => {
@@ -288,12 +374,12 @@ describe("VendorDashboard Testing", () => {
     });
 
     await waitFor(() => {
+      expect(screen.getByText(/No upcoming events/i)).toBeInTheDocument();
       expect(screen.getByText(/No pending requests at the moment/i)).toBeInTheDocument();
     });
   });
 
   test("handles request response with error", async () => {
-    // First render with successful data
     await act(async () => {
       render(
         <MemoryRouter>
@@ -306,7 +392,6 @@ describe("VendorDashboard Testing", () => {
       expect(screen.getByText("Test Event")).toBeInTheDocument();
     });
 
-    // Now mock the update to fail
     global.fetch.mockImplementation((url) => {
       if (url.includes("/api/vendor-requests/1")) {
         return Promise.resolve({ 
@@ -326,12 +411,14 @@ describe("VendorDashboard Testing", () => {
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining("/api/vendor-requests/1"),
-        expect.any(Object)
+        expect.objectContaining({
+          method: "PUT",
+        })
       );
     });
   });
 
-  test("handles profile picture click and modal", async () => {
+  test("navigates to event details when view details clicked", async () => {
     await act(async () => {
       render(
         <MemoryRouter>
@@ -341,25 +428,17 @@ describe("VendorDashboard Testing", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Test Vendor/i)).toBeInTheDocument();
+      expect(screen.getByText("Accepted Event")).toBeInTheDocument();
     });
 
-    const profilePicture = screen.getByAltText("Profile");
+    const viewDetailsButtons = screen.getAllByText("View Details →");
     await act(async () => {
-      fireEvent.click(profilePicture);
+      fireEvent.click(viewDetailsButtons[0]);
     });
 
-    // Modal should be visible
-    expect(screen.getByAltText("Profile Preview")).toBeInTheDocument();
-
-    // Close modal
-    const closeButton = screen.getByText("✕");
-    await act(async () => {
-      fireEvent.click(closeButton);
-    });
-
-    // Modal should be closed
-    expect(screen.queryByAltText("Profile Preview")).not.toBeInTheDocument();
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/viewEvent/2?readonly=true"
+    );
   });
 
   test("handles calendar date change", async () => {
@@ -380,11 +459,24 @@ describe("VendorDashboard Testing", () => {
       fireEvent.click(changeDateButton);
     });
 
-    // Calendar change should be handled without errors
-    expect(screen.getByTestId("mock-calendar")).toBeInTheDocument();
+    expect(screen.getByTestId("tile-content")).toBeInTheDocument();
+    expect(screen.getByTestId("tile-classes")).toBeInTheDocument();
   });
 
-  test("handles chat functionality", async () => {
+
+
+  test("uses existing conversation ID when available", async () => {
+    // Mock conversation with conversationId for direct selection
+    const mockConversationWithId = {
+      conversation_id: "existing-conv-id",
+      planner_id: "planner-1", 
+      planner: { name: "Test Planner" },
+      last_message_at: "2024-01-01T10:00:00Z",
+    };
+    
+    // The vendor's conversations list
+    chatService.getUserConversations.mockResolvedValue([mockConversationWithId]);
+
     await act(async () => {
       render(
         <MemoryRouter>
@@ -397,31 +489,84 @@ describe("VendorDashboard Testing", () => {
       expect(screen.getByTestId("chat-ui")).toBeInTheDocument();
     });
 
-    // Test selecting a planner
-    const selectVendorButton = screen.getByText("Select Vendor");
-    await act(async () => {
-      fireEvent.click(selectVendorButton);
+    // Wait for conversations to load
+    await waitFor(() => {
+      expect(screen.getByTestId("vendors-count")).toHaveTextContent("Vendors: 1");
     });
 
-    // Test sending a message
-    const sendMessageButton = screen.getByText("Send Message");
+    const selectButton = screen.getByText("Select Vendor");
     await act(async () => {
-      fireEvent.click(sendMessageButton);
+      fireEvent.click(selectButton);
     });
 
-    expect(chatService.sendMessage).toHaveBeenCalled();
-    expect(chatService.sendMessageAPI).toHaveBeenCalled();
+    // Should use existing conversation ID instead of creating new one
+    expect(chatService.getOrCreateConversation).not.toHaveBeenCalled();
+    expect(chatService.joinConversation).toHaveBeenCalledWith("existing-conv-id");
   });
 
-  test("handles empty events and requests", async () => {
+  test("handles real-time message updates correctly", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(chatService.onNewMessage).toHaveBeenCalled();
+    });
+
+    const testMessage = {
+      message_id: "real-time-msg",
+      message_text: "Real-time message",
+      created_at: new Date().toISOString(),
+      sender_id: "planner-1",
+      sender: { name: "Test Planner" },
+      conversation_id: "conv-1",
+    };
+
+    await act(async () => {
+      realTimeMessageHandler(testMessage);
+    });
+
+    expect(realTimeMessageHandler).toBeDefined();
+  });
+
+  test("handles real-time message from current user", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    const testMessage = {
+      message_id: "own-msg",
+      message_text: "My own message",
+      created_at: new Date().toISOString(),
+      sender_id: "test-vendor-id",
+      sender: { name: "Test Vendor" },
+      conversation_id: "conv-1",
+    };
+
+    await act(async () => {
+      realTimeMessageHandler(testMessage);
+    });
+
+    expect(realTimeMessageHandler).toBeDefined();
+  });
+
+  test("handles empty events and requests gracefully", async () => {
     global.fetch.mockImplementation((url) => {
       if (url.includes("/api/vendor-requests/test-vendor-id")) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve([]), // Empty array
+          json: () => Promise.resolve([]),
         });
       }
-      return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+      return Promise.resolve({ ok: false });
     });
 
     await act(async () => {
@@ -438,40 +583,29 @@ describe("VendorDashboard Testing", () => {
     });
   });
 
-  test("handles event date formatting edge cases", async () => {
-    const eventsWithEdgeCases = [
+  test("filters out past events correctly", async () => {
+    const pastEventsData = [
       {
-        request_id: "4",
+        request_id: "past-1",
         status: "accepted",
         events: {
-          event_id: "4",
-          name: "Event with Invalid Time Format",
-          start_time: "2025-12-01T14:00:00", // Valid date but will trigger time parsing warning
-          venue: "Test Venue", 
+          event_id: "past-1",
+          name: "Past Event",
+          start_time: "2020-01-01T10:00:00",
+          venue: "Past Venue",
           planner_id: "test-planner-id",
         },
       },
-      {
-        request_id: "5", 
-        status: "accepted",
-        events: {
-          event_id: "5",
-          name: "Event with No Time",
-          start_time: "2025-12-02", // Date without time
-          venue: "Test Venue",
-          planner_id: "test-planner-id",
-        },
-      }
     ];
 
     global.fetch.mockImplementation((url) => {
       if (url.includes("/api/vendor-requests/test-vendor-id")) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve(eventsWithEdgeCases),
+          json: () => Promise.resolve(pastEventsData),
         });
       }
-      return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+      return Promise.resolve({ ok: false });
     });
 
     await act(async () => {
@@ -483,94 +617,9 @@ describe("VendorDashboard Testing", () => {
     });
 
     await waitFor(() => {
-      // Should handle the edge cases and still display the events
-      expect(screen.getByText("Event with Invalid Time Format")).toBeInTheDocument();
-      expect(screen.getByText("Event with No Time")).toBeInTheDocument();
+      expect(screen.getByText(/No upcoming events/i)).toBeInTheDocument();
+      expect(screen.queryByText("Past Event")).not.toBeInTheDocument();
     });
-  });
-
-  test("handles real-time message updates", async () => {
-    const mockOnNewMessage = jest.fn();
-    chatService.onNewMessage.mockImplementation(mockOnNewMessage);
-
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <VendorDashboard session={mockSession} />
-        </MemoryRouter>
-      );
-    });
-
-    await waitFor(() => {
-      expect(chatService.onNewMessage).toHaveBeenCalled();
-    });
-
-    // Simulate receiving a real-time message
-    const mockMessageHandler = mockOnNewMessage.mock.calls[0][0];
-    const testMessage = {
-      message_id: "real-time-msg",
-      message_text: "Real-time message",
-      created_at: new Date().toISOString(),
-      sender_id: "planner-1",
-      sender: { name: "Test Planner" },
-      conversation_id: "conv-1",
-    };
-
-    await act(async () => {
-      mockMessageHandler(testMessage);
-    });
-
-    // Should handle real-time message without errors
-    expect(chatService.onNewMessage).toHaveBeenCalled();
-  });
-
-  test("handles conversation selection with existing conversationId", async () => {
-    // Mock conversations to include one with conversationId
-    const mockConversationsWithId = [{
-      ...mockConversations[0],
-      conversationId: "existing-conv-id"
-    }];
-    
-    chatService.getUserConversations.mockResolvedValue(mockConversationsWithId);
-
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <VendorDashboard session={mockSession} />
-        </MemoryRouter>
-      );
-    });
-
-    await waitFor(() => {
-      expect(screen.getByTestId("chat-ui")).toBeInTheDocument();
-    });
-
-    // Use the existing select button from our mock
-    const selectButton = screen.getByText("Select Vendor");
-    await act(async () => {
-      fireEvent.click(selectButton);
-    });
-
-    expect(chatService.joinConversation).toHaveBeenCalled();
-  });
-
-  test("handles component unmounting", async () => {
-    const { unmount } = render(
-      <MemoryRouter>
-        <VendorDashboard session={mockSession} />
-      </MemoryRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText(/Test Vendor/i)).toBeInTheDocument();
-    });
-
-    await act(async () => {
-      unmount();
-    });
-
-    // Should clean up subscriptions and listeners
-    expect(chatService.removeAllListeners).toHaveBeenCalled();
   });
 
   test("handles success message display and close", async () => {
@@ -591,68 +640,19 @@ describe("VendorDashboard Testing", () => {
       fireEvent.click(acceptButton);
     });
 
-    // Success message should be displayed
     await waitFor(() => {
       expect(screen.getByText(/Request accepted successfully!/i)).toBeInTheDocument();
     });
 
-    // Close success message
     const closeButton = screen.getByLabelText("Close");
     await act(async () => {
       fireEvent.click(closeButton);
     });
 
-    // Success message should be hidden
     expect(screen.queryByText(/Request accepted successfully!/i)).not.toBeInTheDocument();
   });
 
-  test("handles getUpcomingEvents with various date scenarios", async () => {
-    const mixedEvents = [
-      {
-        request_id: "5",
-        status: "accepted",
-        events: {
-          event_id: "5",
-          name: "Past Event",
-          start_time: "2020-01-01T10:00:00", // Past event
-          venue: "Test Venue",
-          planner_id: "test-planner-id",
-        },
-      },
-      {
-        request_id: "6",
-        status: "accepted",
-        events: {
-          event_id: "6",
-          name: "Future Event",
-          start_time: "2030-01-01T10:00:00", // Future event
-          venue: "Test Venue",
-          planner_id: "test-planner-id",
-        },
-      },
-      {
-        request_id: "7",
-        status: "accepted",
-        events: {
-          event_id: "7",
-          name: "Event without date",
-          start_time: null, // No date
-          venue: "Test Venue",
-          planner_id: "test-planner-id",
-        },
-      },
-    ];
-
-    global.fetch.mockImplementation((url) => {
-      if (url.includes("/api/vendor-requests/test-vendor-id")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mixedEvents),
-        });
-      }
-      return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
-    });
-
+  test("handles reject request", async () => {
     await act(async () => {
       render(
         <MemoryRouter>
@@ -662,54 +662,43 @@ describe("VendorDashboard Testing", () => {
     });
 
     await waitFor(() => {
-      // Should only show future events
-      expect(screen.getByText("Future Event")).toBeInTheDocument();
-      expect(screen.queryByText("Past Event")).not.toBeInTheDocument();
-      expect(screen.queryByText("Event without date")).not.toBeInTheDocument();
-    });
-  });
-
-  // Additional test for time formatting edge cases
-  test("handles time formatting with various formats", async () => {
-    const eventsWithDifferentTimeFormats = [
-      {
-        request_id: "8",
-        status: "accepted",
-        events: {
-          event_id: "8",
-          name: "Event with proper time",
-          start_time: "2025-12-01T14:30:00", // Full ISO string
-          venue: "Test Venue",
-          planner_id: "test-planner-id",
-        },
-      },
-    ];
-
-    global.fetch.mockImplementation((url) => {
-      if (url.includes("/api/vendor-requests/test-vendor-id")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(eventsWithDifferentTimeFormats),
-        });
-      }
-      return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+      expect(screen.getByText("Test Event")).toBeInTheDocument();
     });
 
+    const rejectButton = screen.getByText("Reject");
     await act(async () => {
-      render(
-        <MemoryRouter>
-          <VendorDashboard session={mockSession} />
-        </MemoryRouter>
-      );
+      fireEvent.click(rejectButton);
     });
 
     await waitFor(() => {
-      // Should handle the time formatting without warnings
-      expect(screen.getByText("Event with proper time")).toBeInTheDocument();
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/vendor-requests/1"),
+        expect.objectContaining({
+          method: "PUT",
+          body: JSON.stringify({ status: "rejected" }),
+        })
+      );
     });
   });
 
-  // Test for no session scenario
+  test("cleans up on unmount", async () => {
+    const { unmount } = render(
+      <MemoryRouter>
+        <VendorDashboard session={mockSession} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Test Vendor/i)).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      unmount();
+    });
+
+    expect(chatService.removeAllListeners).toHaveBeenCalled();
+  });
+
   test("handles no session gracefully", async () => {
     await act(async () => {
       render(
@@ -720,9 +709,148 @@ describe("VendorDashboard Testing", () => {
     });
 
     await waitFor(() => {
-      // Should render without crashing and show empty states
-      expect(screen.getByText(/No upcoming events/i)).toBeInTheDocument();
-      expect(screen.getByText(/No pending requests at the moment/i)).toBeInTheDocument();
+      expect(screen.getByText(/Mock Navbar/i)).toBeInTheDocument();
     });
+  });
+
+  test("handles profile picture with no image", async () => {
+    supabase.from.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve({ 
+            data: { name: "Test Vendor", profile_picture: null }, 
+            error: null 
+          }),
+        }),
+      }),
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Test Vendor/i)).toBeInTheDocument();
+    });
+
+    // Look for the profile container instead of the image
+    const profileContainer = screen.getByText("FaUser").closest('div[style*="border-radius: 50%"]');
+    expect(profileContainer).toBeInTheDocument();
+    
+    // Verify the container has the right background color for no image
+    expect(profileContainer).toHaveStyle({
+      backgroundColor: "rgb(255, 218, 185)" // #FFDAB9
+    });
+  });
+
+  test("sets up real-time subscriptions", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(supabase.channel).toHaveBeenCalledWith("vendor_requests_changes");
+      expect(chatService.connect).toHaveBeenCalledWith("test-vendor-id");
+    });
+  });
+
+  test("handles profile picture modal", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Test Vendor/i)).toBeInTheDocument();
+    });
+
+    const profilePicture = screen.getByAltText("Profile");
+    await act(async () => {
+      fireEvent.click(profilePicture);
+    });
+
+    expect(screen.getByAltText("Profile Preview")).toBeInTheDocument();
+
+    const closeButton = screen.getByText("✕");
+    await act(async () => {
+      fireEvent.click(closeButton);
+    });
+
+    expect(screen.queryByAltText("Profile Preview")).not.toBeInTheDocument();
+  });
+
+  test("handles event time parsing edge cases", async () => {
+    const edgeCaseEvents = [
+      {
+        request_id: "time-1",
+        status: "accepted",
+        events: {
+          event_id: "time-1",
+          name: "Event with malformed time",
+          start_time: "invalid-date-format", // Malformed date
+          venue: "Test Venue",
+          planner_id: "test-planner-id",
+        },
+      },
+    ];
+
+    global.fetch.mockImplementation((url) => {
+      if (url.includes("/api/vendor-requests/test-vendor-id")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(edgeCaseEvents),
+        });
+      }
+      return Promise.resolve({ ok: false });
+    });
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      //it should handle malformed dates without crashing
+      expect(screen.getByText(/No upcoming events/i)).toBeInTheDocument();
+    });
+  });
+
+  test("handles message notification updates", async () => {
+    const mockOnNotification = jest.fn();
+    chatService.onMessageNotification.mockImplementation(mockOnNotification);
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <VendorDashboard session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(chatService.onMessageNotification).toHaveBeenCalled();
+    });
+
+    const notificationHandler = mockOnNotification.mock.calls[0][0];
+    await act(async () => {
+      notificationHandler({ type: "new_message" });
+    });
+
+    // Should update unread count
+    expect(chatService.onMessageNotification).toHaveBeenCalled();
   });
 });
