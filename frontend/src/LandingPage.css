@@ -272,7 +272,7 @@ body {
   height: 100vh;
   margin: 0;
   padding: 0;
-  background-image: url("./images/landing2.png");
+  background-image: url("./images/landing.webp");
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -324,11 +324,51 @@ body {
   text-shadow: none;
 }
 
-.hero h1 {
-  font-size: 3.5rem;
+.hero-title {
+  font-family: "Noto Serif Display", serif;
+  font-size: 4.5rem;
+  font-weight: 350; /* Force the weight */
   margin-bottom: 1.5rem;
-  font-weight: 700;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  color: rgb(224, 210, 210);
+  line-height: 1.2;
+  letter-spacing: 1px;
+  position: relative;
+  display: inline-block;
+}
+
+.hero-subtitle {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: rgba(224, 210, 210);
+  max-width: 600px;
+  margin: 0 auto;
+  font-weight: 400;
+  font-family: "Noto Serif Display", serif;
+  padding-bottom: 2%;
+}
+
+.hero-subtitle::after {
+  content: "";
+  position: absolute;
+  left: 23%; /* Line starts 10% from left */
+  right: 70%; /* Line ends 10% from right */
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.5);
+
+  /* Perfect vertical centering relative to text */
+  top: 59%;
+  transform: translateY(-20%);
+}
+
+.hero-subtitle::before {
+  content: "";
+  position: absolute;
+  left: 70%; /* Line starts 70% from left */
+  right: 23%; /* Line ends 23% from right (short line on right) */
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.5);
+  top: 59%;
+  transform: translateY(-20%);
 }
 
 .hero p {

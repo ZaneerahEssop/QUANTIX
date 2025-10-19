@@ -48,6 +48,12 @@ const Landing = () => {
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">
+          <div className="hero-text">
+            <h1 className="hero-title">Eventually Perfect</h1>
+            <h4 className="hero-subtitle">
+              Turning special moments into beautiful memories
+            </h4>
+          </div>
           <button
             className="hero-button"
             onClick={() => handleNavigation("signup")}
