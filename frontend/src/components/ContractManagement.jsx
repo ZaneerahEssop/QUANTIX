@@ -50,7 +50,6 @@ const parseContractContent = (content) => {
     if (!fields.totalFee) {
         const feeLine = lines.find(l => l.includes('**Total Fee:**'));
         if (feeLine) {
-            // ✨ FIX: Corrected the invalid regex from /[^0--9]/g to /[^0-9]/g
             fields.totalFee = (feeLine.split(':')[1]?.trim().replace(/[^0-9]/g, '') || '');
         }
     }

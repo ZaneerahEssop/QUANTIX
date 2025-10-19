@@ -25,8 +25,6 @@ jest.mock('./pages/VendorServices', () => () => <div>Vendor Services</div>);
 jest.mock('./pages/AdminDashboard', () => () => <div>Admin Dashboard</div>);
 jest.mock('./pages/PendingApproval', () => () => <div>Pending Approval</div>);
 
-// --- FIX: Create a persistent mock for the query chain ---
-// Renamed to start with "mock" to avoid hoisting issues with jest.mock()
 const mockQueryChain = {
   select: jest.fn().mockReturnThis(),
   eq: jest.fn().mockReturnThis(),
@@ -100,7 +98,7 @@ describe('App Component', () => {
     });
   });
 
-  // --- Special Routes Tests ---
+  // Special Routes Tests 
   test('renders Loading page when navigating to /loading', async () => {
     renderWithRouter('/loading');
     await waitFor(() => {
@@ -129,7 +127,7 @@ describe('App Component', () => {
     });
   });
 
-  // --- Protected Routes Tests ---
+  //  Protected Routes Tests
   describe('Protected Routes', () => {
     test('redirects to /login from /dashboard when not authenticated', async () => {
       renderWithRouter('/dashboard');
@@ -157,7 +155,7 @@ describe('App Component', () => {
         supabase.auth.getSession.mockResolvedValue({
           data: { session: { user: { id: '123' } } }
         });
-        // --- FIX: Configure the mock for this specific test case ---
+        
         mockQueryChain.single.mockResolvedValue({
           data: { user_role: 'planner' },
           error: null

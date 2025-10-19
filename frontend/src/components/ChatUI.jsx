@@ -4,7 +4,6 @@ import { FaComments } from 'react-icons/fa';
 import styled from 'styled-components';
 import VendorSearch from './VendorSearch';
 
-// Styled Components
 const ComponentWrapper = styled.div`
   width: 100%;
   max-width: 100%;
