@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom'; // ✨ FIX: Import MemoryRouter
+import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 
 // Mock console warnings
@@ -25,7 +25,15 @@ jest.mock('./pages/VendorServices', () => () => <div>Vendor Services</div>);
 jest.mock('./pages/AdminDashboard', () => () => <div>Admin Dashboard</div>);
 jest.mock('./pages/PendingApproval', () => () => <div>Pending Approval</div>);
 
-// Mock Supabase
+// --- FIX: Create a persistent mock for the query chain ---
+// Renamed to start with "mock" to avoid hoisting issues with jest.mock()
+const mockQueryChain = {
+  select: jest.fn().mockReturnThis(),
+  eq: jest.fn().mockReturnThis(),
+  single: jest.fn(),
+};
+
+// Mock Supabase to use the persistent query mock
 jest.mock('./client', () => ({
   supabase: {
     auth: {
@@ -44,7 +52,7 @@ jest.mock('./client', () => ({
 
 import { supabase } from './client';
 
-// ✨ FIX: Create a helper function to render the App with MemoryRouter
+// Helper function to render the App with MemoryRouter
 const renderWithRouter = (initialRoute = '/') => {
   return render(
     <MemoryRouter initialEntries={[initialRoute]}>
@@ -55,10 +63,14 @@ const renderWithRouter = (initialRoute = '/') => {
 
 describe('App Component', () => {
   beforeEach(() => {
+    // Clear mocks but not their implementations
     jest.clearAllMocks();
+
+    // Default mocks for each test
     supabase.auth.getSession.mockResolvedValue({
       data: { session: null }
     });
+    mockQueryChain.single.mockResolvedValue({ data: null, error: null });
     process.env.NODE_ENV = 'test';
   });
 
@@ -130,6 +142,11 @@ describe('App Component', () => {
       supabase.auth.getSession.mockResolvedValue({
         data: { session: { user: { id: '123' } } }
       });
+      // --- FIX: Configure the mock for this specific test case ---
+      mockQueryChain.single.mockResolvedValue({
+        data: { user_role: 'planner' },
+        error: null
+      });
       renderWithRouter('/dashboard');
       await waitFor(() => {
         expect(screen.getByText(/Planner Dashboard/i)).toBeInTheDocument();
@@ -140,6 +157,11 @@ describe('App Component', () => {
         supabase.auth.getSession.mockResolvedValue({
           data: { session: { user: { id: '123' } } }
         });
+        // --- FIX: Configure the mock for this specific test case ---
+        mockQueryChain.single.mockResolvedValue({
+          data: { user_role: 'planner' },
+          error: null
+        });
         renderWithRouter('/viewEvent/some-event-id');
         await waitFor(() => {
           expect(screen.getByText(/Event Details/i)).toBeInTheDocument();
@@ -147,3 +169,4 @@ describe('App Component', () => {
       });
   });
 });
+
