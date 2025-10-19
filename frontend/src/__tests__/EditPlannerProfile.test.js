@@ -10,6 +10,9 @@ jest.mock('../client', () => ({
     storage: {
       from: jest.fn(),
     },
+    auth: {
+      updateUser: jest.fn(),
+    },
   },
 }));
 
@@ -57,7 +60,7 @@ describe("EditPlannerProfile Testing", () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
 
-    // Mock supabase.from chain with a delayed response
+    // Mock supabase.from chain
     supabase.from.mockImplementation(() => {
       const builder = {
         select: jest.fn(() => builder),
@@ -68,9 +71,7 @@ describe("EditPlannerProfile Testing", () => {
         delete: jest.fn(() => builder),
         eq: jest.fn(() => builder),
         order: jest.fn(() => builder),
-        single: jest.fn(() => new Promise(resolve => {
-          setTimeout(() => resolve({ data: mockPlannerData, error: null }), 100);
-        })),
+        single: jest.fn(() => Promise.resolve({ data: mockPlannerData, error: null })),
       };
       return builder;
     });
@@ -80,6 +81,9 @@ describe("EditPlannerProfile Testing", () => {
       upload: jest.fn(() => Promise.resolve({ error: null })),
       getPublicUrl: jest.fn(() => ({ data: { publicUrl: 'mock-url' } })),
     }));
+
+    // Mock supabase.auth.updateUser
+    supabase.auth.updateUser.mockImplementation(() => Promise.resolve({ error: null }));
 
     // Mock console methods
     jest.spyOn(global.console, 'error').mockImplementation(() => {});
@@ -194,6 +198,124 @@ describe("EditPlannerProfile Testing", () => {
     }, { timeout: 3000 });
   });
 
+  test("shows warning for invalid email format", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    await act(async () => {
+      fireEvent.change(screen.getByDisplayValue('test@example.com'), { target: { value: 'invalid-email' } });
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Please enter a valid email address/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+  });
+
+  test("handles profile picture upload", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const file = new File(['dummy'], 'test.png', { type: 'image/png' });
+    const input = document.getElementById('profilePic'); // Use direct DOM query since input is hidden
+
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Change/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
+
+    await waitFor(() => {
+      expect(supabase.storage.from).toHaveBeenCalledWith('profile-pictures');
+      expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+  });
+
+  test("handles profile picture upload error", async () => {
+    supabase.storage.from.mockImplementationOnce(() => ({
+      upload: jest.fn(() => Promise.resolve({ error: new Error('Upload error') })),
+      getPublicUrl: jest.fn(() => ({ data: { publicUrl: 'mock-url' } })),
+    }));
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const file = new File(['dummy'], 'test.png', { type: 'image/png' });
+    const input = document.getElementById('profilePic'); // Use direct DOM query since input is hidden
+
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+  });
+
+  test("handles auth update error", async () => {
+    supabase.auth.updateUser.mockImplementationOnce(() => Promise.resolve({ error: new Error('Auth update error') }));
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+  });
+
   test("handles cancel button click", async () => {
     await act(async () => {
       render(
@@ -212,6 +334,29 @@ describe("EditPlannerProfile Testing", () => {
     });
 
     expect(mockedNavigate).toHaveBeenCalledWith("/dashboard");
+  });
+
+  test("handles back button click", async () => {
+    const mockBack = jest.fn();
+    jest.spyOn(window.history, 'back').mockImplementation(mockBack);
+
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Back/i }));
+    });
+
+    expect(mockBack).toHaveBeenCalled();
   });
 
   test("handles form submission successfully", async () => {
@@ -246,7 +391,7 @@ describe("EditPlannerProfile Testing", () => {
     });
 
     await act(async () => {
-      jest.advanceTimersByTime(3000); // Try a longer timer duration
+      jest.advanceTimersByTime(3000);
     });
 
     await waitFor(() => {
@@ -334,5 +479,123 @@ describe("EditPlannerProfile Testing", () => {
     }, { timeout: 3000 });
 
     expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
+  });
+
+  test("cleans up success timer on unmount", async () => {
+    const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
+
+    const { unmount } = await act(async () => {
+      return render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    await act(async () => {
+      unmount();
+    });
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+  });
+
+  test("handles empty bio submission", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    await act(async () => {
+      fireEvent.change(screen.getByDisplayValue('Test bio'), { target: { value: '' } });
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+  });
+
+  test("handles maximum input length for bio", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const longBio = 'A'.repeat(1000);
+    await act(async () => {
+      fireEvent.change(screen.getByDisplayValue('Test bio'), { target: { value: longBio } });
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+  });
+
+  test("dismisses warning modal", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <EditPlannerProfile session={mockSession} />
+        </MemoryRouter>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    await act(async () => {
+      fireEvent.change(screen.getByDisplayValue('John Doe'), { target: { value: '' } });
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Please enter your name')).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    await act(async () => {
+      const closeButton = screen.getByRole('button', { name: /×/i });
+      fireEvent.click(closeButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Please enter your name')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 });
