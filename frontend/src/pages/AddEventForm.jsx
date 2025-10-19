@@ -44,6 +44,7 @@ export default function AddEventForm() {
       end_time: "",
     };
   };
+  
 
   const [formData, setFormData] = useState(loadFormData());
   const vendorCategories = [
