@@ -2,16 +2,15 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import ContractManagement from '../components/ContractManagement';
 
-// Create a mock for the unsubscribe function so we can clear it
+//a mock for the unsubscribe function
 const mockUnsubscribe = jest.fn();
 
-// *** FIX: Update the supabase mock to include 'channel' ***
+
 jest.mock('../client', () => ({
   supabase: {
     auth: {
       getUser: jest.fn(),
     },
-    // Add the mock for the channel subscription chain
     channel: jest.fn(() => ({
       on: jest.fn(() => ({
         subscribe: jest.fn(() => ({
@@ -132,7 +131,7 @@ describe('ContractManagement', () => {
       renderContractManagement({ currentUser: mockCurrentUserVendor });
     });
     await waitFor(() => {
-      // Check for an element that exists *after* loading
+      // Check for an element that exists after loading
       expect(screen.getByText('Edit Contract')).toBeInTheDocument();
     });
     const editButton = screen.getByText('Edit Contract');
@@ -247,17 +246,444 @@ describe('ContractManagement', () => {
         expect(hoursInput.value).toBe('48');
     });
   });
+
+  test('handles contract field parsing for different service types', async () => {
+    const cateringVendor = { ...mockVendor, service_type: 'catering' };
+    
+    await act(async () => {
+      renderContractManagement({ vendor: cateringVendor, currentUser: mockCurrentUserVendor });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit Contract')).toBeInTheDocument();
+    });
+
+    const editButton = screen.getByText('Edit Contract');
+    await act(async () => {
+      fireEvent.click(editButton);
+    });
+
+    // Should show catering-specific fields
+    expect(screen.getByPlaceholderText('e.g., Buffet, Plated Dinner')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('e.g., 2 servers and 1 bartender')).toBeInTheDocument();
+  });
+
+  test('handles empty vendor acceptance state', async () => {
+    await act(async () => {
+      renderContractManagement({ isVendorAccepted: false });
+    });
+
+    // Should not show loading or contract content when vendor is not accepted
+    await waitFor(() => {
+      expect(screen.queryByText('Loading contract...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Edit Contract')).not.toBeInTheDocument();
+    });
+  });
+
+  test('handles missing event data gracefully', async () => {
+    await act(async () => {
+      renderContractManagement({ eventData: null });
+    });
+
+    // Should handle missing event data without crashing
+    await waitFor(() => {
+      expect(screen.queryByText('Loading contract...')).not.toBeInTheDocument();
+    });
+  });
+
+  test('handles contract content parsing with empty values', async () => {
+    const emptyContract = {
+      ...mockContract,
+      content: '# Service Agreement\n- **Hours of Coverage:** []\n- **Total Fee:** []'
+    };
+
+    global.fetch.mockImplementationOnce(() => 
+      Promise.resolve({ ok: true, json: () => Promise.resolve(emptyContract) })
+    );
+
+    await act(async () => {
+      renderContractManagement({ currentUser: mockCurrentUserVendor });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit Contract')).toBeInTheDocument();
+    });
+
+    const editButton = screen.getByText('Edit Contract');
+    await act(async () => {
+      fireEvent.click(editButton);
+    });
+
+    // Fields should be empty when parsed from empty brackets
+    const totalFeeInput = screen.getByPlaceholderText('e.g., 15000');
+    expect(totalFeeInput.value).toBe('');
+  });
+
+test('cancels edit mode', async () => {
+  await act(async () => {
+    renderContractManagement({ currentUser: mockCurrentUserVendor });
+  });
+
+  await waitFor(() => {
+    expect(screen.getByText('Edit Contract')).toBeInTheDocument();
+  });
+
+  const editButton = screen.getByText('Edit Contract');
+  await act(async () => {
+    fireEvent.click(editButton);
+  });
+
+  // Verify we're in edit mode
+  expect(screen.getByText('Edit Contract Details')).toBeInTheDocument();
+
+  const totalFeeInput = screen.getByPlaceholderText('e.g., 15000');
+  await act(async () => {
+    fireEvent.change(totalFeeInput, { target: { value: '99999' } });
+  });
+
+  // Mocking the fetch that will be called when canceling
+  global.fetch.mockImplementationOnce(() => 
+    Promise.resolve({ ok: true, json: () => Promise.resolve(mockContract) })
+  );
+
+  const cancelButton = screen.getByText('Cancel');
+  await act(async () => {
+    fireEvent.click(cancelButton);
+  });
+
+  // Verify we exited edit mode
+  await waitFor(() => {
+    expect(screen.queryByText('Edit Contract Details')).not.toBeInTheDocument();
+  });
+
+  expect(screen.getByText('Edit Contract')).toBeInTheDocument();
+  });
+
+  test('handles contract signing for planner', async () => {
+    await act(async () => {
+      renderContractManagement({ currentUser: mockCurrentUserPlanner });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Type full name to sign')).toBeInTheDocument();
+    });
+
+    const signatureInput = screen.getByPlaceholderText('Type full name to sign');
+    const signButton = screen.getByText('Sign');
+
+    // Mock successful signature response
+    const signedContract = { 
+      ...mockContract, 
+      planner_signature: 'Test Planner',
+      planner_signed_at: '2025-01-01T00:00:00Z'
+    };
+    global.fetch.mockImplementationOnce(() => 
+      Promise.resolve({ ok: true, json: () => Promise.resolve(signedContract) })
+    );
+
+    await act(async () => {
+      fireEvent.change(signatureInput, { target: { value: 'Test Planner' } });
+      fireEvent.click(signButton);
+    });
+
+    // Verify API was called correctly
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `http://localhost:5000/api/contracts/${mockContract.id}/sign`,
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({
+            role: 'planner',
+            signature: 'Test Planner'
+          })
+        })
+      );
+    });
+
+    // Verify signature is displayed
+    await waitFor(() => {
+      expect(screen.getByText(/Test Planner/)).toBeInTheDocument();
+      expect(screen.getByText(/signed/)).toBeInTheDocument();
+    });
+  });
+
+  test('does not show revision form for planner after they have signed', async () => {
+    const plannerSignedContract = { 
+      ...mockContract, 
+      planner_signature: 'Test Planner',
+      planner_signed_at: '2025-01-01T00:00:00Z'
+    };
+
+    global.fetch.mockImplementationOnce(() => 
+      Promise.resolve({ ok: true, json: () => Promise.resolve(plannerSignedContract) })
+    );
+
+    await act(async () => {
+      renderContractManagement({ currentUser: mockCurrentUserPlanner });
+    });
+
+    await waitFor(() => {
+      // Should show the signed signature
+      expect(screen.getByText(/Test Planner/)).toBeInTheDocument();
+    });
+
+    // Shouldnt show revision form
+    expect(screen.queryByPlaceholderText('e.g., Please clarify payment terms...')).not.toBeInTheDocument();
+    expect(screen.queryByText('Submit Revision')).not.toBeInTheDocument();
+    });
+
+  test('shows alert when signing without name', async () => {
+    await act(async () => {
+      renderContractManagement({ currentUser: mockCurrentUserPlanner });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Sign')).toBeInTheDocument();
+    });
+
+    const signButton = screen.getByText('Sign');
+    
+    await act(async () => {
+      fireEvent.click(signButton);
+    });
+
+    // Verify alert was shown
+    expect(global.alert).toHaveBeenCalledWith('Please type your full name to sign.');
+    
+    // Verify no API call was made
+    expect(global.fetch).not.toHaveBeenCalledWith(
+      expect.stringContaining('/sign'),
+      expect.any(Object)
+    );
+  });
+
+  test('handles empty contract state', async () => {
+    // Mock no contract found
+    global.fetch.mockImplementationOnce(() => 
+      Promise.resolve({ 
+        status: 404,
+        ok: false,
+        json: () => Promise.resolve({ error: 'Not found' })
+      })
+    );
+
+    await act(async () => {
+      renderContractManagement({ currentUser: mockCurrentUserVendor });
+    });
+
+    // Should handle empty state without crashing
+    await waitFor(() => {
+      // Should show the contract template content
+      expect(screen.getByTestId('react-markdown')).toBeInTheDocument();
+    });
+
+    // Vendor should be able to create a new contract
+    expect(screen.getByText('Edit Contract')).toBeInTheDocument();
+  });
   
-  test('handles custom field operations', async () => { /* ... */ });
-  test('saves contract successfully', async () => { /* ... */ });
-  test('handles contract signing for planner', async () => { /* ... */ });
-  test('shows alert when signing without name', async () => { /* ... */ });
-  test('handles revision requests', async () => { /* ... */ });
-  test('does not show revision form for planner after they have signed', async () => { /* ... */ });
-  test('displays revision history', async () => { /* ... */ });
-  test('shows status banners correctly', async () => { /* ... */ });
-  test('handles fetch errors gracefully', async () => { /* ... */ });
-  test('cancels edit mode', async () => { /* ... */ });
-  test('displays different service type fields', async () => { /* ... */ });
-  test('handles empty contract state', async () => { /* ... */ });
+  test('displays different service type fields', async () => {
+    const serviceTypes = [
+      { type: 'photography', fields: ['Hours of Coverage', 'Deliverables'] },
+      { type: 'music', fields: ['Performance Time', 'Service Type', 'Equipment'] },
+      { type: 'catering', fields: ['Service Style', 'Staffing'] },
+      { type: 'venue', fields: ['Space(s) Provided', 'Capacity', 'Restrictions'] },
+      { type: 'decor', fields: ['Scope'] },
+      { type: 'flowers', fields: ['Arrangement Types'] }
+    ];
+
+    for (const { type, fields } of serviceTypes) {
+      const vendorWithType = { ...mockVendor, service_type: type };
+      
+      const { unmount } = await act(async () => {
+        return render(
+          <ContractManagement 
+            eventData={mockEventData}
+            vendor={vendorWithType}
+            currentUser={mockCurrentUserVendor}
+            isVendorAccepted={true}
+            onBack={jest.fn()}
+          />
+        );
+      });
+
+      await waitFor(() => {
+        const editButtons = screen.getAllByText('Edit Contract');
+        expect(editButtons.length).toBeGreaterThan(0);
+      });
+
+      const editButtons = screen.getAllByText('Edit Contract');
+      await act(async () => {
+        fireEvent.click(editButtons[0]);
+      });
+
+      // Verify all expected fields for this service type are displayed
+      for (const field of fields) {
+        expect(screen.getByText(field)).toBeInTheDocument();
+      }
+
+      await act(async () => {
+        unmount();
+      });
+    }
+  });
+
+  test('handles fetch errors gracefully', async () => {
+    // Mock fetch error
+    global.fetch.mockImplementationOnce(() => 
+      Promise.reject(new Error('Network error'))
+    );
+
+    await act(async () => {
+      renderContractManagement();
+    });
+
+    // Should show error message in modal
+    await waitFor(() => {
+      expect(screen.getByText(/Could not load contract/)).toBeInTheDocument();
+      expect(screen.getByText(/Network error/)).toBeInTheDocument();
+    });
+
+    const closeButton = screen.getByText('×');
+    await act(async () => {
+      fireEvent.click(closeButton);
+    });
+
+    expect(screen.queryByText(/Network error/)).not.toBeInTheDocument();
+  });
+
+  test('handles revision requests', async () => {
+    await act(async () => {
+      renderContractManagement({ currentUser: mockCurrentUserPlanner });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('e.g., Please clarify payment terms...')).toBeInTheDocument();
+    });
+
+    const revisionTextarea = screen.getByPlaceholderText('e.g., Please clarify payment terms...');
+    const submitButton = screen.getByText('Submit Revision');
+
+    // Mock successful revision response
+    const updatedContract = { 
+      ...mockContract, 
+      revisions: [{ requested_by: 'Test Planner', comment: 'Test revision', timestamp: '2025-01-01T00:00:00Z' }]
+    };
+    global.fetch.mockImplementationOnce(() => 
+      Promise.resolve({ ok: true, json: () => Promise.resolve(updatedContract) })
+    );
+
+    await act(async () => {
+      fireEvent.change(revisionTextarea, { target: { value: 'Test revision' } });
+      fireEvent.click(submitButton);
+    });
+
+    // Verify API was called correctly 
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `http://localhost:5000/api/contracts/${mockContract.id}/revise`,
+        expect.objectContaining({
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: expect.stringContaining('Test revision')
+        })
+      );
+    });
+
+    // Verify the request body contains the expected structure
+    const revisionCall = global.fetch.mock.calls.find(call => 
+      call[0].includes('/revise')
+    );
+    expect(revisionCall).toBeDefined();
+    
+    const requestBody = JSON.parse(revisionCall[1].body);
+    expect(requestBody.revision.requested_by).toBe('Test Planner');
+    expect(requestBody.revision.comment).toBe('Test revision');
+    expect(requestBody.revision.timestamp).toBeDefined();
+    expect(typeof requestBody.revision.timestamp).toBe('string');
+
+    // Verify textarea is cleared after submission
+    expect(revisionTextarea.value).toBe('');
+  });
+
+  test('displays revision history', async () => {
+    global.fetch.mockImplementationOnce(() => 
+      Promise.resolve({ ok: true, json: () => Promise.resolve(mockContractWithRevisions) })
+    );
+
+    await act(async () => {
+      renderContractManagement();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Revision History')).toBeInTheDocument();
+    });
+
+    // Verify revision content is displayed
+    const revisionText = screen.getByText((content, element) => {
+      return element.tagName.toLowerCase() === 'blockquote' && 
+            content.includes('Please clarify payment terms');
+    });
+    expect(revisionText).toBeInTheDocument();
+    
+    expect(screen.getByText('Test Planner')).toBeInTheDocument();
+    
+    // Verify timestamp is formatted
+    const timestamp = new Date('2025-01-01T10:00:00Z').toLocaleString();
+    expect(screen.getByText(timestamp, { exact: false })).toBeInTheDocument();
+  });
+
+  test('handles custom field operations', async () => {
+    await act(async () => {
+      renderContractManagement({ currentUser: mockCurrentUserVendor });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit Contract')).toBeInTheDocument();
+    });
+
+    const editButton = screen.getByText('Edit Contract');
+    await act(async () => {
+      fireEvent.click(editButton);
+    });
+
+    // Add a custom field
+    const addButton = screen.getByText('Add Custom Field');
+    await act(async () => {
+      fireEvent.click(addButton);
+    });
+
+    // Should show the new custom field row
+    const customFieldHeaders = screen.getAllByPlaceholderText('Clause Header (e.g., Travel Fee)');
+    const customFieldValues = screen.getAllByPlaceholderText('Clause Details');
+    
+    expect(customFieldHeaders).toHaveLength(1);
+    expect(customFieldValues).toHaveLength(1);
+
+    // Fill in the custom field
+    await act(async () => {
+      fireEvent.change(customFieldHeaders[0], { target: { value: 'Travel Fee' } });
+      fireEvent.change(customFieldValues[0], { target: { value: 'R500 for distant locations' } });
+    });
+
+    expect(customFieldHeaders[0].value).toBe('Travel Fee');
+    expect(customFieldValues[0].value).toBe('R500 for distant locations');
+
+    // Add another custom field
+    await act(async () => {
+      fireEvent.click(addButton);
+    });
+
+    const updatedHeaders = screen.getAllByPlaceholderText('Clause Header (e.g., Travel Fee)');
+    expect(updatedHeaders).toHaveLength(2);
+
+    // Remove the first custom field
+    const removeButtons = screen.getAllByTestId('fa-trash');
+    await act(async () => {
+      fireEvent.click(removeButtons[0]);
+    });
+
+    const finalHeaders = screen.getAllByPlaceholderText('Clause Header (e.g., Travel Fee)');
+    expect(finalHeaders).toHaveLength(1);
+  });
+
 });
