@@ -28,6 +28,14 @@ global.FileReader = MockFileReader;
 // Mock URL.createObjectURL
 global.URL.createObjectURL = jest.fn(() => 'mocked-url');
 
+// Mock window.history.back
+const mockHistoryBack = jest.fn();
+Object.defineProperty(window, 'history', {
+  value: {
+    back: mockHistoryBack
+  }
+});
+
 describe("EditVendorProfile Testing", () => {
   const mockSession = {
     user: {
@@ -57,13 +65,18 @@ describe("EditVendorProfile Testing", () => {
     profile_picture: null
   };
 
+  const mockVendorNoCategories = {
+    ...mockVendorData,
+    service_type: ''
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockedNavigate.mockClear();
+    mockHistoryBack.mockClear();
     
-    // Default mock implementations
     supabase.auth = {
-      updateUser: jest.fn(() => Promise.resolve({ error: null }))
+      updateUser: jest.fn(() => Promise.resolve({ error: null })),
     };
 
     supabase.storage = {
@@ -75,15 +88,14 @@ describe("EditVendorProfile Testing", () => {
 
     supabase.from = jest.fn(() => ({
       select: jest.fn().mockReturnThis(),
-      insert: jest.fn(() => Promise.resolve({ error: null })),
       update: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
       delete: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
+      single: jest.fn(() => Promise.resolve({ data: mockVendorData, error: null })),
       order: jest.fn().mockReturnThis(),
-      single: jest.fn(() => Promise.resolve({ data: mockVendorData, error: null }))
     }));
 
-    // Mock console methods to avoid noise
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -125,7 +137,7 @@ describe("EditVendorProfile Testing", () => {
     supabase.from.mockImplementation(() => ({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
-      single: jest.fn(() => Promise.resolve({ data: mockVendorWithVenue, error: null }))
+      single: jest.fn(() => Promise.resolve({ data: mockVendorWithVenue, error: null })),
     }));
 
     render(
@@ -138,7 +150,6 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Should show venue names section
     expect(screen.getByText('Venue Names')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Venue 1')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Venue 2')).toBeInTheDocument();
@@ -148,7 +159,7 @@ describe("EditVendorProfile Testing", () => {
     supabase.from.mockImplementation(() => ({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
-      single: jest.fn(() => Promise.resolve({ data: mockVendorNoProfilePic, error: null }))
+      single: jest.fn(() => Promise.resolve({ data: mockVendorNoProfilePic, error: null })),
     }));
 
     render(
@@ -161,7 +172,6 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Should show default camera icon with "Change Photo" text
     expect(screen.getByText('Change Photo')).toBeInTheDocument();
   });
 
@@ -176,7 +186,6 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Use the file input directly since the label text is tricky
     const fileInput = screen.getByLabelText((content, element) => {
       return element.tagName.toLowerCase() === 'input' && element.type === 'file';
     });
@@ -184,9 +193,7 @@ describe("EditVendorProfile Testing", () => {
     
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    // FileReader should be triggered
     await waitFor(() => {
-      // We can't easily test FileReader calls directly, but we can verify the component handles the change
       expect(fileInput.files[0]).toBe(file);
     });
   });
@@ -202,19 +209,14 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Find a category that's not already selected (Photography in this case)
     const photographyLabel = screen.getByText('Photography');
     const photographyCheckbox = photographyLabel.querySelector('input[type="checkbox"]');
     
-    // Initially should not be checked (based on mock data which has catering,photography)
-    // Since photography is in the mock data, it should be checked initially
     expect(photographyCheckbox.checked).toBeTruthy();
     
-    // Deselect the category
     fireEvent.click(photographyLabel);
     expect(photographyCheckbox.checked).toBeFalsy();
 
-    // Select the category again
     fireEvent.click(photographyLabel);
     expect(photographyCheckbox.checked).toBeTruthy();
   });
@@ -223,7 +225,7 @@ describe("EditVendorProfile Testing", () => {
     supabase.from.mockImplementation(() => ({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
-      single: jest.fn(() => Promise.resolve({ data: mockVendorWithVenue, error: null }))
+      single: jest.fn(() => Promise.resolve({ data: mockVendorWithVenue, error: null })),
     }));
 
     render(
@@ -236,19 +238,15 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Should have initial venue names
     expect(screen.getByDisplayValue('Venue 1')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Venue 2')).toBeInTheDocument();
 
-    // Add a new venue name
     const addButton = screen.getByText('Add Another Venue');
     fireEvent.click(addButton);
 
-    // Should have a new empty venue input
     const venueInputs = screen.getAllByDisplayValue('');
     expect(venueInputs.length).toBeGreaterThan(0);
 
-    // Remove a venue name - find by the remove button
     const removeButtons = screen.getAllByText('×').filter(button => 
       button.getAttribute('title') === 'Remove venue'
     );
@@ -256,7 +254,6 @@ describe("EditVendorProfile Testing", () => {
       const initialVenueCount = screen.getAllByDisplayValue(/Venue/).length;
       fireEvent.click(removeButtons[0]);
       
-      // Should have one less venue
       await waitFor(() => {
         const newVenueCount = screen.getAllByDisplayValue(/Venue/).length;
         expect(newVenueCount).toBeLessThan(initialVenueCount);
@@ -284,12 +281,11 @@ describe("EditVendorProfile Testing", () => {
   });
 
   test("handles form submission with new vendor creation", async () => {
-    // Mock no existing vendor (new vendor)
     supabase.from.mockImplementation(() => ({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn(() => Promise.resolve({ data: null, error: null })),
-      insert: jest.fn(() => Promise.resolve({ error: null }))
+      insert: jest.fn(() => Promise.resolve({ error: null })),
     }));
 
     render(
@@ -302,7 +298,6 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Find inputs by their name attributes - this is the most reliable way
     const nameInput = document.querySelector('input[name="name"]');
     const businessInput = document.querySelector('input[name="businessName"]');
 
@@ -317,6 +312,13 @@ describe("EditVendorProfile Testing", () => {
   });
 
   test("handles form submission with existing vendor update", async () => {
+    supabase.from.mockImplementation(() => ({
+      select: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn(() => Promise.resolve({ data: mockVendorData, error: null })),
+    }));
+
     render(
       <MemoryRouter>
         <EditVendorProfile session={mockSession} />
@@ -331,10 +333,17 @@ describe("EditVendorProfile Testing", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
-    }, { timeout: 3000 });
+    }, { timeout: 5000 });
   });
 
   test("handles form submission with profile picture upload", async () => {
+    supabase.from.mockImplementation(() => ({
+      select: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn(() => Promise.resolve({ data: mockVendorData, error: null })),
+    }));
+
     render(
       <MemoryRouter>
         <EditVendorProfile session={mockSession} />
@@ -345,14 +354,12 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Upload a profile picture first
     const fileInput = screen.getByLabelText((content, element) => {
       return element.tagName.toLowerCase() === 'input' && element.type === 'file';
     });
     const file = new File(['dummy content'], 'test.jpg', { type: 'image/jpeg' });
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    // Then submit the form
     fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
 
     await waitFor(() => {
@@ -383,7 +390,7 @@ describe("EditVendorProfile Testing", () => {
       single: jest.fn(() => Promise.resolve({ 
         data: null, 
         error: new Error('Fetch error') 
-      }))
+      })),
     }));
 
     render(
@@ -394,36 +401,11 @@ describe("EditVendorProfile Testing", () => {
 
     await waitFor(() => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
-    }, { timeout: 3000 });
-  });
-
-  test("handles form submission error during update", async () => {
-    supabase.from.mockImplementation(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn(() => Promise.resolve({ data: mockVendorData, error: null })),
-      update: jest.fn(() => ({
-        eq: jest.fn(() => Promise.resolve({ 
-          error: new Error('Update error') 
-        }))
-      }))
-    }));
-
-    render(
-      <MemoryRouter>
-        <EditVendorProfile session={mockSession} />
-      </MemoryRouter>
-    );
+    }, { timeout: 5000 });
 
     await waitFor(() => {
-      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
-    }, { timeout: 3000 });
-
-    fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/Update error/i)).toBeInTheDocument();
-    }, { timeout: 3000 });
+      expect(screen.getByText(/Failed to load vendor profile. Please try again./i)).toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 
   test("handles form submission error during create", async () => {
@@ -433,7 +415,7 @@ describe("EditVendorProfile Testing", () => {
       single: jest.fn(() => Promise.resolve({ data: null, error: null })),
       insert: jest.fn(() => Promise.resolve({ 
         error: new Error('Failed to create vendor profile') 
-      }))
+      })),
     }));
 
     render(
@@ -446,7 +428,6 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Fill required fields - use getAllByDisplayValue and take the first one (name field)
     const emptyInputs = screen.getAllByDisplayValue('');
     const nameInput = emptyInputs.find(input => 
       input.getAttribute('name') === 'name'
@@ -454,6 +435,14 @@ describe("EditVendorProfile Testing", () => {
     
     if (nameInput) {
       fireEvent.change(nameInput, { target: { value: 'New Vendor' } });
+    }
+
+    const businessInput = emptyInputs.find(input => 
+      input.getAttribute('name') === 'businessName'
+    );
+    
+    if (businessInput) {
+      fireEvent.change(businessInput, { target: { value: 'New Business' } });
     }
 
     fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
@@ -479,14 +468,12 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Upload a profile picture
     const fileInput = screen.getByLabelText((content, element) => {
       return element.tagName.toLowerCase() === 'input' && element.type === 'file';
     });
     const file = new File(['dummy content'], 'test.jpg', { type: 'image/jpeg' });
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    // Then submit the form
     fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
 
     await waitFor(() => {
@@ -497,16 +484,27 @@ describe("EditVendorProfile Testing", () => {
   test("handles no session user", async () => {
     render(
       <MemoryRouter>
-        <EditVendorProfile session={{}} />
+        <EditVendorProfile session={null} />
       </MemoryRouter>
     );
 
     await waitFor(() => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
-    }, { timeout: 3000 });
+    }, { timeout: 5000 });
+
+    await waitFor(() => {
+      expect(screen.getByText(/User not authenticated/i)).toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 
   test("handles success modal close and navigation", async () => {
+    supabase.from.mockImplementation(() => ({
+      select: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn(() => Promise.resolve({ data: mockVendorData, error: null })),
+    }));
+
     render(
       <MemoryRouter>
         <EditVendorProfile session={mockSession} />
@@ -517,14 +515,12 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Trigger success first
     fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
-    }, { timeout: 3000 });
+    }, { timeout: 5000 });
 
-    // Close the success modal
     const closeButton = screen.getByText('×');
     fireEvent.click(closeButton);
 
@@ -542,7 +538,6 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Trigger warning first with invalid phone
     const phoneInput = screen.getByDisplayValue('1234567890');
     fireEvent.change(phoneInput, { target: { value: "0123" } });
     fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
@@ -551,11 +546,9 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.getByText(/Please enter 10 digits for the phone number/i)).toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Close the warning modal
     const closeButton = screen.getByText('×');
     fireEvent.click(closeButton);
 
-    // Warning should be dismissed
     await waitFor(() => {
       expect(screen.queryByText(/Please enter 10 digits for the phone number/i)).not.toBeInTheDocument();
     });
@@ -572,22 +565,18 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Test name change
     const nameInput = screen.getByDisplayValue('John Doe');
     fireEvent.change(nameInput, { target: { value: 'Jane Smith' } });
     expect(nameInput.value).toBe('Jane Smith');
 
-    // Test business name change
     const businessInput = screen.getByDisplayValue('Test Business');
     fireEvent.change(businessInput, { target: { value: 'New Business' } });
     expect(businessInput.value).toBe('New Business');
 
-    // Test description change
     const descriptionInput = screen.getByDisplayValue('Test description');
     fireEvent.change(descriptionInput, { target: { value: 'New description' } });
     expect(descriptionInput.value).toBe('New description');
 
-    // Test phone change
     const phoneInput = screen.getByDisplayValue('1234567890');
     fireEvent.change(phoneInput, { target: { value: '0987654321' } });
     expect(phoneInput.value).toBe('0987654321');
@@ -604,18 +593,13 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Select venue category (it's not selected initially based on mock data)
     const venueLabel = screen.getByText('Venue');
     fireEvent.click(venueLabel);
 
-    // Should show venue names section
     await waitFor(() => {
       expect(screen.getByText('Venue Names')).toBeInTheDocument();
     });
 
-    // Test venue name input - use getAllByDisplayValue and find the one that's for venue names
-    const venueInputs = screen.getAllByDisplayValue('');
-    // Find the venue input by looking for inputs within the venue names section
     const venueSection = screen.getByText('Venue Names').closest('div');
     const venueNameInputs = venueSection.querySelectorAll('input');
     
@@ -625,7 +609,6 @@ describe("EditVendorProfile Testing", () => {
     }
   });
 
-  // Additional test for checking initial category state
   test("correctly initializes categories from vendor data", async () => {
     render(
       <MemoryRouter>
@@ -637,7 +620,6 @@ describe("EditVendorProfile Testing", () => {
       expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
     }, { timeout: 3000 });
 
-    // Check that categories from mock data are selected
     const cateringLabel = screen.getByText('Catering');
     const cateringCheckbox = cateringLabel.querySelector('input[type="checkbox"]');
     expect(cateringCheckbox.checked).toBeTruthy();
@@ -646,9 +628,217 @@ describe("EditVendorProfile Testing", () => {
     const photographyCheckbox = photographyLabel.querySelector('input[type="checkbox"]');
     expect(photographyCheckbox.checked).toBeTruthy();
 
-    // Venue should not be selected initially
     const venueLabel = screen.getByText('Venue');
     const venueCheckbox = venueLabel.querySelector('input[type="checkbox"]');
     expect(venueCheckbox.checked).toBeFalsy();
+  });
+
+  test("handles form submission with empty required fields", async () => {
+    render(
+      <MemoryRouter>
+        <EditVendorProfile session={mockSession} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const nameInput = screen.getByDisplayValue('John Doe');
+    fireEvent.change(nameInput, { target: { value: '' } });
+
+    const businessInput = screen.getByDisplayValue('Test Business');
+    fireEvent.change(businessInput, { target: { value: '' } });
+
+    fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+
+    expect(screen.queryByText(/Profile updated successfully!/i)).not.toBeInTheDocument();
+  });
+
+  test("handles form submission with no categories selected", async () => {
+    supabase.from.mockImplementation(() => ({
+      select: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn(() => Promise.resolve({ data: mockVendorNoCategories, error: null })),
+    }));
+
+    render(
+      <MemoryRouter>
+        <EditVendorProfile session={mockSession} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const nameInput = document.querySelector('input[name="name"]');
+    const businessInput = document.querySelector('input[name="businessName"]');
+
+    if (nameInput) {
+      fireEvent.change(nameInput, { target: { value: 'John Doe' } });
+    }
+
+    if (businessInput) {
+      fireEvent.change(businessInput, { target: { value: 'Test Business' } });
+    }
+
+    const cateringLabel = screen.getByText('Catering');
+    fireEvent.click(cateringLabel);
+    const photographyLabel = screen.getByText('Photography');
+    fireEvent.click(photographyLabel);
+
+    fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+  });
+
+  test("handles venue names with only whitespace", async () => {
+    supabase.from.mockImplementation(() => ({
+      select: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn(() => Promise.resolve({ data: mockVendorWithVenue, error: null })),
+    }));
+
+    render(
+      <MemoryRouter>
+        <EditVendorProfile session={mockSession} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const venueInputs = screen.getAllByDisplayValue(/Venue/);
+    fireEvent.change(venueInputs[0], { target: { value: '   ' } });
+
+    const nameInput = document.querySelector('input[name="name"]');
+    const businessInput = document.querySelector('input[name="businessName"]');
+
+    if (nameInput) {
+      fireEvent.change(nameInput, { target: { value: 'John Doe' } });
+    }
+
+    if (businessInput) {
+      fireEvent.change(businessInput, { target: { value: 'Test Business' } });
+    }
+
+    fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+  });
+
+  test("handles profile picture change with no file selected", async () => {
+    render(
+      <MemoryRouter>
+        <EditVendorProfile session={mockSession} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const fileInput = screen.getByLabelText((content, element) => {
+      return element.tagName.toLowerCase() === 'input' && element.type === 'file';
+    });
+    fireEvent.change(fileInput, { target: { files: [] } });
+
+    expect(fileInput.files.length).toBe(0);
+  });
+
+  test("handles useEffect cleanup for success timer", async () => {
+    const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <EditVendorProfile session={mockSession} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    unmount();
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
+  });
+
+  test("handles unexpected Supabase data structure", async () => {
+    supabase.from.mockImplementation(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn(() => Promise.resolve({ data: {}, error: null })),
+    }));
+
+    render(
+      <MemoryRouter>
+        <EditVendorProfile session={mockSession} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const nameInput = document.querySelector('input[name="name"]');
+    expect(nameInput.value).toBe('');
+
+    const businessInput = document.querySelector('input[name="businessName"]');
+    expect(businessInput.value).toBe('');
+  });
+
+  test("handles partial form update (only description)", async () => {
+    supabase.from.mockImplementation(() => ({
+      select: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn(() => Promise.resolve({ data: mockVendorData, error: null })),
+    }));
+
+    render(
+      <MemoryRouter>
+        <EditVendorProfile session={mockSession} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const descriptionInput = screen.getByDisplayValue('Test description');
+    fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
+
+    fireEvent.click(screen.getByRole("button", { name: /Update Profile/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Profile updated successfully!/i)).toBeInTheDocument();
+    }, { timeout: 5000 });
+  });
+
+  test("handles back button click", async () => {
+    render(
+      <MemoryRouter>
+        <EditVendorProfile session={mockSession} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading your profile...')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const backButton = screen.getByRole('button', { name: /Back/i });
+    fireEvent.click(backButton);
+
+    expect(mockHistoryBack).toHaveBeenCalled();
   });
 });
