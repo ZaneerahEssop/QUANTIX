@@ -1,8 +1,8 @@
 import React from "react";
-import { render, screen, fireEvent,act } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import SignUpPage from "../pages/SignUpPage";
 import { MemoryRouter } from "react-router-dom";
-import {supabase} from '../client';
+import { supabase } from '../client'; // This import will now get the mock
 
 //to silence the console warnings: 
 beforeAll(() => jest.spyOn(console, 'warn').mockImplementation(() => {}));
@@ -17,9 +17,42 @@ jest.mock("react-router-dom", () => ({
   Link: ({ children }) => <span>{children}</span>, //fixing render Link as span to fix <p> nesting error
 }));
 
+// *** FIX 1: Mock the icon library ***
+jest.mock('react-icons/fa', () => ({
+  FaArrowLeft: () => <i data-testid="fa-arrow-left-icon" />,
+}));
+
+// *** FIX 2: Mock the supabase client ***
+jest.mock('../client', () => ({
+  supabase: {
+    auth: {
+      signInWithOAuth: jest.fn().mockResolvedValue({ data: {}, error: null }),
+      // Note: getSession/onAuthStateChange aren't needed
+      // because the component code skips them in 'test' env
+    },
+  },
+}));
+
+// Mock window.location.origin
+const originalLocation = window.location;
+beforeAll(() => {
+  delete window.location;
+  window.location = {
+    ...originalLocation,
+    origin: 'http://localhost:3000',
+    search: '', // Add search property
+  };
+});
+afterAll(() => {
+  window.location = originalLocation;
+});
+
+
 describe("SignUpPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset window.location.search
+    window.location.search = '';
   });
 
   test("renders headings, role cards, and sign-up button", () => {
@@ -76,8 +109,17 @@ describe("SignUpPage", () => {
     fireEvent.click(button);
 
     // Expect Supabase OAuth to be called
-    const { supabase } = require("../client");
-    expect(supabase.auth.signInWithOAuth).toHaveBeenCalled();
+    // We can use the imported mock directly
+    expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'google',
+      options: {
+        redirectTo: 'http://localhost:3000/loading',
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
   });
 
   test("stores selected role in sessionStorage before OAuth", () => {
@@ -99,6 +141,9 @@ describe("SignUpPage", () => {
   test("handles error from Supabase OAuth gracefully", async () => {
     supabase.auth.signInWithOAuth.mockRejectedValueOnce(new Error("OAuth failed"));
 
+    // Mock console.error to check for error logging
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
     render(
       <MemoryRouter>
         <SignUpPage />
@@ -115,5 +160,9 @@ describe("SignUpPage", () => {
 
     //No crash 
     expect(supabase.auth.signInWithOAuth).toHaveBeenCalled();
+    // Check that the error was logged
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error with Google sign-up:', 'OAuth failed');
+    
+    consoleErrorSpy.mockRestore();
   });
 });
