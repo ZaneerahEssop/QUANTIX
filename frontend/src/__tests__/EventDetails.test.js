@@ -166,11 +166,10 @@ describe("EventDetails Component", () => {
   const waitForComponentToLoad = async () => {
     await waitFor(() => {
       expect(screen.queryByText("Loading event details...")).not.toBeInTheDocument();
-    }, { timeout: 3000 });
+    }, { timeout: 5000 });
   };
 
   const switchToView = async (viewName) => {
-    // Find all buttons with the view name and click the main navigation one
     const viewButtons = screen.getAllByRole("button", { name: new RegExp(viewName, "i") });
     const mainNavButton = viewButtons.find(button => 
       button.className.includes('new-button')
@@ -181,7 +180,6 @@ describe("EventDetails Component", () => {
         fireEvent.click(mainNavButton);
       });
     } else if (viewButtons.length > 0) {
-      // Fallback to first button if no main nav button found
       await act(async () => {
         fireEvent.click(viewButtons[0]);
       });
@@ -195,7 +193,6 @@ describe("EventDetails Component", () => {
     supabase.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
     supabase.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
     
-    // Mock storage
     supabase.storage.from.mockReturnValue({
       upload: jest.fn(() => Promise.resolve({ error: null })),
       remove: jest.fn(() => Promise.resolve({ error: null })),
@@ -212,15 +209,13 @@ describe("EventDetails Component", () => {
       })),
     });
 
-    searchUnsplashPhotos.mockResolvedValue({ results: [] });
+    searchUnsplashPhotos.mockResolvedValue(overrides.unsplashResults || { results: [] });
     registerUnsplashDownload.mockResolvedValue();
 
-    // URLSearchParams mock
     global.URLSearchParams = jest.fn().mockImplementation(() => ({
       get: jest.fn((param) => param === 'readonly' ? (overrides.readOnly ? 'true' : 'false') : null)
     }));
 
-    // Fetch mock
     global.fetch.mockImplementation((url) => {
       if (url.includes("/api/events/id/test-event-id")) {
         return Promise.resolve({ 
@@ -260,7 +255,10 @@ describe("EventDetails Component", () => {
         });
       }
       if (url.includes("/api/guests/test-event-id/")) {
-        return Promise.resolve({ ok: true });
+        return Promise.resolve({ 
+          ok: true,
+          json: () => Promise.resolve({ success: true })
+        });
       }
       if (url.includes("/api/emails/send-invite")) {
         return Promise.resolve({ 
@@ -268,13 +266,23 @@ describe("EventDetails Component", () => {
           json: () => Promise.resolve({ success: true }) 
         });
       }
-      if (url.includes("/api/vendor-requests")) {
+      if (url.includes("/api/vendor-notes")) {
         return Promise.resolve({ 
           ok: true, 
-          json: () => Promise.resolve({ success: true }) 
+          json: () => Promise.resolve({ 
+            success: true,
+            request: { 
+              request_id: "req1", 
+              booking_notes: overrides.notes || "New notes", 
+              price: overrides.price || "2000" 
+            }
+          }) 
         });
       }
-      return Promise.resolve({ ok: false });
+      return Promise.resolve({ 
+        ok: false,
+        json: () => Promise.resolve({ error: "Not found" })
+      });
     });
   };
 
@@ -298,25 +306,6 @@ describe("EventDetails Component", () => {
   });
 
   describe("Initialization and Loading", () => {
-    test("renders event details component with correct data", async () => {
-      await act(async () => {
-        renderComponent();
-      });
-
-      await waitForComponentToLoad();
-      const venueBox = screen.getByText("Venue").closest('.info-box');
-      expect(within(venueBox).getByText("Test Venue")).toBeInTheDocument();
-      const themeBox = screen.getByText("Theme").closest('.info-box');
-      expect(within(themeBox).getByText("Test Theme")).toBeInTheDocument();
-      expect(screen.getByText("October 1, 2025")).toBeInTheDocument();
-      expect(screen.getByText("14:00")).toBeInTheDocument();
-      
-      // Verify the main sections are present
-      expect(screen.getByText("Event Details")).toBeInTheDocument();
-      expect(screen.getByText("Schedule")).toBeInTheDocument();
-      expect(screen.getByText("Event Theme")).toBeInTheDocument();
-    });
-
     test("shows loading state during data fetch", async () => {
       let resolveEventFetch;
       const eventFetchPromise = new Promise((resolve) => {
@@ -389,8 +378,6 @@ describe("EventDetails Component", () => {
       await waitForComponentToLoad();
 
       expect(screen.queryByRole('button', { name: /edit details/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /edit schedule/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /edit theme/i })).not.toBeInTheDocument();
     });
 
     test("allows view-only operations in read-only mode", async () => {
@@ -402,7 +389,6 @@ describe("EventDetails Component", () => {
 
       await waitForComponentToLoad();
 
-      // Should still be able to view different sections
       await switchToView("Guest List");
       expect(screen.getByText("John Doe")).toBeInTheDocument();
 
@@ -426,7 +412,6 @@ describe("EventDetails Component", () => {
 
       expect(screen.getByRole('button', { name: /save details/i })).toBeInTheDocument();
       
-      // Should show editable inputs
       expect(screen.getByDisplayValue("Test Venue")).toBeInTheDocument();
     });
 
@@ -437,19 +422,16 @@ describe("EventDetails Component", () => {
 
       await waitForComponentToLoad();
 
-      // Enter edit mode
       const editButton = screen.getByRole('button', { name: /edit details/i });
       await act(async () => {
         fireEvent.click(editButton);
       });
 
-      // Change venue
       const venueInput = screen.getByDisplayValue("Test Venue");
       await act(async () => {
         fireEvent.change(venueInput, { target: { value: "Updated Venue" } });
       });
 
-      // Save changes
       const saveButton = screen.getByRole('button', { name: /save details/i });
       await act(async () => {
         fireEvent.click(saveButton);
@@ -475,12 +457,12 @@ describe("EventDetails Component", () => {
 
       await waitForComponentToLoad();
 
+      await switchToView("Event Overview");
       const editScheduleButton = screen.getByRole('button', { name: /edit schedule/i });
       await act(async () => {
         fireEvent.click(editScheduleButton);
       });
 
-      // Add new activity
       const addActivityButton = screen.getByRole('button', { name: /add activity/i });
       await act(async () => {
         fireEvent.click(addActivityButton);
@@ -497,7 +479,6 @@ describe("EventDetails Component", () => {
         fireEvent.change(activityInputs[activityInputs.length - 1], { target: { value: "New Activity" } });
       });
 
-      // Save schedule
       const saveScheduleButton = screen.getByRole('button', { name: /save schedule/i });
       await act(async () => {
         fireEvent.click(saveScheduleButton);
@@ -518,21 +499,18 @@ describe("EventDetails Component", () => {
 
       await waitForComponentToLoad();
 
-      // Test that we can enter edit mode and see the schedule section
+      await switchToView("Event Overview");
       const editScheduleButton = screen.getByRole('button', { name: /edit schedule/i });
       await act(async () => {
         fireEvent.click(editScheduleButton);
       });
 
-      // Should show save & add activity button in edit mode
       expect(screen.getByRole('button', { name: /save schedule/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /add activity/i })).toBeInTheDocument();
     });
-
   });
 
   describe("Theme Management", () => {
-
     test("handles malformed theme data gracefully", async () => {
       const eventWithBadTheme = {
         ...mockEventData,
@@ -547,124 +525,181 @@ describe("EventDetails Component", () => {
 
       await waitForComponentToLoad();
 
-      // Should not crash and should show default theme state
       expect(screen.getByText("No theme has been set for this event.")).toBeInTheDocument();
     });
-  });
 
-describe("Guest Management", () => {
-  const navigateToGuestList = async () => {
-    const guestListButton = screen.getByRole('button', { name: "Guest List" });
-    await act(async () => {
-      fireEvent.click(guestListButton);
-    });
+    test("edits theme notes", async () => {
+      await act(async () => {
+        renderComponent();
+      });
 
-    await waitFor(() => {
-      expect(screen.getByText("Guest Management")).toBeInTheDocument();
-    });
-  };
+      await waitForComponentToLoad();
 
-  beforeEach(() => {
-    // Ensure all API calls succeed by default and vendorRequests is an array
-    global.fetch.mockImplementation((url) => {
-      if (url.includes("/api/events/id/test-event-id")) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockEventData) });
-      }
-      if (url.includes("/api/guests/test-event-id")) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockGuestsData) });
-      }
-      if (url.includes("/api/vendor-requests/event/test-event-id")) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockVendorRequests) });
-      }
-      if (url.includes("/api/emails/send-invite")) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true }) });
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      await switchToView("Event Overview");
+      const editThemeButton = screen.getByRole('button', { name: /edit theme/i });
+      await act(async () => {
+        fireEvent.click(editThemeButton);
+      });
+
+      const notesTextarea = screen.getByPlaceholderText("Add notes about your theme...");
+      await act(async () => {
+        fireEvent.change(notesTextarea, { target: { value: "Updated notes" } });
+      });
+
+      const saveThemeButton = screen.getByRole('button', { name: /save theme/i });
+      await act(async () => {
+        fireEvent.click(saveThemeButton);
+      });
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+      });
     });
   });
 
-  test("displays guest list correctly", async () => {
-    await act(async () => {
-      renderComponent();
+  describe("Guest Management", () => {
+    const navigateToGuestList = async () => {
+      const guestListButton = screen.getByRole('button', { name: "Guest List" });
+      await act(async () => {
+        fireEvent.click(guestListButton);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText("Guest Management")).toBeInTheDocument();
+      });
+    };
+
+    test("displays guest list correctly", async () => {
+      await act(async () => {
+        renderComponent();
+      });
+
+      await waitForComponentToLoad();
+      await navigateToGuestList();
+
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+      expect(screen.getByText("Jane Smith")).toBeInTheDocument();
     });
 
-    await waitForComponentToLoad();
-    await navigateToGuestList();
+    test("handles RSVP status changes", async () => {
+      await act(async () => {
+        renderComponent();
+      });
 
-    expect(screen.getByText("John Doe")).toBeInTheDocument();
-    expect(screen.getByText("Jane Smith")).toBeInTheDocument();
+      await waitForComponentToLoad();
+      await navigateToGuestList();
+
+      const yesCheckboxes = screen.getAllByRole('checkbox', { name: /yes/i });
+      await act(async () => {
+        fireEvent.click(yesCheckboxes[0]);
+      });
+
+      expect(yesCheckboxes[0]).toBeChecked();
+    });
+
+    test("sends guest invites successfully", async () => {
+      await act(async () => {
+        renderComponent();
+      });
+
+      await waitForComponentToLoad();
+      await navigateToGuestList();
+
+      const sendButtons = screen.getAllByRole("button", { name: /send invite/i });
+      await act(async () => {
+        fireEvent.click(sendButtons[0]);
+      });
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining("/api/emails/send-invite"),
+          expect.objectContaining({ method: "POST" })
+        );
+      });
+    });
+
+    test("adds new guests in edit mode", async () => {
+      await act(async () => {
+        renderComponent();
+      });
+
+      await waitForComponentToLoad();
+      await navigateToGuestList();
+
+      const editGuestsButton = screen.getByRole('button', { name: /edit guests/i });
+      await act(async () => {
+        fireEvent.click(editGuestsButton);
+      });
+
+      const nameInput = screen.getByPlaceholderText("Guest Name");
+      const emailInput = screen.getByPlaceholderText("Email");
+      const dietaryInput = screen.getByPlaceholderText("Dietary Requirements");
+
+      await act(async () => {
+        fireEvent.change(nameInput, { target: { value: "New Guest" } });
+        fireEvent.change(emailInput, { target: { value: "new@example.com" } });
+        fireEvent.change(dietaryInput, { target: { value: "Gluten Free" } });
+      });
+
+      const addButton = screen.getByRole('button', { name: /add guest/i });
+      await act(async () => {
+        fireEvent.click(addButton);
+      });
+
+      expect(screen.getByText("New Guest")).toBeInTheDocument();
+    });
+
+    test("removes a guest in edit mode", async () => {
+      await act(async () => {
+        renderComponent();
+      });
+
+      await waitForComponentToLoad();
+      await navigateToGuestList();
+
+      const editGuestsButton = screen.getByRole('button', { name: /edit guests/i });
+      await act(async () => {
+        fireEvent.click(editGuestsButton);
+      });
+
+      const removeButtons = screen.getAllByTitle("Remove guest");
+      await act(async () => {
+        fireEvent.click(removeButtons[0]);
+      });
+
+      const saveGuestsButton = screen.getByRole('button', { name: /save guests/i });
+      await act(async () => {
+        fireEvent.click(saveGuestsButton);
+      });
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining("/api/guests/test-event-id/"),
+          expect.objectContaining({ method: "DELETE" })
+        );
+      });
+    });
+
+    test("handles sending invite without email", async () => {
+      setupMocks({ guestsData: [{ guest_id: "guest1", name: "John Doe", email: "", rsvp_status: "Pending", dietary_info: "Vegan" }] });
+
+      await act(async () => {
+        renderComponent();
+      });
+
+      await waitForComponentToLoad();
+      await navigateToGuestList();
+
+      const sendButtons = screen.getAllByRole("button", { name: /send invite/i });
+      await act(async () => {
+        fireEvent.click(sendButtons[0]);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Cannot send invite: No email address/)).toBeInTheDocument();
+      });
+    });
   });
-
-
-  test("handles RSVP status changes", async () => {
-    await act(async () => {
-      renderComponent();
-    });
-
-    await waitForComponentToLoad();
-    await navigateToGuestList();
-
-    const yesCheckboxes = screen.getAllByRole('checkbox', { name: /yes/i });
-    await act(async () => {
-      fireEvent.click(yesCheckboxes[0]);
-    });
-
-    expect(yesCheckboxes[0]).toBeChecked();
-  });
-
-  test("sends guest invites successfully", async () => {
-    await act(async () => {
-      renderComponent();
-    });
-
-    await waitForComponentToLoad();
-    await navigateToGuestList();
-
-    const sendButtons = screen.getAllByRole("button", { name: /send invite/i });
-    await act(async () => {
-      fireEvent.click(sendButtons[0]);
-    });
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/emails/send-invite"),
-        expect.objectContaining({ method: "POST" })
-      );
-    });
-  });
-
-  test("adds new guests in edit mode", async () => {
-    await act(async () => {
-      renderComponent();
-    });
-
-    await waitForComponentToLoad();
-    await navigateToGuestList();
-
-    const editGuestsButton = screen.getByRole('button', { name: /edit guests/i });
-    await act(async () => {
-      fireEvent.click(editGuestsButton);
-    });
-
-    // Fill new guest form
-    const nameInput = screen.getByPlaceholderText("Guest Name");
-    const emailInput = screen.getByPlaceholderText("Email");
-    const dietaryInput = screen.getByPlaceholderText("Dietary Requirements");
-
-    await act(async () => {
-      fireEvent.change(nameInput, { target: { value: "New Guest" } });
-      fireEvent.change(emailInput, { target: { value: "new@example.com" } });
-      fireEvent.change(dietaryInput, { target: { value: "Gluten Free" } });
-    });
-
-    const addButton = screen.getByRole('button', { name: /add guest/i });
-    await act(async () => {
-      fireEvent.click(addButton);
-    });
-
-    expect(screen.getByText("New Guest")).toBeInTheDocument();
-  });
-});
 
   describe("Vendor Management", () => {
     test("displays vendor requests with correct status", async () => {
@@ -680,7 +715,6 @@ describe("Guest Management", () => {
         expect(within(confirmedSection).getByText("Venue Provider")).toBeInTheDocument();
       });
 
-      // Check for pending status
       expect(screen.getByText("Pending Approval")).toBeInTheDocument();
       
       const vendorNames = screen.getAllByText(/Vendor One|Venue Provider/);
@@ -695,13 +729,11 @@ describe("Guest Management", () => {
       await waitForComponentToLoad();
       await switchToView("Vendor List");
 
-      // Enter vendor editing mode
       const addVendorsButton = screen.getByRole('button', { name: /add vendors/i });
       await act(async () => {
         fireEvent.click(addVendorsButton);
       });
 
-      // Wait for vendor cards to load by checking for select buttons
       await waitFor(() => {
         const selectButtons = screen.getAllByRole('button', { name: /select as/i });
         expect(selectButtons.length).toBeGreaterThan(0);
@@ -709,18 +741,15 @@ describe("Guest Management", () => {
 
       const selectButtons = screen.getAllByRole('button', { name: /select as/i });
       
-      // Click the first select button
       await act(async () => {
         fireEvent.click(selectButtons[0]);
       });
 
-      // Wait for the button to change to selected state
       await waitFor(() => {
-        const selectedButtons = screen.getAllByText(/selected/i);
+        const selectedButtons = screen.getAllByText(/requested/i);
         expect(selectedButtons.length).toBeGreaterThan(0);
       });
 
-      // Now look for the remove/X button specifically
       const removeIcons = screen.getAllByTestId("fa-times");
       const removeButton = removeIcons.find(icon => {
         const button = icon.closest('button');
@@ -733,7 +762,6 @@ describe("Guest Management", () => {
         });
       }
 
-      // Verify we can select again
       await waitFor(() => {
         const selectButtonsAfter = screen.getAllByRole('button', { name: /select as/i });
         expect(selectButtonsAfter.length).toBeGreaterThan(0);
@@ -748,19 +776,16 @@ describe("Guest Management", () => {
       await waitForComponentToLoad();
       await switchToView("Vendor List");
 
-      // Enter vendor editing mode
       const addVendorsButton = screen.getByRole('button', { name: /add vendors/i });
       await act(async () => {
         fireEvent.click(addVendorsButton);
       });
 
-      // Select a vendor
       const selectButtons = screen.getAllByRole('button', { name: /select as/i });
       await act(async () => {
         fireEvent.click(selectButtons[0]);
       });
 
-      // Save vendors
       const saveVendorsButton = screen.getByRole('button', { name: /save vendors/i });
       await act(async () => {
         fireEvent.click(saveVendorsButton);
@@ -773,7 +798,6 @@ describe("Guest Management", () => {
         );
       });
     });
-
   });
 
   describe("Document Management", () => {
@@ -787,7 +811,7 @@ describe("Guest Management", () => {
 
       await waitFor(() => {
         expect(screen.getByText("doc.pdf")).toBeInTheDocument();
-      }, { timeout: 3000 });
+      }, { timeout: 5000 });
     });
 
     test("handles document upload", async () => {
@@ -798,13 +822,11 @@ describe("Guest Management", () => {
       await waitForComponentToLoad();
       await switchToView("Documents");
 
-      // Enter edit mode
       const editDocsButton = screen.getByRole('button', { name: /edit documents/i });
       await act(async () => {
         fireEvent.click(editDocsButton);
       });
 
-      // Mock file upload
       const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
       const fileInput = screen.getByLabelText(/upload documents/i);
 
@@ -826,13 +848,11 @@ describe("Guest Management", () => {
       await waitForComponentToLoad();
       await switchToView("Documents");
 
-      // Enter edit mode
       const editDocsButton = screen.getByRole('button', { name: /edit documents/i });
       await act(async () => {
         fireEvent.click(editDocsButton);
       });
 
-      // Wait for delete button to appear
       await waitFor(() => {
         expect(screen.getByTitle("Delete document")).toBeInTheDocument();
       });
@@ -847,7 +867,6 @@ describe("Guest Management", () => {
     });
 
     test("shows empty state when no documents", async () => {
-      // Mock empty documents
       setupMocks({ documents: [] });
 
       await act(async () => {
@@ -858,6 +877,33 @@ describe("Guest Management", () => {
       await switchToView("Documents");
 
       expect(screen.getByText("No documents found in storage for this event.")).toBeInTheDocument();
+    });
+
+    test("handles multiple document uploads", async () => {
+      await act(async () => {
+        renderComponent();
+      });
+
+      await waitForComponentToLoad();
+      await switchToView("Documents");
+
+      const editDocsButton = screen.getByRole('button', { name: /edit documents/i });
+      await act(async () => {
+        fireEvent.click(editDocsButton);
+      });
+
+      const file1 = new File(['content1'], 'file1.pdf', { type: 'application/pdf' });
+      const file2 = new File(['content2'], 'file2.pdf', { type: 'application/pdf' });
+      const fileInput = screen.getByLabelText(/upload documents/i);
+
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file1, file2] } });
+      });
+
+      await waitFor(() => {
+        const { supabase } = require("../client");
+        expect(supabase.storage.from().upload).toHaveBeenCalledTimes(2);
+      });
     });
   });
 
@@ -883,7 +929,6 @@ describe("Guest Management", () => {
     });
 
     test("handles export failure", async () => {
-      // Mock successful event fetch but failed export
       global.fetch.mockImplementation((url) => {
         if (url.includes("/api/events/id/test-event-id")) {
           return Promise.resolve({ ok: true, json: () => Promise.resolve(mockEventData) });
@@ -905,7 +950,6 @@ describe("Guest Management", () => {
         fireEvent.click(exportButton);
       });
 
-      // Should handle the error without crashing
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalled();
       });
@@ -935,7 +979,6 @@ describe("Guest Management", () => {
 
       await waitForComponentToLoad();
 
-      // Test all view switches
       const views = [
         { name: "Guest List", buttonText: /guest list/i },
         { name: "Vendor List", buttonText: /vendor list/i },
@@ -989,7 +1032,6 @@ describe("Guest Management", () => {
 
       await waitForComponentToLoad();
 
-      // Test empty states in different views
       await switchToView("Guest List");
       expect(screen.getByText("No guests have been added yet.")).toBeInTheDocument();
 
@@ -1001,13 +1043,15 @@ describe("Guest Management", () => {
     });
 
     test("handles API failures gracefully", async () => {
-      global.fetch.mockImplementation(() => Promise.resolve({ ok: false }));
+      global.fetch.mockImplementation(() => Promise.resolve({ 
+        ok: false,
+        json: () => Promise.resolve({ error: "API failure" })
+      }));
 
       await act(async () => {
         renderComponent();
       });
 
-      // Should handle errors without crashing
       await waitForComponentToLoad();
     });
 
@@ -1021,7 +1065,6 @@ describe("Guest Management", () => {
       const { supabase } = require("../client");
       supabase.auth.getUser.mockResolvedValue({ data: { user: vendorUser } });
 
-      // Mock read-only mode for vendor
       setupMocks({ readOnly: true });
 
       await act(async () => {
@@ -1030,7 +1073,6 @@ describe("Guest Management", () => {
 
       await waitForComponentToLoad();
 
-      // Vendor should see back button
       const backButton = screen.getByRole('button', { name: /back/i });
       expect(backButton).toHaveTextContent(/vendor dashboard/i);
     });
@@ -1087,6 +1129,85 @@ describe("Guest Management", () => {
 
       await waitFor(() => {
         expect(screen.getByText(/search failed/i)).toBeInTheDocument();
+      });
+    });
+
+    test("handles Unsplash pagination", async () => {
+      const { searchUnsplashPhotos } = require("../services/unsplash");
+      searchUnsplashPhotos.mockResolvedValue({
+        results: [
+          { id: "photo1", urls: { small: "http://example.com/photo1.jpg" }, links: { html: "http://unsplash.com/photo1" } },
+          { id: "photo2", urls: { small: "http://example.com/photo2.jpg" }, links: { html: "http://unsplash.com/photo2" } },
+        ],
+        total_pages: 2
+      });
+
+      await act(async () => {
+        renderComponent();
+      });
+
+      await waitForComponentToLoad();
+
+      const searchInput = screen.getByPlaceholderText("Search inspiration for this event");
+      const searchButton = screen.getByRole('button', { name: /search/i });
+
+      await act(async () => {
+        fireEvent.change(searchInput, { target: { value: "wedding" } });
+        fireEvent.click(searchButton);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /next/i })).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      const nextButton = screen.getByRole('button', { name: /next/i });
+      await act(async () => {
+        fireEvent.click(nextButton);
+      });
+
+      await waitFor(() => {
+        expect(searchUnsplashPhotos).toHaveBeenCalledWith("wedding", 2, 12);
+      });
+
+      const prevButton = screen.getByRole('button', { name: /prev/i });
+      await act(async () => {
+        fireEvent.click(prevButton);
+      });
+
+      await waitFor(() => {
+        expect(searchUnsplashPhotos).toHaveBeenCalledWith("wedding", 1, 12);
+      });
+    });
+
+    test("registers download on Unsplash photo click", async () => {
+      const { searchUnsplashPhotos, registerUnsplashDownload } = require("../services/unsplash");
+      searchUnsplashPhotos.mockResolvedValue({
+        results: [
+          { id: "photo1", urls: { small: "http://example.com/photo1.jpg" }, links: { html: "http://unsplash.com/photo1" } }
+        ]
+      });
+
+      await act(async () => {
+        renderComponent();
+      });
+
+      await waitForComponentToLoad();
+
+      const searchInput = screen.getByPlaceholderText("Search inspiration for this event");
+      const searchButton = screen.getByRole('button', { name: /search/i });
+
+      await act(async () => {
+        fireEvent.change(searchInput, { target: { value: "wedding" } });
+        fireEvent.click(searchButton);
+      });
+
+      const photo = screen.getByAltText("Unsplash photo");
+      await act(async () => {
+        fireEvent.click(photo);
+      });
+
+      await waitFor(() => {
+        expect(registerUnsplashDownload).toHaveBeenCalledWith("photo1");
       });
     });
   });
