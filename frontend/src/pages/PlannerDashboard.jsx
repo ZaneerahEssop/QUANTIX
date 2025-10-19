@@ -9,6 +9,7 @@ import { supabase } from "../client";
 import { FaPlus, FaTrash, FaCheck, FaUser, FaClock } from "react-icons/fa";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import confetti from 'canvas-confetti';
 import Navbar from "../components/Navbar";
 import ChatUI from "../components/ChatUI";
 import chatService from "../services/chatService";
@@ -742,19 +743,42 @@ export default function PlannerDashboard({ session }) {
   };
 
   const toggleTaskCompletion = async (taskId, completed) => {
+    const isCompleting = !completed; // Check if we're marking as complete (true) or incomplete (false)
+    
     try {
       const { error } = await supabase
         .from("tasks")
-        .update({ completed: !completed })
+        .update({ completed: isCompleting })
         .eq("task_id", taskId);
 
       if (error) throw error;
 
       setTasks(
         tasks.map((task) =>
-          task.id === taskId ? { ...task, completed: !completed } : task
+          task.id === taskId ? { ...task, completed: isCompleting } : task
         )
       );
+
+      // Trigger confetti only when marking a task as complete (not when unchecking)
+      if (isCompleting) {
+        // Create a basic confetti effect
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#FFB6C1', '#FFD700', '#87CEEB', '#98FB98', '#FFA07A'],
+        });
+
+        // Add a slight delay and trigger another burst
+        setTimeout(() => {
+          confetti({
+            particleCount: 50,
+            spread: 100,
+            origin: { y: 0.5 },
+            colors: ['#FFB6C1', '#FFD700', '#87CEEB'],
+          });
+        }, 300);
+      }
     } catch (error) {
       console.error("Error updating task:", error);
     }
