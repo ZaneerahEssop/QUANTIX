@@ -24,6 +24,9 @@ Event-ually Perfect is a full-stack event planning platform that connects event 
 ## 🔗 Visit our site
 Click [here](http://quantix-frontend.vercel.app/)
 
+## CODECOV 
+[![codecov](https://codecov.io/github/ZaneerahEssop/QUANTIX/graph/badge.svg?token=27W27JSNGD)](https://codecov.io/github/ZaneerahEssop/QUANTIX)
+
 ## 👥 Our Team
 Karabo Bopape   
 Ammaarah Cassim   

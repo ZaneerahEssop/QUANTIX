@@ -7,7 +7,6 @@ import { supabase } from '../client';
 // Mock fetch for API calls
 global.fetch = jest.fn();
 
-// Mock icons
 jest.mock('react-icons/fa', () => ({
   FaArrowLeft: () => <span data-testid="fa-arrow-left">FaArrowLeft</span>,
   FaArrowDown: () => <span data-testid="fa-arrow-down">FaArrowDown</span>,
@@ -87,10 +86,8 @@ describe('AddEventForm', () => {
     localStorage.clear();
     sessionStorage.clear();
     
-    // Mock environment variable
     process.env.REACT_APP_API_URL = 'http://localhost:3001';
     
-    // Mock successful session
     supabase.auth.getSession.mockResolvedValue({
       data: { 
         session: { 
@@ -111,7 +108,7 @@ describe('AddEventForm', () => {
       error: null,
     });
     
-    // Default mock for successful API calls
+    // mock for successful API calls
     fetch.mockImplementation((url) => {
       if (url.includes('/api/vendors')) {
         return Promise.resolve({
@@ -141,7 +138,10 @@ describe('AddEventForm', () => {
     jest.clearAllMocks();
   });
 
-  // Helper function to render component with common setup
+  // Helper function to get form inputs by name (since labels don't have proper htmlFor)
+  const getInputByName = (name) => document.querySelector(`input[name="${name}"]`);
+  const getSelectByName = (name) => document.querySelector(`select[name="${name}"]`);
+
   const renderComponent = async () => {
     let utils;
     await act(async () => {
@@ -152,41 +152,41 @@ describe('AddEventForm', () => {
       );
     });
     
-    // Wait for initial load - use a more flexible approach
+    // Wait for initial load 
     await waitFor(() => {
-      // Check for any part of the heading text
-      expect(screen.getByText((content, element) => {
+      const heading = screen.getByText((content, element) => {
         return element.tagName.toLowerCase() === 'h1' && 
                content.includes('Create a New');
-      })).toBeInTheDocument();
+      });
+      expect(heading).toBeInTheDocument();
     });
     
     return utils;
   };
 
-  // FIXED: Basic rendering test with correct selectors
   test('renders form elements correctly', async () => {
     await renderComponent();
 
-    // Check for main form elements using proper selectors
-    expect(screen.getByLabelText(/Event Name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Date/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Time.*Optional/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Theme.*Optional/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Venue.*Optional/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/End Time.*Optional/i)).toBeInTheDocument();
+    // Check main form elements 
+    expect(getInputByName('name')).toBeInTheDocument();
+    expect(getInputByName('date')).toBeInTheDocument();
+    expect(getInputByName('time')).toBeInTheDocument();
+    expect(getInputByName('theme')).toBeInTheDocument();
+    expect(getInputByName('venue')).toBeInTheDocument();
+    expect(getInputByName('end_time')).toBeInTheDocument();
     
-    // Check for vendor section
-    expect(screen.getByText(/Vendors/i)).toBeInTheDocument();
+    // Check vendor section 
+    const vendorElements = screen.getAllByText(/Vendors/i);
+    expect(vendorElements.length).toBeGreaterThan(0);
     expect(screen.getByPlaceholderText(/Search vendors by name or service/i)).toBeInTheDocument();
     
-    // Check for action buttons
+    // Check action buttons
     expect(screen.getByRole('button', { name: /Create Event/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Cancel/i })).toBeInTheDocument();
     expect(screen.getByText(/Back to Dashboard/i)).toBeInTheDocument();
   });
 
-  // FIXED: Form validation test
+
   test('validates required fields on submission', async () => {
     await renderComponent();
 
@@ -200,16 +200,16 @@ describe('AddEventForm', () => {
     });
   });
 
-  // FIXED: Date validation test
+  // validation test
   test('prevents submission with past dates', async () => {
     await renderComponent();
 
     // Fill form with past date
-    fireEvent.change(screen.getByLabelText(/Event Name/i), { 
+    fireEvent.change(getInputByName('name'), { 
       target: { value: 'Test Event' } 
     });
     
-    fireEvent.change(screen.getByLabelText(/Date/i), { 
+    fireEvent.change(getInputByName('date'), { 
       target: { value: '2020-01-01' } 
     });
 
@@ -222,28 +222,26 @@ describe('AddEventForm', () => {
     });
   });
 
-  // FIXED: Vendor selection and removal
   test('handles vendor selection and removal correctly', async () => {
     await renderComponent();
 
-    // Wait for vendors to load
     await waitFor(() => {
       expect(screen.getByText('Elegant Events')).toBeInTheDocument();
     });
 
-    // Select a vendor - use the specific service button
     const selectButtons = screen.getAllByText(/Select as Venue/i);
     await act(async () => {
       fireEvent.click(selectButtons[0]);
     });
 
-    // Verify vendor was selected
+    // Verify vendor was selected 
     await waitFor(() => {
       expect(screen.getByText(/Selected Vendors/i)).toBeInTheDocument();
-      expect(screen.getByText(/Elegant Events/i)).toBeInTheDocument();
+      const vendorElements = screen.getAllByText(/Elegant Events/i);
+      expect(vendorElements.length).toBe(2); // One in grid, one in selected list
     });
 
-    // Remove the vendor - find by title attribute
+    
     const removeButton = screen.getByTitle(/Remove vendor selection/i);
     await act(async () => {
       fireEvent.click(removeButton);
@@ -255,17 +253,14 @@ describe('AddEventForm', () => {
     });
   });
 
-  // FIXED: Vendor search functionality
   test('filters vendors based on search input', async () => {
     await renderComponent();
 
-    // Wait for vendors to load
     await waitFor(() => {
       expect(screen.getByText('Elegant Events')).toBeInTheDocument();
       expect(screen.getByText('Perfect Clicks Photography')).toBeInTheDocument();
     });
 
-    // Search for specific vendor
     const searchInput = screen.getByPlaceholderText(/Search vendors by name or service/i);
     fireEvent.change(searchInput, { target: { value: 'Elegant' } });
 
@@ -280,11 +275,10 @@ describe('AddEventForm', () => {
     });
   });
 
-  // FIXED: Category filter functionality
+
   test('filters vendors by category', async () => {
     await renderComponent();
 
-    // Wait for vendors to load
     await waitFor(() => {
       expect(screen.getByText('Elegant Events')).toBeInTheDocument();
     });
@@ -299,17 +293,15 @@ describe('AddEventForm', () => {
     });
   });
 
-  // FIXED: Form submission with vendors
   test('submits form successfully with selected vendors', async () => {
     await renderComponent();
 
-    // Wait for vendors to load
     await waitFor(() => {
       expect(screen.getByText('Elegant Events')).toBeInTheDocument();
     });
 
     // Fill required fields
-    fireEvent.change(screen.getByLabelText(/Event Name/i), { 
+    fireEvent.change(getInputByName('name'), { 
       target: { value: 'Wedding Celebration' } 
     });
     
@@ -317,42 +309,41 @@ describe('AddEventForm', () => {
     futureDate.setFullYear(futureDate.getFullYear() + 1);
     const dateString = futureDate.toISOString().split('T')[0];
     
-    fireEvent.change(screen.getByLabelText(/Date/i), { 
+    fireEvent.change(getInputByName('date'), { 
       target: { value: dateString } 
     });
 
-    // Select a vendor
     const selectButtons = screen.getAllByText(/Select as Venue/i);
     await act(async () => {
       fireEvent.click(selectButtons[0]);
     });
 
-    // Submit form
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Create Event/i }));
     });
 
-    // Verify success message
+    // Verify success message 
     await waitFor(() => {
-      expect(screen.getByText(/Wedding Celebration.*created successfully/i)).toBeInTheDocument();
+      const successMessage = screen.getByText((content, element) => {
+        return element.tagName.toLowerCase() === 'p' && 
+               content.includes('Wedding Celebration') && 
+               content.includes('created successfully');
+      });
+      expect(successMessage).toBeInTheDocument();
     });
   });
 
-  // FIXED: Navigation tests
+
   test('navigates correctly on back and cancel', async () => {
     await renderComponent();
 
-    // Test back button
     await act(async () => {
       fireEvent.click(screen.getByText(/Back to Dashboard/i));
     });
 
     expect(mockedNavigate).toHaveBeenCalledWith('/dashboard');
-
-    // Reset mock
     mockedNavigate.mockClear();
 
-    // Test cancel button
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
     });
@@ -360,16 +351,14 @@ describe('AddEventForm', () => {
     expect(mockedNavigate).toHaveBeenCalledWith('/dashboard');
   });
 
-  // FIXED: Vendor profile navigation
+
   test('navigates to vendor profile correctly', async () => {
     await renderComponent();
 
-    // Wait for vendors to load
     await waitFor(() => {
       expect(screen.getByText('Elegant Events')).toBeInTheDocument();
     });
 
-    // Click view profile button
     const viewProfileButtons = screen.getAllByText(/View Profile/i);
     await act(async () => {
       fireEvent.click(viewProfileButtons[0]);
@@ -381,20 +370,19 @@ describe('AddEventForm', () => {
     );
   });
 
-  // NEW TEST: Form data persistence
+
   test('persists form data in localStorage', async () => {
     await renderComponent();
 
-    // Fill some form fields
-    fireEvent.change(screen.getByLabelText(/Event Name/i), { 
+    fireEvent.change(getInputByName('name'), { 
       target: { value: 'Persisted Event' } 
     });
     
-    fireEvent.change(screen.getByLabelText(/Theme.*Optional/i), { 
+    fireEvent.change(getInputByName('theme'), { 
       target: { value: 'Winter Wonderland' } 
     });
 
-    // Check if data is persisted
+    // Check if data is persist
     await waitFor(() => {
       const savedData = JSON.parse(localStorage.getItem('eventFormData'));
       expect(savedData.name).toBe('Persisted Event');
@@ -402,7 +390,7 @@ describe('AddEventForm', () => {
     });
   });
 
-  // NEW TEST: Error handling for vendor fetch
+
   test('handles vendor fetch errors gracefully', async () => {
     // Mock failed vendor fetch
     fetch.mockImplementationOnce(() => 
@@ -416,7 +404,6 @@ describe('AddEventForm', () => {
     });
   });
 
-  // NEW TEST: Multi-service vendor handling
   test('handles vendors with multiple services', async () => {
     await renderComponent();
 
@@ -425,21 +412,38 @@ describe('AddEventForm', () => {
       expect(screen.getByText('Multi-Service Vendor')).toBeInTheDocument();
     });
 
-    // Should show multiple service buttons
-    const cateringButton = screen.getByText(/Select as Catering/i);
-    const decorButton = screen.getByText(/Select as Decor/i);
-    const musicButton = screen.getByText(/Select as Music/i);
     
-    expect(cateringButton).toBeInTheDocument();
-    expect(decorButton).toBeInTheDocument();
-    expect(musicButton).toBeInTheDocument();
+    const cateringButtons = screen.getAllByText(/Select as Catering/i);
+    const decorButtons = screen.getAllByText(/Select as Decor/i);
+    const musicButtons = screen.getAllByText(/Select as Music/i);
+    
+    expect(cateringButtons.length).toBeGreaterThan(0);
+    expect(decorButtons.length).toBeGreaterThan(0);
+    expect(musicButtons.length).toBeGreaterThan(0);
+    
+    // Find the multi-service vendor card and verify it has all three service buttons
+    const multiServiceVendorCard = screen.getByText('Multi-Service Vendor').closest('.vendor-card');
+    expect(multiServiceVendorCard).toBeInTheDocument();
+
+    const hasCatering = Array.from(cateringButtons).some(button => 
+      multiServiceVendorCard?.contains(button)
+    );
+    const hasDecor = Array.from(decorButtons).some(button => 
+      multiServiceVendorCard?.contains(button)
+    );
+    const hasMusic = Array.from(musicButtons).some(button => 
+      multiServiceVendorCard?.contains(button)
+    );
+    
+    expect(hasCatering).toBe(true);
+    expect(hasDecor).toBe(true);
+    expect(hasMusic).toBe(true);
   });
 
-  // NEW TEST: Venue vendor special handling
+
   test('handles venue vendor selection correctly', async () => {
     await renderComponent();
 
-    // Wait for vendors to load
     await waitFor(() => {
       expect(screen.getByText('Elegant Events')).toBeInTheDocument();
     });
@@ -452,17 +456,16 @@ describe('AddEventForm', () => {
 
     // Verify venue is auto-filled and disabled
     await waitFor(() => {
-      const venueInput = screen.getByDisplayValue('Main Hall');
-      expect(venueInput).toBeInTheDocument();
+      const venueInput = getInputByName('venue');
+      expect(venueInput.value).toBe('Main Hall');
       expect(venueInput.disabled).toBe(true);
     });
   });
 
-  // NEW TEST: Theme object handling
   test('handles theme object correctly', async () => {
     await renderComponent();
 
-    const themeInput = screen.getByLabelText(/Theme.*Optional/i);
+    const themeInput = getInputByName('theme');
     fireEvent.change(themeInput, { target: { value: 'Test Theme' } });
 
     await waitFor(() => {
@@ -473,12 +476,11 @@ describe('AddEventForm', () => {
     });
   });
 
-  // NEW TEST: Form submission without optional fields
   test('submits form successfully without optional fields', async () => {
     await renderComponent();
 
-    // Fill only required fields
-    fireEvent.change(screen.getByLabelText(/Event Name/i), { 
+    //only required fields
+    fireEvent.change(getInputByName('name'), { 
       target: { value: 'Minimal Event' } 
     });
     
@@ -486,24 +488,29 @@ describe('AddEventForm', () => {
     futureDate.setFullYear(futureDate.getFullYear() + 1);
     const dateString = futureDate.toISOString().split('T')[0];
     
-    fireEvent.change(screen.getByLabelText(/Date/i), { 
+    fireEvent.change(getInputByName('date'), { 
       target: { value: dateString } 
     });
 
-    // Submit form
+
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Create Event/i }));
     });
 
     // Verify success message
     await waitFor(() => {
-      expect(screen.getByText(/Minimal Event.*created successfully/i)).toBeInTheDocument();
+      const successMessage = screen.getByText((content, element) => {
+        return element.tagName.toLowerCase() === 'p' && 
+               content.includes('Minimal Event') && 
+               content.includes('created successfully');
+      });
+      expect(successMessage).toBeInTheDocument();
     });
   });
 
-  // NEW TEST: Loading states during vendor fetch
+
   test('shows loading state during vendor fetch', async () => {
-    // Create a promise that we can resolve manually
+    // Create a promise that can be resolve manually
     let resolveFetch;
     const fetchPromise = new Promise(resolve => {
       resolveFetch = () => resolve({
@@ -535,5 +542,74 @@ describe('AddEventForm', () => {
       expect(screen.queryByText(/Loading vendors/i)).not.toBeInTheDocument();
       expect(screen.getByText('Elegant Events')).toBeInTheDocument();
     });
+  });
+
+  
+  test('shows success message when vendor is removed', async () => {
+    await renderComponent();
+
+    // Wait for vendors to load
+    await waitFor(() => {
+      expect(screen.getByText('Elegant Events')).toBeInTheDocument();
+    });
+
+    // Select a vendor
+    const selectButtons = screen.getAllByText(/Select as Venue/i);
+    await act(async () => {
+      fireEvent.click(selectButtons[0]);
+    });
+
+    // Wait for vendor to be selected
+    await waitFor(() => {
+      expect(screen.getByText(/Selected Vendors/i)).toBeInTheDocument();
+    });
+
+    // Remove the vendor
+    const removeButton = screen.getByTitle(/Remove vendor selection/i);
+    await act(async () => {
+      fireEvent.click(removeButton);
+    });
+
+    // Verify success message appears - use a more flexible matcher
+    await waitFor(() => {
+      const successMessage = screen.getByText((content, element) => {
+        return element.tagName.toLowerCase() === 'p' && 
+               content.includes('removed from selection');
+      });
+      expect(successMessage).toBeInTheDocument();
+    });
+  });
+
+  test('clears form data when navigating away', async () => {
+    await renderComponent();
+
+    // Fill some data
+    fireEvent.change(getInputByName('name'), { 
+      target: { value: 'Event to Clear' } 
+    });
+
+    // Wait for data to be persisted
+    await waitFor(() => {
+      const savedData = JSON.parse(localStorage.getItem('eventFormData'));
+      expect(savedData.name).toBe('Event to Clear');
+    });
+
+    // Navigate away using back button
+    await act(async () => {
+      fireEvent.click(screen.getByText(/Back to Dashboard/i));
+    });
+
+    // The form data is reset to empty values, but localStorage still contains the empty structure
+    // This is actually the expected behavior - the form is cleared but localStorage keeps the structure
+    await waitFor(() => {
+      const savedData = JSON.parse(localStorage.getItem('eventFormData'));
+      // The form should be reset to empty values
+      expect(savedData.name).toBe('');
+      expect(savedData.date).toBe('');
+      expect(savedData.theme.name).toBe('');
+    });
+
+    // Verify navigation occurred
+    expect(mockedNavigate).toHaveBeenCalledWith('/dashboard');
   });
 });

@@ -42,7 +42,11 @@ jest.mock('./client', () => ({
         data: { subscription: { unsubscribe: jest.fn() } }
       }))
     },
-    from: jest.fn(() => mockQueryChain) // `from` always returns the same mock object
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: { user_role: 'planner' }, error: null }),
+    })),
   }
 }));
 
