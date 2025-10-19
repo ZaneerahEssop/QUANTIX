@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1759233366401" clover="3.2.0">
-  <project timestamp="1759233366401" name="All files">
-    <metrics statements="542" coveredstatements="495" conditionals="241" coveredconditionals="189" methods="40" coveredmethods="40" elements="823" coveredelements="724" complexity="0" loc="542" ncloc="542" packages="3" files="24" classes="24"/>
+<coverage generated="1760859723090" clover="3.2.0">
+  <project timestamp="1760859723090" name="All files">
+    <metrics statements="662" coveredstatements="599" conditionals="350" coveredconditionals="268" methods="50" coveredmethods="50" elements="1062" coveredelements="917" complexity="0" loc="662" ncloc="662" packages="3" files="30" classes="30"/>
     <package name="Config">
       <metrics statements="8" coveredstatements="8" conditionals="4" coveredconditionals="4" methods="0" coveredmethods="0"/>
-      <file name="supabase.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Config\supabase.js">
+      <file name="supabase.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Config\supabase.js">
         <metrics statements="8" coveredstatements="8" conditionals="4" coveredconditionals="4" methods="0" coveredmethods="0"/>
         <line num="1" count="3" type="stmt"/>
         <line num="2" count="3" type="stmt"/>
@@ -17,9 +17,9 @@
       </file>
     </package>
     <package name="Controllers">
-      <metrics statements="389" coveredstatements="343" conditionals="198" coveredconditionals="154" methods="33" coveredmethods="33"/>
-      <file name="chat.controller.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Controllers\chat.controller.js">
-        <metrics statements="101" coveredstatements="75" conditionals="56" coveredconditionals="43" methods="7" coveredmethods="7"/>
+      <metrics statements="485" coveredstatements="426" conditionals="293" coveredconditionals="226" methods="43" coveredmethods="43"/>
+      <file name="chat.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\chat.controller.js">
+        <metrics statements="101" coveredstatements="75" conditionals="52" coveredconditionals="39" methods="7" coveredmethods="7"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="5" count="1" type="stmt"/>
@@ -28,101 +28,101 @@
         <line num="9" count="3" type="cond" truecount="3" falsecount="1"/>
         <line num="10" count="0" type="stmt"/>
         <line num="16" count="3" type="stmt"/>
-        <line num="25" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="27" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="24" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="26" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="27" count="0" type="stmt"/>
         <line num="28" count="0" type="stmt"/>
-        <line num="29" count="0" type="stmt"/>
-        <line num="31" count="0" type="stmt"/>
-        <line num="34" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="35" count="1" type="stmt"/>
-        <line num="39" count="2" type="stmt"/>
-        <line num="49" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="50" count="1" type="stmt"/>
-        <line num="51" count="1" type="stmt"/>
-        <line num="54" count="1" type="stmt"/>
-        <line num="56" count="0" type="stmt"/>
-        <line num="57" count="0" type="stmt"/>
-        <line num="62" count="1" type="stmt"/>
-        <line num="63" count="2" type="stmt"/>
-        <line num="64" count="2" type="stmt"/>
-        <line num="66" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="67" count="0" type="stmt"/>
-        <line num="71" count="2" type="stmt"/>
-        <line num="85" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="86" count="1" type="stmt"/>
+        <line num="30" count="0" type="stmt"/>
+        <line num="33" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="34" count="1" type="stmt"/>
+        <line num="38" count="2" type="stmt"/>
+        <line num="47" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="48" count="1" type="stmt"/>
+        <line num="49" count="1" type="stmt"/>
+        <line num="52" count="1" type="stmt"/>
+        <line num="54" count="0" type="stmt"/>
+        <line num="55" count="0" type="stmt"/>
+        <line num="60" count="1" type="stmt"/>
+        <line num="61" count="2" type="stmt"/>
+        <line num="62" count="2" type="stmt"/>
+        <line num="64" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="65" count="0" type="stmt"/>
+        <line num="69" count="2" type="stmt"/>
+        <line num="82" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="83" count="1" type="stmt"/>
+        <line num="84" count="1" type="stmt"/>
         <line num="87" count="1" type="stmt"/>
-        <line num="90" count="1" type="stmt"/>
-        <line num="92" count="0" type="stmt"/>
-        <line num="93" count="0" type="stmt"/>
-        <line num="98" count="1" type="stmt"/>
-        <line num="99" count="2" type="stmt"/>
-        <line num="100" count="2" type="stmt"/>
-        <line num="101" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="103" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="104" count="0" type="stmt"/>
+        <line num="89" count="0" type="stmt"/>
+        <line num="90" count="0" type="stmt"/>
+        <line num="95" count="1" type="stmt"/>
+        <line num="96" count="2" type="stmt"/>
+        <line num="97" count="2" type="stmt"/>
+        <line num="98" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="100" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="101" count="0" type="stmt"/>
+        <line num="104" count="2" type="stmt"/>
         <line num="107" count="2" type="stmt"/>
-        <line num="110" count="2" type="stmt"/>
-        <line num="122" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="123" count="0" type="stmt"/>
-        <line num="124" count="0" type="stmt"/>
+        <line num="119" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="120" count="0" type="stmt"/>
+        <line num="121" count="0" type="stmt"/>
+        <line num="124" count="1" type="stmt"/>
+        <line num="126" count="1" type="stmt"/>
         <line num="127" count="1" type="stmt"/>
-        <line num="129" count="1" type="stmt"/>
-        <line num="130" count="1" type="stmt"/>
-        <line num="135" count="1" type="stmt"/>
-        <line num="136" count="3" type="stmt"/>
-        <line num="142" count="3" type="stmt"/>
-        <line num="144" count="3" type="cond" truecount="4" falsecount="1"/>
-        <line num="145" count="0" type="stmt"/>
+        <line num="132" count="1" type="stmt"/>
+        <line num="133" count="3" type="stmt"/>
+        <line num="139" count="3" type="stmt"/>
+        <line num="141" count="3" type="cond" truecount="4" falsecount="1"/>
+        <line num="142" count="0" type="stmt"/>
+        <line num="148" count="3" type="stmt"/>
+        <line num="150" count="3" type="stmt"/>
         <line num="151" count="3" type="stmt"/>
-        <line num="153" count="3" type="stmt"/>
-        <line num="154" count="3" type="stmt"/>
-        <line num="164" count="2" type="stmt"/>
-        <line num="166" count="1" type="stmt"/>
-        <line num="171" count="3" type="stmt"/>
-        <line num="178" count="3" type="cond" truecount="4" falsecount="0"/>
-        <line num="179" count="1" type="stmt"/>
-        <line num="185" count="2" type="stmt"/>
-        <line num="201" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="202" count="0" type="stmt"/>
-        <line num="203" count="0" type="stmt"/>
-        <line num="206" count="2" type="stmt"/>
-        <line num="208" count="0" type="stmt"/>
-        <line num="209" count="0" type="stmt"/>
-        <line num="214" count="1" type="stmt"/>
-        <line num="215" count="2" type="stmt"/>
-        <line num="216" count="2" type="stmt"/>
-        <line num="218" count="2" type="cond" truecount="3" falsecount="1"/>
-        <line num="219" count="0" type="stmt"/>
-        <line num="225" count="2" type="stmt"/>
-        <line num="232" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="233" count="1" type="stmt"/>
+        <line num="161" count="2" type="stmt"/>
+        <line num="163" count="1" type="stmt"/>
+        <line num="168" count="3" type="stmt"/>
+        <line num="175" count="3" type="cond" truecount="4" falsecount="0"/>
+        <line num="176" count="1" type="stmt"/>
+        <line num="182" count="2" type="stmt"/>
+        <line num="198" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="199" count="0" type="stmt"/>
+        <line num="200" count="0" type="stmt"/>
+        <line num="203" count="2" type="stmt"/>
+        <line num="205" count="0" type="stmt"/>
+        <line num="206" count="0" type="stmt"/>
+        <line num="211" count="1" type="stmt"/>
+        <line num="212" count="2" type="stmt"/>
+        <line num="213" count="2" type="stmt"/>
+        <line num="215" count="2" type="cond" truecount="3" falsecount="1"/>
+        <line num="216" count="0" type="stmt"/>
+        <line num="222" count="2" type="stmt"/>
+        <line num="229" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="230" count="1" type="stmt"/>
+        <line num="231" count="1" type="stmt"/>
         <line num="234" count="1" type="stmt"/>
-        <line num="237" count="1" type="stmt"/>
-        <line num="239" count="0" type="stmt"/>
-        <line num="240" count="0" type="stmt"/>
-        <line num="245" count="1" type="stmt"/>
-        <line num="246" count="3" type="stmt"/>
-        <line num="247" count="3" type="stmt"/>
-        <line num="249" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="250" count="0" type="stmt"/>
-        <line num="253" count="3" type="stmt"/>
-        <line num="259" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="260" count="1" type="stmt"/>
-        <line num="261" count="1" type="stmt"/>
-        <line num="266" count="2" type="cond" truecount="4" falsecount="0"/>
+        <line num="236" count="0" type="stmt"/>
+        <line num="237" count="0" type="stmt"/>
+        <line num="242" count="1" type="stmt"/>
+        <line num="243" count="3" type="stmt"/>
+        <line num="244" count="3" type="stmt"/>
+        <line num="246" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="247" count="0" type="stmt"/>
+        <line num="250" count="3" type="stmt"/>
+        <line num="256" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="257" count="1" type="stmt"/>
+        <line num="258" count="1" type="stmt"/>
+        <line num="263" count="2" type="cond" truecount="4" falsecount="0"/>
+        <line num="264" count="1" type="stmt"/>
         <line num="267" count="1" type="stmt"/>
-        <line num="270" count="1" type="stmt"/>
-        <line num="271" count="2" type="stmt"/>
-        <line num="274" count="1" type="stmt"/>
-        <line num="281" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="282" count="0" type="stmt"/>
-        <line num="283" count="0" type="stmt"/>
-        <line num="286" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="289" count="0" type="stmt"/>
-        <line num="290" count="0" type="stmt"/>
-        <line num="294" count="1" type="stmt"/>
+        <line num="268" count="2" type="stmt"/>
+        <line num="271" count="1" type="stmt"/>
+        <line num="278" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="279" count="0" type="stmt"/>
+        <line num="280" count="0" type="stmt"/>
+        <line num="283" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="286" count="0" type="stmt"/>
+        <line num="287" count="0" type="stmt"/>
+        <line num="291" count="1" type="stmt"/>
       </file>
-      <file name="contract.controller.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Controllers\contract.controller.js">
+      <file name="contract.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\contract.controller.js">
         <metrics statements="59" coveredstatements="54" conditionals="28" coveredconditionals="20" methods="5" coveredmethods="5"/>
         <line num="3" count="1" type="stmt"/>
         <line num="6" count="1" type="stmt"/>
@@ -184,7 +184,34 @@
         <line num="153" count="0" type="stmt"/>
         <line num="158" count="1" type="stmt"/>
       </file>
-      <file name="editEvent.controller.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Controllers\editEvent.controller.js">
+      <file name="deleteEvent.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\deleteEvent.controller.js">
+        <metrics statements="24" coveredstatements="21" conditionals="8" coveredconditionals="8" methods="1" coveredmethods="1"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="3" count="1" type="stmt"/>
+        <line num="4" count="5" type="stmt"/>
+        <line num="5" count="5" type="stmt"/>
+        <line num="7" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="8" count="1" type="stmt"/>
+        <line num="9" count="1" type="stmt"/>
+        <line num="13" count="4" type="stmt"/>
+        <line num="19" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="20" count="1" type="stmt"/>
+        <line num="21" count="1" type="stmt"/>
+        <line num="26" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="27" count="1" type="stmt"/>
+        <line num="28" count="1" type="stmt"/>
+        <line num="32" count="2" type="stmt"/>
+        <line num="37" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="38" count="1" type="stmt"/>
+        <line num="39" count="1" type="stmt"/>
+        <line num="45" count="1" type="stmt"/>
+        <line num="46" count="1" type="stmt"/>
+        <line num="51" count="0" type="stmt"/>
+        <line num="52" count="0" type="stmt"/>
+        <line num="53" count="0" type="stmt"/>
+        <line num="59" count="1" type="stmt"/>
+      </file>
+      <file name="editEvent.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\editEvent.controller.js">
         <metrics statements="23" coveredstatements="23" conditionals="12" coveredconditionals="12" methods="1" coveredmethods="1"/>
         <line num="1" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -210,60 +237,63 @@
         <line num="46" count="1" type="stmt"/>
         <line num="50" count="1" type="stmt"/>
       </file>
-      <file name="exportController.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Controllers\exportController.js">
-        <metrics statements="50" coveredstatements="50" conditionals="18" coveredconditionals="10" methods="8" coveredmethods="8"/>
+      <file name="exportController.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\exportController.js">
+        <metrics statements="53" coveredstatements="50" conditionals="28" coveredconditionals="16" methods="8" coveredmethods="8"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
-        <line num="5" count="1" type="stmt"/>
-        <line num="6" count="3" type="stmt"/>
-        <line num="7" count="3" type="stmt"/>
-        <line num="10" count="3" type="stmt"/>
-        <line num="14" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="20" count="3" type="stmt"/>
-        <line num="26" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="29" count="2" type="stmt"/>
-        <line num="31" count="2" type="stmt"/>
-        <line num="33" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="34" count="1" type="stmt"/>
-        <line num="39" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="40" count="1" type="stmt"/>
-        <line num="45" count="2" type="stmt"/>
-        <line num="50" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="53" count="2" type="stmt"/>
-        <line num="54" count="2" type="stmt"/>
-        <line num="55" count="2" type="stmt"/>
-        <line num="57" count="2" type="stmt"/>
-        <line num="58" count="2" type="stmt"/>
-        <line num="59" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="60" count="2" type="stmt"/>
-        <line num="64" count="2" type="stmt"/>
-        <line num="65" count="2" type="stmt"/>
-        <line num="66" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="67" count="2" type="stmt"/>
-        <line num="71" count="2" type="stmt"/>
-        <line num="72" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="73" count="2" type="stmt"/>
-        <line num="74" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="75" count="2" type="stmt"/>
-        <line num="79" count="2" type="stmt"/>
-        <line num="80" count="2" type="stmt"/>
-        <line num="81" count="2" type="stmt"/>
-        <line num="84" count="2" type="stmt"/>
-        <line num="85" count="2" type="stmt"/>
-        <line num="86" count="2" type="stmt"/>
-        <line num="87" count="2" type="stmt"/>
-        <line num="90" count="2" type="stmt"/>
-        <line num="91" count="2" type="stmt"/>
-        <line num="92" count="2" type="stmt"/>
-        <line num="93" count="2" type="stmt"/>
-        <line num="94" count="2" type="stmt"/>
-        <line num="95" count="2" type="stmt"/>
-        <line num="97" count="2" type="stmt"/>
-        <line num="99" count="1" type="stmt"/>
-        <line num="100" count="1" type="stmt"/>
+        <line num="5" count="1" type="cond" truecount="2" falsecount="0"/>
+        <line num="7" count="1" type="stmt"/>
+        <line num="8" count="6" type="stmt"/>
+        <line num="9" count="6" type="stmt"/>
+        <line num="12" count="6" type="cond" truecount="1" falsecount="1"/>
+        <line num="13" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="14" count="0" type="cond" truecount="0" falsecount="4"/>
+        <line num="15" count="0" type="stmt"/>
+        <line num="20" count="6" type="stmt"/>
+        <line num="24" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="27" count="5" type="stmt"/>
+        <line num="32" count="5" type="cond" truecount="1" falsecount="1"/>
+        <line num="34" count="5" type="stmt"/>
+        <line num="36" count="5" type="stmt"/>
+        <line num="37" count="5" type="cond" truecount="1" falsecount="1"/>
+        <line num="39" count="5" type="stmt"/>
+        <line num="43" count="5" type="cond" truecount="1" falsecount="1"/>
+        <line num="44" count="5" type="stmt"/>
+        <line num="48" count="5" type="stmt"/>
+        <line num="53" count="5" type="cond" truecount="1" falsecount="1"/>
+        <line num="56" count="5" type="stmt"/>
+        <line num="57" count="5" type="stmt"/>
+        <line num="58" count="5" type="stmt"/>
+        <line num="60" count="5" type="stmt"/>
+        <line num="61" count="5" type="stmt"/>
+        <line num="62" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="63" count="4" type="stmt"/>
+        <line num="67" count="5" type="stmt"/>
+        <line num="68" count="5" type="stmt"/>
+        <line num="69" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="70" count="4" type="stmt"/>
+        <line num="74" count="5" type="stmt"/>
+        <line num="75" count="5" type="cond" truecount="1" falsecount="1"/>
+        <line num="76" count="5" type="stmt"/>
+        <line num="77" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="78" count="4" type="stmt"/>
+        <line num="82" count="5" type="stmt"/>
+        <line num="89" count="4" type="stmt"/>
+        <line num="90" count="4" type="stmt"/>
+        <line num="91" count="4" type="stmt"/>
+        <line num="92" count="4" type="stmt"/>
+        <line num="95" count="4" type="stmt"/>
+        <line num="96" count="4" type="stmt"/>
+        <line num="97" count="4" type="stmt"/>
+        <line num="98" count="4" type="stmt"/>
+        <line num="99" count="4" type="stmt"/>
+        <line num="100" count="4" type="stmt"/>
+        <line num="102" count="4" type="stmt"/>
+        <line num="104" count="2" type="stmt"/>
+        <line num="105" count="2" type="stmt"/>
       </file>
-      <file name="getEvent.controller.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Controllers\getEvent.controller.js">
+      <file name="getEvent.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\getEvent.controller.js">
         <metrics statements="23" coveredstatements="22" conditionals="10" coveredconditionals="8" methods="2" coveredmethods="2"/>
         <line num="1" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -289,8 +319,8 @@
         <line num="45" count="1" type="stmt"/>
         <line num="49" count="1" type="stmt"/>
       </file>
-      <file name="newEvent.controller.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Controllers\newEvent.controller.js">
-        <metrics statements="26" coveredstatements="23" conditionals="23" coveredconditionals="21" methods="1" coveredmethods="1"/>
+      <file name="newEvent.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\newEvent.controller.js">
+        <metrics statements="31" coveredstatements="25" conditionals="33" coveredconditionals="28" methods="3" coveredmethods="3"/>
         <line num="1" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
         <line num="4" count="4" type="stmt"/>
@@ -301,24 +331,29 @@
         <line num="27" count="3" type="cond" truecount="4" falsecount="0"/>
         <line num="28" count="1" type="stmt"/>
         <line num="32" count="2" type="stmt"/>
-        <line num="44" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="45" count="1" type="stmt"/>
-        <line num="46" count="1" type="stmt"/>
+        <line num="48" count="2" type="cond" truecount="2" falsecount="0"/>
         <line num="49" count="1" type="stmt"/>
-        <line num="52" count="1" type="stmt"/>
-        <line num="53" count="1" type="stmt"/>
-        <line num="61" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="62" count="0" type="stmt"/>
+        <line num="50" count="1" type="stmt"/>
+        <line num="54" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="55" count="0" type="stmt"/>
+        <line num="56" count="0" type="stmt"/>
+        <line num="59" count="1" type="stmt"/>
+        <line num="63" count="1" type="cond" truecount="3" falsecount="1"/>
         <line num="66" count="1" type="stmt"/>
-        <line num="67" count="1" type="stmt"/>
-        <line num="68" count="1" type="stmt"/>
-        <line num="74" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="77" count="1" type="stmt"/>
-        <line num="79" count="0" type="stmt"/>
+        <line num="75" count="1" type="stmt"/>
+        <line num="79" count="1" type="cond" truecount="1" falsecount="1"/>
         <line num="80" count="0" type="stmt"/>
-        <line num="84" count="1" type="stmt"/>
+        <line num="92" count="1" type="cond" truecount="3" falsecount="1"/>
+        <line num="93" count="1" type="stmt"/>
+        <line num="100" count="1" type="stmt"/>
+        <line num="104" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="105" count="0" type="stmt"/>
+        <line num="111" count="1" type="stmt"/>
+        <line num="114" count="0" type="stmt"/>
+        <line num="115" count="0" type="stmt"/>
+        <line num="119" count="1" type="stmt"/>
       </file>
-      <file name="planner.controller.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Controllers\planner.controller.js">
+      <file name="planner.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\planner.controller.js">
         <metrics statements="13" coveredstatements="13" conditionals="6" coveredconditionals="5" methods="1" coveredmethods="1"/>
         <line num="1" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -334,7 +369,66 @@
         <line num="23" count="1" type="stmt"/>
         <line num="27" count="1" type="stmt"/>
       </file>
-      <file name="vendor.controller.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Controllers\vendor.controller.js">
+      <file name="schedule.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\schedule.controller.js">
+        <metrics statements="25" coveredstatements="23" conditionals="36" coveredconditionals="27" methods="4" coveredmethods="4"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="3" count="1" type="stmt"/>
+        <line num="4" count="3" type="stmt"/>
+        <line num="5" count="3" type="stmt"/>
+        <line num="6" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="8" count="2" type="stmt"/>
+        <line num="14" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="16" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="28" count="1" type="stmt"/>
+        <line num="30" count="0" type="stmt"/>
+        <line num="34" count="1" type="stmt"/>
+        <line num="35" count="5" type="stmt"/>
+        <line num="36" count="5" type="stmt"/>
+        <line num="37" count="5" type="stmt"/>
+        <line num="38" count="5" type="cond" truecount="1" falsecount="1"/>
+        <line num="39" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="41" count="4" type="stmt"/>
+        <line num="45" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="47" count="3" type="stmt"/>
+        <line num="56" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="57" count="2" type="stmt"/>
+        <line num="60" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="63" count="2" type="stmt"/>
+        <line num="65" count="0" type="stmt"/>
+        <line num="69" count="1" type="stmt"/>
+      </file>
+      <file name="unsplash.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\unsplash.controller.js">
+        <metrics statements="28" coveredstatements="28" conditionals="26" coveredconditionals="18" methods="3" coveredmethods="3"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="3" count="1" type="cond" truecount="2" falsecount="0"/>
+        <line num="6" count="4" type="stmt"/>
+        <line num="7" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="8" count="1" type="stmt"/>
+        <line num="12" count="3" type="stmt"/>
+        <line num="13" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="14" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="16" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="20" count="2" type="stmt"/>
+        <line num="29" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="38" count="1" type="stmt"/>
+        <line num="40" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="41" count="1" type="stmt"/>
+        <line num="42" count="1" type="cond" truecount="1" falsecount="3"/>
+        <line num="44" count="1" type="stmt"/>
+        <line num="49" count="1" type="stmt"/>
+        <line num="54" count="3" type="stmt"/>
+        <line num="55" count="3" type="stmt"/>
+        <line num="56" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="57" count="1" type="stmt"/>
+        <line num="60" count="2" type="stmt"/>
+        <line num="67" count="1" type="stmt"/>
+        <line num="69" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="70" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="71" count="1" type="stmt"/>
+        <line num="75" count="1" type="stmt"/>
+      </file>
+      <file name="vendor.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\vendor.controller.js">
         <metrics statements="20" coveredstatements="20" conditionals="8" coveredconditionals="6" methods="2" coveredmethods="2"/>
         <line num="1" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -357,7 +451,7 @@
         <line num="39" count="1" type="stmt"/>
         <line num="43" count="1" type="stmt"/>
       </file>
-      <file name="vendorProfileController.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Controllers\vendorProfileController.js">
+      <file name="vendorProfileController.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\vendorProfileController.js">
         <metrics statements="20" coveredstatements="18" conditionals="8" coveredconditionals="6" methods="2" coveredmethods="2"/>
         <line num="1" count="1" type="stmt"/>
         <line num="7" count="1" type="stmt"/>
@@ -380,67 +474,78 @@
         <line num="54" count="1" type="stmt"/>
         <line num="58" count="1" type="stmt"/>
       </file>
-      <file name="vendorRequest.controller.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Controllers\vendorRequest.controller.js">
-        <metrics statements="54" coveredstatements="45" conditionals="29" coveredconditionals="23" methods="4" coveredmethods="4"/>
+      <file name="vendorRequest.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\vendorRequest.controller.js">
+        <metrics statements="65" coveredstatements="54" conditionals="38" coveredconditionals="33" methods="4" coveredmethods="4"/>
         <line num="1" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
         <line num="4" count="3" type="stmt"/>
-        <line num="5" count="3" type="stmt"/>
-        <line num="7" count="3" type="cond" truecount="5" falsecount="0"/>
-        <line num="8" count="1" type="stmt"/>
-        <line num="13" count="2" type="stmt"/>
-        <line num="19" count="2" type="stmt"/>
-        <line num="25" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="26" count="1" type="stmt"/>
-        <line num="27" count="1" type="stmt"/>
-        <line num="30" count="1" type="stmt"/>
-        <line num="32" count="0" type="stmt"/>
-        <line num="33" count="0" type="stmt"/>
-        <line num="37" count="1" type="stmt"/>
-        <line num="38" count="3" type="stmt"/>
-        <line num="39" count="3" type="stmt"/>
-        <line num="40" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="41" count="0" type="stmt"/>
-        <line num="43" count="3" type="stmt"/>
-        <line num="63" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="64" count="1" type="stmt"/>
-        <line num="65" count="1" type="stmt"/>
-        <line num="68" count="2" type="cond" truecount="4" falsecount="0"/>
-        <line num="69" count="1" type="stmt"/>
-        <line num="72" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="74" count="0" type="stmt"/>
-        <line num="75" count="0" type="stmt"/>
-        <line num="79" count="1" type="stmt"/>
-        <line num="80" count="2" type="stmt"/>
-        <line num="81" count="2" type="stmt"/>
-        <line num="82" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="83" count="0" type="stmt"/>
-        <line num="85" count="2" type="stmt"/>
-        <line num="87" count="2" type="stmt"/>
-        <line num="104" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="105" count="1" type="stmt"/>
-        <line num="106" count="1" type="stmt"/>
-        <line num="109" count="1" type="stmt"/>
-        <line num="111" count="1" type="cond" truecount="3" falsecount="1"/>
-        <line num="112" count="0" type="stmt"/>
-        <line num="114" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="116" count="0" type="stmt"/>
-        <line num="117" count="0" type="stmt"/>
-        <line num="121" count="1" type="stmt"/>
-        <line num="122" count="2" type="stmt"/>
-        <line num="123" count="2" type="stmt"/>
-        <line num="124" count="2" type="stmt"/>
-        <line num="126" count="2" type="stmt"/>
+        <line num="6" count="3" type="stmt"/>
+        <line num="9" count="3" type="cond" truecount="6" falsecount="0"/>
+        <line num="10" count="1" type="stmt"/>
+        <line num="16" count="2" type="stmt"/>
+        <line num="23" count="2" type="stmt"/>
+        <line num="38" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="39" count="1" type="stmt"/>
+        <line num="40" count="1" type="stmt"/>
+        <line num="43" count="1" type="stmt"/>
+        <line num="45" count="0" type="stmt"/>
+        <line num="46" count="0" type="stmt"/>
+        <line num="50" count="1" type="stmt"/>
+        <line num="51" count="3" type="stmt"/>
+        <line num="52" count="3" type="stmt"/>
+        <line num="53" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="54" count="0" type="stmt"/>
+        <line num="56" count="3" type="stmt"/>
+        <line num="79" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="80" count="1" type="stmt"/>
+        <line num="81" count="1" type="stmt"/>
+        <line num="84" count="2" type="cond" truecount="4" falsecount="0"/>
+        <line num="85" count="1" type="stmt"/>
+        <line num="88" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="90" count="0" type="stmt"/>
+        <line num="91" count="0" type="stmt"/>
+        <line num="95" count="1" type="stmt"/>
+        <line num="96" count="2" type="stmt"/>
+        <line num="97" count="2" type="stmt"/>
+        <line num="98" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="99" count="0" type="stmt"/>
+        <line num="101" count="2" type="stmt"/>
+        <line num="103" count="2" type="stmt"/>
+        <line num="123" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="124" count="1" type="stmt"/>
+        <line num="125" count="1" type="stmt"/>
+        <line num="128" count="1" type="stmt"/>
+        <line num="130" count="1" type="cond" truecount="3" falsecount="1"/>
+        <line num="131" count="0" type="stmt"/>
         <line num="133" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="134" count="1" type="stmt"/>
-        <line num="136" count="1" type="stmt"/>
-        <line num="137" count="1" type="stmt"/>
-        <line num="141" count="1" type="stmt"/>
+        <line num="135" count="0" type="stmt"/>
+        <line num="136" count="0" type="stmt"/>
+        <line num="143" count="1" type="stmt"/>
+        <line num="144" count="4" type="stmt"/>
+        <line num="145" count="4" type="stmt"/>
+        <line num="148" count="4" type="stmt"/>
+        <line num="150" count="4" type="stmt"/>
+        <line num="154" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="155" count="2" type="stmt"/>
+        <line num="157" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="158" count="1" type="stmt"/>
+        <line num="160" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="161" count="1" type="stmt"/>
+        <line num="165" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="166" count="1" type="stmt"/>
+        <line num="171" count="3" type="stmt"/>
+        <line num="178" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="179" count="1" type="stmt"/>
+        <line num="180" count="1" type="stmt"/>
+        <line num="183" count="2" type="stmt"/>
+        <line num="185" count="0" type="stmt"/>
+        <line num="186" count="0" type="stmt"/>
+        <line num="194" count="1" type="stmt"/>
       </file>
     </package>
     <package name="Routes">
-      <metrics statements="145" coveredstatements="144" conditionals="39" coveredconditionals="31" methods="7" coveredmethods="7"/>
-      <file name="chat.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\chat.routes.js">
+      <metrics statements="169" coveredstatements="165" conditionals="53" coveredconditionals="38" methods="7" coveredmethods="7"/>
+      <file name="chat.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\chat.routes.js">
         <metrics statements="10" coveredstatements="10" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="1" type="stmt"/>
         <line num="9" count="1" type="stmt"/>
@@ -453,7 +558,7 @@
         <line num="29" count="1" type="stmt"/>
         <line num="31" count="1" type="stmt"/>
       </file>
-      <file name="contract.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\contract.routes.js">
+      <file name="contract.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\contract.routes.js">
         <metrics statements="10" coveredstatements="10" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -466,7 +571,7 @@
         <line num="28" count="1" type="stmt"/>
         <line num="31" count="1" type="stmt"/>
       </file>
-      <file name="editEvent.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\editEvent.routes.js">
+      <file name="deleteEvent.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\deleteEvent.routes.js">
         <metrics statements="5" coveredstatements="5" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
@@ -474,8 +579,16 @@
         <line num="6" count="1" type="stmt"/>
         <line num="8" count="1" type="stmt"/>
       </file>
-      <file name="email.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\email.routes.js">
-        <metrics statements="17" coveredstatements="16" conditionals="13" coveredconditionals="10" methods="1" coveredmethods="1"/>
+      <file name="editEvent.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\editEvent.routes.js">
+        <metrics statements="5" coveredstatements="5" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="4" count="1" type="stmt"/>
+        <line num="6" count="1" type="stmt"/>
+        <line num="8" count="1" type="stmt"/>
+      </file>
+      <file name="email.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\email.routes.js">
+        <metrics statements="24" coveredstatements="20" conditionals="27" coveredconditionals="17" methods="1" coveredmethods="1"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -489,20 +602,27 @@
         <line num="32" count="3" type="cond" truecount="5" falsecount="0"/>
         <line num="33" count="1" type="stmt"/>
         <line num="39" count="2" type="stmt"/>
-        <line num="58" count="2" type="stmt"/>
-        <line num="61" count="1" type="stmt"/>
-        <line num="64" count="1" type="stmt"/>
-        <line num="71" count="1" type="stmt"/>
+        <line num="40" count="2" type="cond" truecount="3" falsecount="1"/>
+        <line num="41" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="42" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="43" count="0" type="stmt"/>
+        <line num="46" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="47" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="50" count="2" type="stmt"/>
+        <line num="73" count="2" type="stmt"/>
+        <line num="76" count="1" type="stmt"/>
+        <line num="79" count="1" type="stmt"/>
+        <line num="86" count="1" type="stmt"/>
       </file>
-      <file name="export.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\export.routes.js">
+      <file name="export.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\export.routes.js">
         <metrics statements="5" coveredstatements="5" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-        <line num="1" count="1" type="stmt"/>
-        <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
+        <line num="4" count="1" type="stmt"/>
         <line num="5" count="1" type="stmt"/>
-        <line num="7" count="1" type="stmt"/>
+        <line num="8" count="1" type="stmt"/>
+        <line num="10" count="1" type="stmt"/>
       </file>
-      <file name="getEvent.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\getEvent.routes.js">
+      <file name="getEvent.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\getEvent.routes.js">
         <metrics statements="7" coveredstatements="7" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
@@ -512,7 +632,7 @@
         <line num="8" count="1" type="stmt"/>
         <line num="10" count="1" type="stmt"/>
       </file>
-      <file name="guests.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\guests.routes.js">
+      <file name="guests.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\guests.routes.js">
         <metrics statements="47" coveredstatements="47" conditionals="16" coveredconditionals="12" methods="5" coveredmethods="5"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -562,7 +682,7 @@
         <line num="102" count="1" type="stmt"/>
         <line num="106" count="1" type="stmt"/>
       </file>
-      <file name="newEvent.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\newEvent.routes.js">
+      <file name="newEvent.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\newEvent.routes.js">
         <metrics statements="5" coveredstatements="5" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
@@ -570,7 +690,7 @@
         <line num="6" count="1" type="stmt"/>
         <line num="8" count="1" type="stmt"/>
       </file>
-      <file name="planner.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\planner.routes.js">
+      <file name="planner.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\planner.routes.js">
         <metrics statements="5" coveredstatements="5" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
@@ -578,7 +698,16 @@
         <line num="6" count="1" type="stmt"/>
         <line num="8" count="1" type="stmt"/>
       </file>
-      <file name="simple-email.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\simple-email.routes.js">
+      <file name="schedule.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\schedule.routes.js">
+        <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="4" count="1" type="stmt"/>
+        <line num="7" count="1" type="stmt"/>
+        <line num="10" count="1" type="stmt"/>
+        <line num="12" count="1" type="stmt"/>
+      </file>
+      <file name="simple-email.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\simple-email.routes.js">
         <metrics statements="15" coveredstatements="15" conditionals="10" coveredconditionals="9" methods="1" coveredmethods="1"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
@@ -596,7 +725,16 @@
         <line num="48" count="1" type="stmt"/>
         <line num="55" count="1" type="stmt"/>
       </file>
-      <file name="vendor.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\vendor.routes.js">
+      <file name="unsplash.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\unsplash.routes.js">
+        <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="4" count="1" type="stmt"/>
+        <line num="6" count="1" type="stmt"/>
+        <line num="7" count="1" type="stmt"/>
+        <line num="9" count="1" type="stmt"/>
+      </file>
+      <file name="vendor.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\vendor.routes.js">
         <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="1" type="stmt"/>
         <line num="5" count="1" type="stmt"/>
@@ -605,7 +743,7 @@
         <line num="10" count="1" type="stmt"/>
         <line num="12" count="1" type="stmt"/>
       </file>
-      <file name="vendorProfile.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\vendorProfile.routes.js">
+      <file name="vendorProfile.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\vendorProfile.routes.js">
         <metrics statements="5" coveredstatements="5" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
@@ -613,7 +751,7 @@
         <line num="7" count="1" type="stmt"/>
         <line num="9" count="1" type="stmt"/>
       </file>
-      <file name="vendorRequest.routes.js" path="C:\Users\raees\Documents\SDP Take 2\QUANTIX\Backend\src\Routes\vendorRequest.routes.js">
+      <file name="vendorRequest.routes.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Routes\vendorRequest.routes.js">
         <metrics statements="8" coveredstatements="8" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="1" type="stmt"/>
         <line num="7" count="1" type="stmt"/>

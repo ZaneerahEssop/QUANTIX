@@ -10,7 +10,7 @@ exports.exportEventData = async (req, res) => {
 
     // --- Optional Public Token Check ---
     if (PUBLIC_TOKEN) {
-      const token = req.header('x-export-token') || req.query.token;
+      const token = req.header('x-export-token') || req.query.token; // Use req.header, alias for req.get
       if (!token || token !== PUBLIC_TOKEN) {
         return res.status(403).send('Forbidden: invalid or missing token');
       }
@@ -43,8 +43,6 @@ exports.exportEventData = async (req, res) => {
       if (vendorsError) throw vendorsError;
       vendors = vendorData;
     }
-
-
 
     // --- Fetch Event Info ---
     const { data: eventData, error: eventError } = await supabase

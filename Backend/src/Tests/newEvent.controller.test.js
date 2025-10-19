@@ -1,4 +1,4 @@
-// This is the full test file for your newEvent controller.
+// This is the full corrected test file for your newEvent controller.
 // Place this file in: backend/src/Tests/newEvent.controller.test.js
 
 const { createEvent } = require('../Controllers/newEvent.controller');
@@ -34,7 +34,9 @@ describe('createEvent Controller', () => {
         case 'events':
           return {
             insert: jest.fn().mockReturnThis(),
-            select: jest.fn().mockResolvedValue({ data: [mockEvent], error: null }),
+            // ✨ FIX: Mock the .select().single() chain to return the created event object.
+            select: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({ data: mockEvent, error: null }),
           };
         case 'vendor_requests':
         case 'files':
@@ -51,7 +53,8 @@ describe('createEvent Controller', () => {
         name: 'Annual Tech Conference',
         start_time: '2025-10-26T09:00:00Z',
         planner_id: 'p-123',
-        selectedVendors: [{ vendor_id: 'v-abc' }],
+        // ✨ FIX: Updated selectedVendors to match the controller's expected structure.
+        selectedVendors: [{ vendor_id: 'v-abc', service_requested: 'Catering' }],
         documents: [{ name: 'contract.pdf', url: 'http://example.com/contract.pdf', uploaded_by: 'p-123' }],
       },
     };
@@ -111,6 +114,7 @@ describe('createEvent Controller', () => {
           single: jest.fn().mockResolvedValue({ data: null, error: null }),
         };
       }
+      return {};
     });
 
     const req = {
@@ -148,7 +152,9 @@ describe('createEvent Controller', () => {
         case 'events':
           return {
             insert: jest.fn().mockReturnThis(),
-            select: jest.fn().mockResolvedValue({ data: null, error: dbError }),
+            // ✨ FIX: Mock the full .select().single() chain to simulate a DB error.
+            select: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({ data: null, error: dbError }),
           };
         default:
           return {};
@@ -172,6 +178,7 @@ describe('createEvent Controller', () => {
 
     // ---- 3. Assert ----
     expect(res.status).toHaveBeenCalledWith(500);
+    // Now the controller will correctly return the specific database error message
     expect(res.json).toHaveBeenCalledWith({ error: dbError.message });
   });
 });

@@ -1,33 +1,29 @@
-// This is the test file for your export router.
-// Place this file in: backend/src/Tests/export.routes.test.js
+// backend/src/Tests/export.routes.test.js
 
 const request = require('supertest');
 const express = require('express');
 
-// --- Mock the Controller ---
-// We replace the exportController with a mock. The goal is to check
-// if the correct function is called, not to test the function's logic itself.
-const { exportEventData } = require('../Controllers/exportController');
+// ✨ FIX: Import the router you want to test BEFORE mocking its dependencies.
+const exportRouter = require('../Routes/export.routes');
 
+// --- Mock the Controller ---
+// Now that the router is loaded, we can safely mock the controller it depends on.
+const { exportEventData } = require('../Controllers/exportController');
 jest.mock('../Controllers/exportController', () => ({
   exportEventData: jest.fn((req, res) => res.status(200).json({ message: 'controller called' })),
 }));
 
-
 // --- Setup a Test App ---
-// Create a minimal Express app to mount the router for testing.
 const app = express();
-const exportRouter = require('../Routes/export.routes');
-// Mount the router under a realistic base path, e.g., /api/events
+// Mount the (already imported) router
 app.use('/api/events', exportRouter);
-
 
 // --- The Test ---
 describe('Export Routes', () => {
 
-  // Clear mock history before each test
   beforeEach(() => {
-    jest.clearAllMocks();
+    // Clear the mock's history before each test
+    exportEventData.mockClear();
   });
 
   it('should route GET /api/events/:eventId/export to the exportEventData controller', async () => {
