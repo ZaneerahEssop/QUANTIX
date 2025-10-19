@@ -2,12 +2,23 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import ContractManagement from '../components/ContractManagement';
 
-// Mock dependencies
+// Create a mock for the unsubscribe function so we can clear it
+const mockUnsubscribe = jest.fn();
+
+// *** FIX: Update the supabase mock to include 'channel' ***
 jest.mock('../client', () => ({
   supabase: {
     auth: {
       getUser: jest.fn(),
     },
+    // Add the mock for the channel subscription chain
+    channel: jest.fn(() => ({
+      on: jest.fn(() => ({
+        subscribe: jest.fn(() => ({
+          unsubscribe: mockUnsubscribe,
+        })),
+      })),
+    })),
   },
 }));
 
@@ -94,6 +105,7 @@ describe('ContractManagement', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUnsubscribe.mockClear(); // Clear the unsubscribe mock
     global.fetch.mockImplementation(() => Promise.resolve({ ok: true, json: () => Promise.resolve(mockContract) }));
   });
 
@@ -120,6 +132,7 @@ describe('ContractManagement', () => {
       renderContractManagement({ currentUser: mockCurrentUserVendor });
     });
     await waitFor(() => {
+      // Check for an element that exists *after* loading
       expect(screen.getByText('Edit Contract')).toBeInTheDocument();
     });
     const editButton = screen.getByText('Edit Contract');
@@ -127,6 +140,7 @@ describe('ContractManagement', () => {
       fireEvent.click(editButton);
     });
     expect(screen.getByText('Edit Contract Details')).toBeInTheDocument();
+    // The value is parsed from the mock contract
     expect(screen.getByDisplayValue('15000')).toBeInTheDocument(); 
     expect(screen.getByText('Cancel')).toBeInTheDocument();
     expect(screen.getByText('Save Contract')).toBeInTheDocument();
@@ -143,7 +157,8 @@ describe('ContractManagement', () => {
     await act(async () => {
       fireEvent.click(editButton);
     });
-    const totalFeeInput = screen.getByDisplayValue('15000');
+    // Use the placeholder text to find the input
+    const totalFeeInput = screen.getByPlaceholderText('e.g., 15000');
     await act(async () => {
       fireEvent.change(totalFeeInput, { target: { value: '20000' } });
     });
@@ -194,7 +209,8 @@ describe('ContractManagement', () => {
       await act(async () => {
         fireEvent.change(totalFeeInput, { target: { value: '1000001' } });
       });
-      expect(totalFeeInput.value).toBe('999999');
+      // The component logic prevents the state from updating
+      expect(totalFeeInput.value).toBe('999999'); 
     });
 
     test('only allows numbers in Hours of Coverage field', async () => {
@@ -227,6 +243,7 @@ describe('ContractManagement', () => {
         await act(async () => {
             fireEvent.change(hoursInput, { target: { value: '49' } });
         });
+         // The component logic prevents the state from updating
         expect(hoursInput.value).toBe('48');
     });
   });
