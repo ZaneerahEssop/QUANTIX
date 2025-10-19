@@ -1,20 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  FaArrowLeft,
-  FaCalendarAlt,
-  FaCheck,
-  FaClock,
-  FaEdit,
-  FaEnvelope,
-  FaFilePdf,
-  FaMapMarkerAlt,
-  FaPlus,
-  FaSave,
-  FaSearch,
-  FaStar,
-  FaTimes,
-  FaTrash,
-  FaUpload,
+import {FaArrowLeft, FaCalendarAlt, FaCheck, FaClock, FaEdit, FaEnvelope, FaFilePdf, FaMapMarkerAlt, FaPlus, FaSave, FaSearch, FaStar, FaTimes, FaTrash, FaUpload,
 } from "react-icons/fa";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "../client";
@@ -533,11 +518,9 @@ const VendorBookingNotes = ({
       return;
     }
 
-    // Validation: Only allow numbers, decimal point, and commas
-    const sanitizedPrice = price.replace(/[^\d.,]/g, "");
+    const sanitizedPrice = price.replace(/[^\d.,]/g, ""); // Validation: Only allow numbers, decimal point, and commas
 
-    // Check if it's a valid number format
-    const numericValue = parseFloat(sanitizedPrice.replace(/,/g, ""));
+    const numericValue = parseFloat(sanitizedPrice.replace(/,/g, "")); // Check if it's a valid number format
 
     if (!isNaN(numericValue)) {
       // Check maximum value
@@ -546,7 +529,7 @@ const VendorBookingNotes = ({
           ...prev,
           [vendorInstanceKey]: "Price cannot exceed R 1,000,000",
         }));
-        onUpdatePrices({ ...prices, [vendorInstanceKey]: "" }); // ← Clear the price
+        onUpdatePrices({ ...prices, [vendorInstanceKey]: "" }); //Clear the price
         return;
       }
 
@@ -568,7 +551,6 @@ const VendorBookingNotes = ({
     if (price && !/[a-zA-Z]/.test(price)) {
       const numericValue = parseFloat(price.replace(/,/g, ""));
       if (!isNaN(numericValue)) {
-        // Format with thousand separators and R symbol
         const formattedPrice = new Intl.NumberFormat("en-ZA", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
@@ -1293,7 +1275,7 @@ const EventDetails = () => {
   }, [eventId, navigate, API_URL, isReadOnly]);
 
   const handleSelectVendor = (vendor, service) => {
-    // Check if this specific vendor + service is already selected
+    // Check if this specific vendor& service is already selected
     if (
       selectedVendors.some(
         (v) => v.vendor.vendor_id === vendor.vendor_id && v.service === service
@@ -1301,7 +1283,7 @@ const EventDetails = () => {
     )
       return;
 
-    // Check if this specific vendor + service is already in vendorRequests
+    // Check if this specific vendor& service is already in vendorRequests
     if (
       vendorRequests.some(
         (req) =>

@@ -32,10 +32,7 @@ export default function VendorDashboard({ session }) {
 
   // Prevent scrolling until page is fully loaded
   useLayoutEffect(() => {
-    // Add a class to the body to prevent scrolling via CSS
     document.body.classList.add("dashboard-loading");
-
-    // Lock scroll on mount
     document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
 
@@ -50,7 +47,7 @@ export default function VendorDashboard({ session }) {
       window.scrollTo(0, 0);
     }, 1000);
 
-    // Cleanup
+    
     return () => {
       clearTimeout(timer);
       document.documentElement.style.overflow = "auto";
@@ -161,7 +158,7 @@ export default function VendorDashboard({ session }) {
           });
         }
 
-        // Fetch planner names using your planner API
+        // Fetch planner names using planner API
         const plannerPromises = [...plannerIds].map(async (plannerId) => {
           try {
             const response = await fetch(
@@ -458,9 +455,8 @@ export default function VendorDashboard({ session }) {
     try {
       // If it's a full ISO date string, extract just the time in 24h format
       const date = new Date(dateTimeString);
-      if (isNaN(date.getTime())) return dateTimeString; // Return original if not a valid date
+      if (isNaN(date.getTime())) return dateTimeString;
 
-      // Get hours and minutes, pad with leading zeros
       const hours = String(date.getHours()).padStart(2, "0");
       const minutes = String(date.getMinutes()).padStart(2, "0");
 
@@ -534,7 +530,7 @@ export default function VendorDashboard({ session }) {
         const dateA = new Date(a.eventDate);
         const dateB = new Date(b.eventDate);
 
-        // Set times if available
+        // Set times
         if (a.eventTime) {
           const [hoursA, minutesA] = a.eventTime.split(":").map(Number);
           if (!isNaN(hoursA) && !isNaN(minutesA)) {
@@ -1312,13 +1308,13 @@ export default function VendorDashboard({ session }) {
               <ChatUI
                 listTitle="Planners"
                 vendors={conversations.map((conv) => ({
-                  id: conv.conversation_id, // Use conversation_id instead of planner_id
+                  id: conv.conversation_id, 
                   name: conv.planner?.name || "Unknown Planner",
                   lastMessage: conv.last_message_at
                     ? "Last message: " +
                       new Date(conv.last_message_at).toLocaleString()
                     : "No messages yet",
-                  unread: 0, // You could calculate this from unread messages
+                  unread: 0, 
                   plannerId: conv.planner_id, // Store the actual planner ID for selection
                   conversationId: conv.conversation_id, // Store the conversation ID
                 }))}
