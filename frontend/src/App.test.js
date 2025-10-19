@@ -33,7 +33,12 @@ jest.mock('./client', () => ({
       onAuthStateChange: jest.fn(() => ({
         data: { subscription: { unsubscribe: jest.fn() } }
       }))
-    }
+    },
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: { user_role: 'planner' }, error: null }),
+    })),
   }
 }));
 
