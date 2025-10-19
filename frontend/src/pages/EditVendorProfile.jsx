@@ -41,6 +41,7 @@ const EditVendorProfile = ({ session }) => {
         const userId = session?.user?.id;
         if (!userId) {
           setWarning('User not authenticated');
+          setShowWarning(true);
           setIsLoading(false);
           return;
         }
@@ -54,6 +55,7 @@ const EditVendorProfile = ({ session }) => {
         if (vendorError) {
           console.error('Error fetching vendor data:', vendorError);
           setWarning('Failed to load vendor profile. Please try again.');
+          setShowWarning(true);
           setIsLoading(false);
           return;
         }
@@ -81,6 +83,7 @@ const EditVendorProfile = ({ session }) => {
       } catch (error) {
         console.error('Error in fetchVendorData:', error);
         setWarning('An error occurred while loading your profile.');
+        setShowWarning(true);
       } finally {
         setIsLoading(false);
       }
@@ -88,6 +91,10 @@ const EditVendorProfile = ({ session }) => {
 
     if (session) {
       fetchVendorData();
+    } else {
+      setIsLoading(false);
+      setWarning('User not authenticated');
+      setShowWarning(true);
     }
   }, [session]);
 
@@ -171,6 +178,7 @@ const EditVendorProfile = ({ session }) => {
       const userId = session?.user?.id;
       if (!userId) {
         setWarning('User not authenticated');
+        setShowWarning(true);
         return;
       }
 
@@ -417,9 +425,6 @@ const EditVendorProfile = ({ session }) => {
               alignItems: 'center',
               padding: '0.5rem 0',
               transition: 'color 0.2s',
-              ':hover': {
-                color: '#E5ACBF'
-              }
             }}
           >
             <span style={{ marginRight: '8px' }}>←</span> Back
@@ -615,10 +620,6 @@ const EditVendorProfile = ({ session }) => {
                 fontSize: '1rem',
                 outline: 'none',
                 transition: 'all 0.3s',
-                '&:focus': {
-                  borderColor: '#E5ACBF',
-                  boxShadow: '0 0 0 2px rgba(229, 172, 191, 0.2)'
-                }
               }}
               placeholder=" "
             />
@@ -648,7 +649,6 @@ const EditVendorProfile = ({ session }) => {
               fontSize: '0.9rem'
             }}>Service Categories <span style={{ color: '#E5ACBF' }}>*</span></label>
             
-            {/* Venue Names Section */}
             {formData.categories.map(cat => cat.toLowerCase()).includes('venue') && (
               <div style={{ 
                 margin: '25px 0 35px',
@@ -743,9 +743,6 @@ const EditVendorProfile = ({ session }) => {
                           justifyContent: 'center',
                           borderRadius: '50%',
                           transition: 'all 0.2s',
-                          ':hover': {
-                            backgroundColor: 'rgba(255, 107, 107, 0.1)'
-                          }
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = 'rgba(255, 107, 107, 0.1)';
@@ -873,65 +870,54 @@ const EditVendorProfile = ({ session }) => {
             ></textarea>
           </div>
 
-        <div className="form-actions" style={{ 
-          display: 'flex', 
-          gap: '1rem', 
-          justifyContent: 'center',
-          marginTop: '2rem'
-        }}>
-          <button 
-            type="button" 
-            style={{
-              padding: '0.8rem 2rem',
-              borderRadius: '50px',
-              border: '2px solid #E5ACBF',
-              backgroundColor: 'transparent',
-              color: '#E5ACBF',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              minWidth: '180px',
-              ':hover': {
-                backgroundColor: 'rgba(229, 172, 191, 0.1)'
-              }
-            }}
-            onClick={() => navigate(-1)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit" 
-            style={{
-              padding: '0.8rem 2rem',
-              borderRadius: '50px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #E5ACBF 0%, #E8B180 100%)',
-              color: 'white',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              minWidth: '180px',
-              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
-              ':hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.15)'
-              },
-              ':disabled': {
-                opacity: 0.7,
-                cursor: 'not-allowed'
-              }
-            }}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Saving...' : 'Update Profile'}
-          </button>
-        </div>
-      </form>
+          <div className="form-actions" style={{ 
+            display: 'flex', 
+            gap: '1rem', 
+            justifyContent: 'center',
+            marginTop: '2rem'
+          }}>
+            <button 
+              type="button" 
+              style={{
+                padding: '0.8rem 2rem',
+                borderRadius: '50px',
+                border: '2px solid #E5ACBF',
+                backgroundColor: 'transparent',
+                color: '#E5ACBF',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                minWidth: '180px',
+              }}
+              onClick={() => navigate(-1)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              style={{
+                padding: '0.8rem 2rem',
+                borderRadius: '50px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #E5ACBF 0%, #E8B180 100%)',
+                color: 'white',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                minWidth: '180px',
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+              }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : 'Update Profile'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
   );
 };
 
