@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1760859723090" clover="3.2.0">
-  <project timestamp="1760859723090" name="All files">
-    <metrics statements="662" coveredstatements="599" conditionals="350" coveredconditionals="268" methods="50" coveredmethods="50" elements="1062" coveredelements="917" complexity="0" loc="662" ncloc="662" packages="3" files="30" classes="30"/>
+<coverage generated="1760862381282" clover="3.2.0">
+  <project timestamp="1760862381282" name="All files">
+    <metrics statements="662" coveredstatements="599" conditionals="350" coveredconditionals="265" methods="50" coveredmethods="50" elements="1062" coveredelements="914" complexity="0" loc="662" ncloc="662" packages="3" files="30" classes="30"/>
     <package name="Config">
       <metrics statements="8" coveredstatements="8" conditionals="4" coveredconditionals="4" methods="0" coveredmethods="0"/>
       <file name="supabase.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Config\supabase.js">
@@ -17,7 +17,7 @@
       </file>
     </package>
     <package name="Controllers">
-      <metrics statements="485" coveredstatements="426" conditionals="293" coveredconditionals="226" methods="43" coveredmethods="43"/>
+      <metrics statements="485" coveredstatements="426" conditionals="293" coveredconditionals="223" methods="43" coveredmethods="43"/>
       <file name="chat.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\chat.controller.js">
         <metrics statements="101" coveredstatements="75" conditionals="52" coveredconditionals="39" methods="7" coveredmethods="7"/>
         <line num="1" count="1" type="stmt"/>
@@ -238,60 +238,60 @@
         <line num="50" count="1" type="stmt"/>
       </file>
       <file name="exportController.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\exportController.js">
-        <metrics statements="53" coveredstatements="50" conditionals="28" coveredconditionals="16" methods="8" coveredmethods="8"/>
+        <metrics statements="53" coveredstatements="50" conditionals="28" coveredconditionals="13" methods="8" coveredmethods="8"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
         <line num="5" count="1" type="cond" truecount="2" falsecount="0"/>
         <line num="7" count="1" type="stmt"/>
-        <line num="8" count="6" type="stmt"/>
-        <line num="9" count="6" type="stmt"/>
-        <line num="12" count="6" type="cond" truecount="1" falsecount="1"/>
+        <line num="8" count="3" type="stmt"/>
+        <line num="9" count="3" type="stmt"/>
+        <line num="12" count="3" type="cond" truecount="1" falsecount="1"/>
         <line num="13" count="0" type="cond" truecount="0" falsecount="2"/>
         <line num="14" count="0" type="cond" truecount="0" falsecount="4"/>
         <line num="15" count="0" type="stmt"/>
-        <line num="20" count="6" type="stmt"/>
-        <line num="24" count="6" type="cond" truecount="2" falsecount="0"/>
-        <line num="27" count="5" type="stmt"/>
-        <line num="32" count="5" type="cond" truecount="1" falsecount="1"/>
-        <line num="34" count="5" type="stmt"/>
-        <line num="36" count="5" type="stmt"/>
-        <line num="37" count="5" type="cond" truecount="1" falsecount="1"/>
-        <line num="39" count="5" type="stmt"/>
-        <line num="43" count="5" type="cond" truecount="1" falsecount="1"/>
-        <line num="44" count="5" type="stmt"/>
-        <line num="48" count="5" type="stmt"/>
-        <line num="53" count="5" type="cond" truecount="1" falsecount="1"/>
-        <line num="56" count="5" type="stmt"/>
-        <line num="57" count="5" type="stmt"/>
-        <line num="58" count="5" type="stmt"/>
-        <line num="60" count="5" type="stmt"/>
-        <line num="61" count="5" type="stmt"/>
-        <line num="62" count="5" type="cond" truecount="2" falsecount="0"/>
-        <line num="63" count="4" type="stmt"/>
-        <line num="67" count="5" type="stmt"/>
-        <line num="68" count="5" type="stmt"/>
-        <line num="69" count="5" type="cond" truecount="2" falsecount="0"/>
-        <line num="70" count="4" type="stmt"/>
-        <line num="74" count="5" type="stmt"/>
-        <line num="75" count="5" type="cond" truecount="1" falsecount="1"/>
-        <line num="76" count="5" type="stmt"/>
-        <line num="77" count="5" type="cond" truecount="2" falsecount="0"/>
-        <line num="78" count="4" type="stmt"/>
-        <line num="82" count="5" type="stmt"/>
-        <line num="89" count="4" type="stmt"/>
-        <line num="90" count="4" type="stmt"/>
-        <line num="91" count="4" type="stmt"/>
-        <line num="92" count="4" type="stmt"/>
-        <line num="95" count="4" type="stmt"/>
-        <line num="96" count="4" type="stmt"/>
-        <line num="97" count="4" type="stmt"/>
-        <line num="98" count="4" type="stmt"/>
-        <line num="99" count="4" type="stmt"/>
-        <line num="100" count="4" type="stmt"/>
-        <line num="102" count="4" type="stmt"/>
+        <line num="20" count="3" type="stmt"/>
+        <line num="24" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="27" count="3" type="stmt"/>
+        <line num="32" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="34" count="2" type="stmt"/>
+        <line num="36" count="2" type="stmt"/>
+        <line num="37" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="39" count="1" type="stmt"/>
+        <line num="43" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="44" count="1" type="stmt"/>
+        <line num="50" count="2" type="stmt"/>
+        <line num="55" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="58" count="2" type="stmt"/>
+        <line num="59" count="2" type="stmt"/>
+        <line num="60" count="2" type="stmt"/>
+        <line num="62" count="2" type="stmt"/>
+        <line num="63" count="2" type="stmt"/>
+        <line num="64" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="65" count="2" type="stmt"/>
+        <line num="69" count="2" type="stmt"/>
+        <line num="70" count="2" type="stmt"/>
+        <line num="71" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="72" count="2" type="stmt"/>
+        <line num="76" count="2" type="stmt"/>
+        <line num="77" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="78" count="2" type="stmt"/>
+        <line num="79" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="80" count="2" type="stmt"/>
+        <line num="84" count="2" type="stmt"/>
+        <line num="91" count="2" type="stmt"/>
+        <line num="92" count="2" type="stmt"/>
+        <line num="93" count="2" type="stmt"/>
+        <line num="94" count="2" type="stmt"/>
+        <line num="97" count="2" type="stmt"/>
+        <line num="98" count="2" type="stmt"/>
+        <line num="99" count="2" type="stmt"/>
+        <line num="100" count="2" type="stmt"/>
+        <line num="101" count="2" type="stmt"/>
+        <line num="102" count="2" type="stmt"/>
         <line num="104" count="2" type="stmt"/>
-        <line num="105" count="2" type="stmt"/>
+        <line num="106" count="1" type="stmt"/>
+        <line num="107" count="1" type="stmt"/>
       </file>
       <file name="getEvent.controller.js" path="C:\Users\raees\Documents\SDP 3\QUANTIX\Backend\src\Controllers\getEvent.controller.js">
         <metrics statements="23" coveredstatements="22" conditionals="10" coveredconditionals="8" methods="2" coveredmethods="2"/>
